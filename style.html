@@ -1044,8 +1044,15 @@
             color: var(--dark-color);
             border-radius: 14px;
             box-shadow: 0 12px 28px var(--shadow-color);
-            padding: 20px;
+            padding: 18px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .cards-hero .card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 6px;
         }
         .card:hover {
             transform: translateY(-6px);
@@ -1067,14 +1074,17 @@
         }
         .card-header {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            margin-bottom: 10px;
+            gap: 6px;
+            margin-bottom: 4px;
+            width: 100%;
         }
         .card-title {
             font-size: 1rem;
             font-weight: 600;
             color: var(--dark-color);
+            text-align: center;
         }
         .card-icon {
             font-size: 1.6rem;
@@ -1087,7 +1097,7 @@
         .card-value {
             font-size: 2rem;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 0;
             color: var(--dark-color);
         }
         .card-description {
@@ -2923,26 +2933,23 @@
                 align-items: flex-start;
             }
             .cards-hero {
-                grid-template-columns: repeat(4, minmax(120px, 1fr));
-                gap: 10px;
-                overflow-x: auto;
-                padding-bottom: 6px;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+                overflow-x: hidden;
+                padding-bottom: 0;
             }
             .cards-hero .card {
-                min-width: 120px;
-                padding: 12px;
+                min-width: 0;
+                padding: 12px 10px;
             }
             .cards-hero .card-title {
-                font-size: 0.9rem;
+                font-size: 0.85rem;
             }
             .cards-hero .card-icon {
-                font-size: 1.2rem;
+                font-size: 1.25rem;
             }
             .cards-hero .card-value {
-                font-size: 1.4rem;
-            }
-            .cards-hero .card-description {
-                font-size: 0.8rem;
+                font-size: 1.35rem;
             }
             .table-header-controls button {
                 width: 100%;
