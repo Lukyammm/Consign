@@ -1811,15 +1811,18 @@
         /* Modal de impressão de reserva */
         .modal.modal-print {
             padding: 16px 10px;
+            background: rgba(15, 23, 42, 0.55);
         }
         .modal-print .modal-content {
-            background: transparent;
-            border: none;
-            box-shadow: none;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 18px 46px rgba(15, 23, 42, 0.28);
             max-width: 520px;
             width: min(100%, 520px);
             display: flex;
             justify-content: center;
+            border-radius: 18px;
+            padding: 18px;
         }
         .modal-print-wrapper {
             display: flex;
@@ -1827,6 +1830,9 @@
             gap: 14px;
             align-items: center;
             width: 100%;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 70%);
+            border-radius: 14px;
+            padding: 6px 8px 12px;
         }
         .modal-print .modal-close {
             align-self: flex-end;
@@ -1937,6 +1943,7 @@
             justify-content: center;
             gap: 12px;
             padding: 12px 4px 2px;
+            background: transparent;
         }
         .print-actions .btn {
             min-width: 120px;
