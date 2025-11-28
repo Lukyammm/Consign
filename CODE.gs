@@ -3868,7 +3868,9 @@ function salvarTermoCompleto(dadosTermo) {
       }
     }
 
-    var precisaAtualizarCadastro = cadastroArmario && String(cadastroArmario.id) === String(dadosTermo.armarioId);
+    var cadastroArmarioValido = cadastroArmario && String(cadastroArmario.id) === String(dadosTermo.armarioId)
+      ? cadastroArmario
+      : null;
 
     if (linhaAcompanhante > -1 && sheetAcompanhantes && estruturaAcompanhantes) {
       var totalColunasAcompanhantes = estruturaAcompanhantes.ultimaColuna || 12;
@@ -3881,54 +3883,59 @@ function salvarTermoCompleto(dadosTermo) {
       definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'volumes', totalVolumes);
       definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'termo aplicado', true);
 
-      if (precisaAtualizarCadastro) {
-        var statusAtual = normalizarTextoBasico(obterValorLinha(linhaAtualizada, estruturaAcompanhantes, 'status', ''));
-        if (statusAtual && statusAtual !== 'livre') {
-          throw new Error('Armário já está em uso. Atualize a lista e tente novamente.');
-        }
+      var dadosCadastroAcompanhante = cadastroArmarioValido || {
+        nomeVisitante: dadosTermo.acompanhante || '',
+        nomePaciente: dadosTermo.paciente || '',
+        leito: dadosTermo.leito || '',
+        whatsapp: dadosTermo.telefone || ''
+      };
 
-        var dataHoraAtualCadastro = obterDataHoraAtualFormatada();
-        var horaInicioCadastro = dataHoraAtualCadastro.horaCurta;
-        var dataRegistroCadastro = dataHoraAtualCadastro.dataHoraIso;
-        var unidadeAtual = obterValorLinha(linhaAtualizada, estruturaAcompanhantes, 'unidade', '');
-        var whatsappCadastro = cadastroArmario.whatsapp ? cadastroArmario.whatsapp.toString().trim() : '';
-        var nomeColunaCadastro = CABECALHOS_NOME_ACOMPANHANTE;
+      var statusAtual = normalizarTextoBasico(obterValorLinha(linhaAtualizada, estruturaAcompanhantes, 'status', ''));
+      if (statusAtual && statusAtual !== 'livre') {
+        throw new Error('Armário já está em uso. Atualize a lista e tente novamente.');
+      }
 
-        definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'status', 'em-uso');
-        definirValorLinha(linhaAtualizada, estruturaAcompanhantes, nomeColunaCadastro, cadastroArmario.nomeVisitante || dadosTermo.acompanhante || '');
-        definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'nome paciente', cadastroArmario.nomePaciente || dadosTermo.paciente || '');
-        definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'leito', cadastroArmario.leito || dadosTermo.leito || '');
-        definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'hora inicio', horaInicioCadastro);
-        definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'hora prevista', '');
-        definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'data registro', dataRegistroCadastro);
-        definirValorLinha(linhaAtualizada, estruturaAcompanhantes, CABECALHOS_WHATSAPP, whatsappCadastro);
+      var dataHoraAtualCadastro = obterDataHoraAtualFormatada();
+      var horaInicioCadastro = dataHoraAtualCadastro.horaCurta;
+      var dataRegistroCadastro = dataHoraAtualCadastro.dataHoraIso;
+      var unidadeAtual = obterValorLinha(linhaAtualizada, estruturaAcompanhantes, 'unidade', '');
+      var whatsappCadastro = dadosCadastroAcompanhante.whatsapp ? dadosCadastroAcompanhante.whatsapp.toString().trim() : '';
+      var nomeColunaCadastro = CABECALHOS_NOME_ACOMPANHANTE;
 
-        // Registrar histórico de uso
-        var historicoSheet = ss.getSheetByName('Histórico Acompanhantes');
-        if (historicoSheet) {
-          var historicoLastRow = historicoSheet.getLastRow();
-          var historicoId = historicoLastRow > 1
-            ? Math.max.apply(null, historicoSheet.getRange(2, 1, historicoLastRow - 1, 1).getValues().flat()) + 1
-            : 1;
+      definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'status', 'em-uso');
+      definirValorLinha(linhaAtualizada, estruturaAcompanhantes, nomeColunaCadastro, dadosCadastroAcompanhante.nomeVisitante || dadosTermo.acompanhante || '');
+      definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'nome paciente', dadosCadastroAcompanhante.nomePaciente || dadosTermo.paciente || '');
+      definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'leito', dadosCadastroAcompanhante.leito || dadosTermo.leito || '');
+      definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'hora inicio', horaInicioCadastro);
+      definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'hora prevista', '');
+      definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'data registro', dataRegistroCadastro);
+      definirValorLinha(linhaAtualizada, estruturaAcompanhantes, CABECALHOS_WHATSAPP, whatsappCadastro);
 
-          var historicoLinha = [
-            historicoId,
-            dataRegistroCadastro,
-            numeroArmarioOficial,
-            cadastroArmario.nomeVisitante || dadosTermo.acompanhante || '',
-            cadastroArmario.nomePaciente || dadosTermo.paciente || '',
-            cadastroArmario.leito || dadosTermo.leito || '',
-            totalVolumes,
-            horaInicioCadastro,
-            '',
-            'EM USO',
-            'acompanhante',
-            unidadeAtual,
-            whatsappCadastro
-          ];
+      // Registrar histórico de uso
+      var historicoSheet = ss.getSheetByName('Histórico Acompanhantes');
+      if (historicoSheet) {
+        var historicoLastRow = historicoSheet.getLastRow();
+        var historicoId = historicoLastRow > 1
+          ? Math.max.apply(null, historicoSheet.getRange(2, 1, historicoLastRow - 1, 1).getValues().flat()) + 1
+          : 1;
 
-          historicoSheet.getRange(historicoLastRow + 1, 1, 1, historicoLinha.length).setValues([historicoLinha]);
-        }
+        var historicoLinha = [
+          historicoId,
+          dataRegistroCadastro,
+          numeroArmarioOficial,
+          dadosCadastroAcompanhante.nomeVisitante || dadosTermo.acompanhante || '',
+          dadosCadastroAcompanhante.nomePaciente || dadosTermo.paciente || '',
+          dadosCadastroAcompanhante.leito || dadosTermo.leito || '',
+          totalVolumes,
+          horaInicioCadastro,
+          '',
+          'EM USO',
+          'acompanhante',
+          unidadeAtual,
+          whatsappCadastro
+        ];
+
+        historicoSheet.getRange(historicoLastRow + 1, 1, 1, historicoLinha.length).setValues([historicoLinha]);
       }
 
       sheetAcompanhantes.getRange(linhaAcompanhante + 1, 1, 1, totalColunasAcompanhantes).setValues([linhaAtualizada]);
