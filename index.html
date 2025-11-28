@@ -939,6 +939,61 @@
             </div>
         </div>
     </div>
+    <!-- Modal de impressão da reserva do armário -->
+    <div class="modal modal-full modal-print" id="impressao-reserva-modal" aria-hidden="true" role="dialog" aria-labelledby="impressao-reserva-titulo">
+        <div class="modal-content modal-print-content">
+            <div class="modal-print-wrapper">
+                <button class="modal-close" id="impressao-reserva-close" type="button" aria-label="Fechar comprovante">&times;</button>
+                <div class="print-ticket" id="impressao-reserva-card" aria-live="polite">
+                    <div class="print-ticket-header">
+                        <div class="print-badge">Guarda Volumes - HUC</div>
+                        <div class="print-title" id="impressao-reserva-titulo">Reserva do armário</div>
+                        <div class="print-subtitle">Entregue ao acompanhante</div>
+                    </div>
+                    <div class="print-ticket-body">
+                        <div class="print-row">
+                            <span>Armário</span>
+                            <strong id="print-armario">-</strong>
+                        </div>
+                        <div class="print-row">
+                            <span>Paciente</span>
+                            <strong id="print-paciente">-</strong>
+                        </div>
+                        <div class="print-row">
+                            <span>Acompanhante</span>
+                            <strong id="print-acompanhante">-</strong>
+                        </div>
+                        <div class="print-row">
+                            <span>Prontuário</span>
+                            <strong id="print-prontuario">-</strong>
+                        </div>
+                        <div class="print-row">
+                            <span>Leito</span>
+                            <strong id="print-leito">-</strong>
+                        </div>
+                        <div class="print-row">
+                            <span>Volumes</span>
+                            <strong id="print-volumes">-</strong>
+                        </div>
+                    </div>
+                    <div class="print-ticket-footer">
+                        <div class="print-meta">
+                            <span>Início</span>
+                            <strong id="print-inicio">-</strong>
+                        </div>
+                        <div class="print-meta">
+                            <span>Emitido em</span>
+                            <strong id="print-emissao">-</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions print-actions">
+                    <button type="button" class="btn btn-secondary" id="impressao-reserva-fechar">Fechar</button>
+                    <button type="button" class="btn btn-primary" id="impressao-reserva-print">Imprimir</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Painel de Notificações -->
     <div class="notification-panel" id="notification-panel">
         <div class="notification-header">
