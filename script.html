@@ -262,9 +262,11 @@
                 },
                 orientacoes: ['ori1', 'ori2', 'ori3'].filter(chave => document.getElementById(`termo-${chave}`)?.checked),
                 volumes: obterVolumesTermo(),
-                assinatura: termoAssinaturaDesenhada && elementos.termoAssinaturaCanvas
-                    ? elementos.termoAssinaturaCanvas.toDataURL('image/png')
-                    : ''
+                assinatura: (() => {
+                    if (!termoAssinaturaDesenhada || !elementos.termoAssinaturaCanvas) return '';
+                    const assinaturaCompacta = gerarAssinaturaCompacta(elementos.termoAssinaturaCanvas, { limiteCaracteres: 32000, alturaMax: 200 });
+                    return assinaturaCompacta.dataUrl;
+                })()
             };
         }
         function salvarRascunhoTermo() {
@@ -1794,6 +1796,65 @@
                 ctx.drawImage(imagem, 0, 0, canvas.width, canvas.height);
             };
             imagem.src = dataUrl.startsWith('data:') ? dataUrl : `data:image/png;base64,${dataUrl}`;
+        }
+        function gerarAssinaturaCompacta(canvas, opcoes = {}) {
+            if (!canvas) {
+                return { base64: '', mime: 'image/png', dataUrl: '' };
+            }
+
+            const larguraMax = opcoes.larguraMax || 900;
+            const alturaMax = opcoes.alturaMax || 220;
+            const limiteCaracteres = opcoes.limiteCaracteres || 48000;
+            const qualidadeInicial = opcoes.qualidadeInicial || 0.82;
+            const qualidadeMinima = opcoes.qualidadeMinima || 0.6;
+            const mime = 'image/jpeg';
+
+            const retangulo = canvas.getBoundingClientRect();
+            const larguraOriginal = canvas.width || retangulo.width || 1;
+            const alturaOriginal = canvas.height || retangulo.height || 1;
+            const proporcao = Math.min(1, larguraMax / larguraOriginal, alturaMax / alturaOriginal);
+            const larguraDestino = Math.max(1, Math.round(larguraOriginal * proporcao));
+            const alturaDestino = Math.max(1, Math.round(alturaOriginal * proporcao));
+
+            const buffer = document.createElement('canvas');
+            buffer.width = larguraDestino;
+            buffer.height = alturaDestino;
+            const contextoBuffer = buffer.getContext('2d');
+            contextoBuffer.fillStyle = '#fff';
+            contextoBuffer.fillRect(0, 0, larguraDestino, alturaDestino);
+            contextoBuffer.drawImage(canvas, 0, 0, larguraDestino, alturaDestino);
+
+            let qualidadeAtual = qualidadeInicial;
+            let dataUrl = '';
+            let base64 = '';
+
+            while (qualidadeAtual >= qualidadeMinima) {
+                dataUrl = buffer.toDataURL(mime, qualidadeAtual);
+                base64 = (dataUrl.split(',')[1] || '').trim();
+                if (base64.length <= limiteCaracteres) {
+                    break;
+                }
+                qualidadeAtual -= 0.12;
+            }
+
+            if (base64.length > limiteCaracteres) {
+                const fatorReducao = Math.sqrt(limiteCaracteres / base64.length);
+                const novaLargura = Math.max(1, Math.round(larguraDestino * fatorReducao));
+                const novaAltura = Math.max(1, Math.round(alturaDestino * fatorReducao));
+                buffer.width = novaLargura;
+                buffer.height = novaAltura;
+                contextoBuffer.fillStyle = '#fff';
+                contextoBuffer.fillRect(0, 0, novaLargura, novaAltura);
+                contextoBuffer.drawImage(canvas, 0, 0, novaLargura, novaAltura);
+                dataUrl = buffer.toDataURL(mime, Math.max(qualidadeMinima, qualidadeAtual));
+                base64 = (dataUrl.split(',')[1] || '').trim();
+            }
+
+            return {
+                base64,
+                mime,
+                dataUrl
+            };
         }
         function inicializarCanvasAssinatura() {
             if (elementos.termoAssinaturaCanvas) {
@@ -5193,8 +5254,9 @@
             restaurarRascunhoTermo();
             mostrarPassoTermo(termoPassoAtual || 0);
             const assinaturaInicial = termoDados?.assinaturas?.inicial || termoDados?.assinaturaBase64 || '';
+            const assinaturaMimeInicial = termoDados?.assinaturas?.mimeInicial || termoDados?.assinaturaMimeInicial || 'image/png';
             if (restaurarAssinatura && assinaturaInicial && !termoAssinaturaDesenhada) {
-                restaurarAssinaturaTermo(assinaturaInicial);
+                restaurarAssinaturaTermo(assinaturaInicial, assinaturaMimeInicial);
             }
         }
         async function abrirTermoWizard(id) {
@@ -5439,11 +5501,12 @@
             }
             salvarRascunhoTermo();
         }
-        function restaurarAssinaturaTermo(base64) {
+        function restaurarAssinaturaTermo(base64, mime = 'image/png') {
             if (!base64) return;
             const canvas = elementos.termoAssinaturaCanvas;
             if (!canvas) return;
-            const dataUrl = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+            const prefixo = mime && typeof mime === 'string' && mime.trim() ? mime.trim() : 'image/png';
+            const dataUrl = base64.startsWith('data:') ? base64 : `data:${prefixo};base64,${base64}`;
             restaurarDesenhoCanvas(canvas, dataUrl);
             termoAssinaturaDesenhada = true;
             termoDesenhandoAssinatura = false;
@@ -5522,7 +5585,8 @@
             const identificadores = montarIdentificadoresArmario(armarioAtual);
             // Capturar a assinatura do canvas
             const canvas = elementos.termoAssinaturaCanvas;
-            const assinaturaBase64 = canvas ? canvas.toDataURL('image/png').replace('data:image/png;base64,', '') : '';
+            const assinaturaCompacta = canvas ? gerarAssinaturaCompacta(canvas) : { base64: '', mime: 'image/png' };
+            const assinaturaBase64 = assinaturaCompacta.base64;
             const volumes = obterVolumesTermo();
             const descricaoVolumes = volumes.map(v => `${v.quantidade}x ${v.descricao}`).join('; ');
             const nascimentoCampo = elementos.termoNascimento;
@@ -5543,7 +5607,8 @@
                 orientacoes: ['ori1', 'ori2', 'ori3'].filter(chave => document.getElementById(`termo-${chave}`).checked),
                 volumes: volumes,
                 descricaoVolumes: descricaoVolumes,
-                assinaturaBase64: assinaturaBase64
+                assinaturaBase64: assinaturaBase64,
+                assinaturaMime: assinaturaCompacta.mime
             };
             if (termoCadastroArmario && identificadores && normalizarIdentificador(termoCadastroArmario.id) === identificadores.idPlanilha) {
                 dadosTermo.cadastroArmario = {
@@ -5665,7 +5730,7 @@
             return {
                 limpar,
                 possuiAssinatura: () => assinou,
-                obterImagem: () => canvas.toDataURL('image/png'),
+                obterImagem: () => gerarAssinaturaCompacta(canvas),
                 destruir: removerEventos
             };
         }
@@ -5742,7 +5807,12 @@
                         return false;
                     }
                     const imagem = controlador.obterImagem();
-                    return imagem.replace('data:image/png;base64,', '');
+                    if (!imagem || !imagem.base64) {
+                        field?.classList.add('invalid');
+                        Swal.showValidationMessage('A assinatura não pôde ser processada.');
+                        return false;
+                    }
+                    return imagem;
                 }
             });
 
@@ -6156,8 +6226,8 @@
                 return;
             }
 
-            const assinaturaFinalBase64 = await coletarAssinaturaEncerramento(acompanhante);
-            if (!assinaturaFinalBase64) {
+            const assinaturaFinal = await coletarAssinaturaEncerramento(acompanhante);
+            if (!assinaturaFinal || !assinaturaFinal.base64) {
                 await Swal.fire({
                     title: 'Liberação cancelada',
                     text: 'A assinatura de encerramento não foi coletada. O armário permanecerá ativo.',
@@ -6243,7 +6313,8 @@
                     armarioId: identificadores?.idPlanilha || '',
                     numeroArmario: identificadores?.numeroArmario || '',
                     metodo,
-                    assinaturaFinal: assinaturaFinalBase64,
+                    assinaturaFinal: assinaturaFinal.base64,
+                    assinaturaMimeFinal: assinaturaFinal.mime,
                     confirmacao,
                     usuarioResponsavel,
                     tipo: identificadores?.tipo || ''

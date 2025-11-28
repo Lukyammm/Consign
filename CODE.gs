@@ -3775,6 +3775,10 @@ function salvarTermoCompleto(dadosTermo) {
 
     var assinaturasInfo = normalizarAssinaturas(valorAtualAssinatura);
     assinaturasInfo.inicial = dadosTermo.assinaturaBase64 || assinaturasInfo.inicial || '';
+    assinaturasInfo.mimeInicial = dadosTermo.assinaturaMime || assinaturasInfo.mimeInicial || (assinaturasInfo.inicial ? 'image/png' : '');
+    if (assinaturasInfo.inicial && assinaturasInfo.inicial.length > 49000) {
+      return { success: false, error: 'A assinatura está muito grande. Limpe o campo e refaça o desenho em tamanho menor.' };
+    }
 
     var numeroArmarioOficial = numeroInformado;
 
@@ -3962,6 +3966,8 @@ function normalizarAssinaturas(valor) {
   var info = {
     inicial: '',
     final: '',
+    mimeInicial: '',
+    mimeFinal: '',
     metodoFinal: '',
     cpfFinal: '',
     finalizadoEm: '',
@@ -3977,6 +3983,8 @@ function normalizarAssinaturas(valor) {
       var json = JSON.parse(valor);
       info.inicial = json.inicial || '';
       info.final = json.final || '';
+      info.mimeInicial = json.mimeInicial || '';
+      info.mimeFinal = json.mimeFinal || '';
       info.metodoFinal = json.metodoFinal || '';
       info.cpfFinal = json.cpfFinal || '';
       info.finalizadoEm = json.finalizadoEm || '';
@@ -3991,10 +3999,20 @@ function normalizarAssinaturas(valor) {
   if (typeof valor === 'object') {
     info.inicial = valor.inicial || '';
     info.final = valor.final || '';
+    info.mimeInicial = valor.mimeInicial || '';
+    info.mimeFinal = valor.mimeFinal || '';
     info.metodoFinal = valor.metodoFinal || '';
     info.cpfFinal = valor.cpfFinal || '';
     info.finalizadoEm = valor.finalizadoEm || '';
     info.responsavelFinalizacao = valor.responsavelFinalizacao || '';
+  }
+
+  if (!info.mimeInicial && info.inicial) {
+    info.mimeInicial = 'image/png';
+  }
+
+  if (!info.mimeFinal && info.final) {
+    info.mimeFinal = 'image/png';
   }
 
   return info;
@@ -4140,6 +4158,8 @@ function getTermo(dados) {
         aplicadoEm: data[i][16],
         pdfUrl: data[i][17],
         assinaturaBase64: assinaturas.inicial,
+        assinaturaMimeInicial: assinaturas.mimeInicial || 'image/png',
+        assinaturaMimeFinal: assinaturas.mimeFinal || 'image/png',
         assinaturas: assinaturas,
         finalizadoEm: assinaturas.finalizadoEm,
         metodoFinal: assinaturas.metodoFinal,
@@ -4266,10 +4286,18 @@ function finalizarTermo(dados) {
     var assinaturas = termoEncontrado.assinaturas || normalizarAssinaturas('');
     var finalizacaoInfo = obterDataHoraAtualFormatada();
     var finalizacaoIso = finalizacaoInfo.dataHoraIso;
+    assinaturas.mimeInicial = assinaturas.mimeInicial || (termoEncontrado.assinaturas && termoEncontrado.assinaturas.mimeInicial) || 'image/png';
+    assinaturas.mimeFinal = assinaturas.mimeFinal || '';
     assinaturas.metodoFinal = metodo;
     assinaturas.cpfFinal = metodo === 'cpf' ? confirmacao : '';
     assinaturas.finalizadoEm = finalizacaoIso;
     assinaturas.final = metodo === 'assinatura' ? assinaturaFinal : '';
+    if (metodo === 'assinatura') {
+      assinaturas.mimeFinal = dados.assinaturaMimeFinal || assinaturas.mimeFinal || 'image/png';
+    }
+    if (assinaturas.final && assinaturas.final.length > 49000) {
+      return { success: false, error: 'A assinatura de encerramento está muito grande. Peça para refazer utilizando traços menores.' };
+    }
     var responsavelFinalizacao = determinarResponsavelRegistro(dados.usuarioResponsavel);
     assinaturas.responsavelFinalizacao = responsavelFinalizacao;
 
@@ -4302,6 +4330,8 @@ function finalizarTermo(dados) {
       finalizadoEm: finalizacaoIso,
       assinaturaInicial: assinaturas.inicial,
       assinaturaFinal: assinaturas.final,
+      assinaturaMimeInicial: assinaturas.mimeInicial || 'image/png',
+      assinaturaMimeFinal: assinaturas.mimeFinal || (assinaturas.final ? 'image/png' : ''),
       metodoFinal: assinaturas.metodoFinal,
       cpfFinal: assinaturas.cpfFinal,
       responsavelFinalizacao: assinaturas.responsavelFinalizacao,
@@ -4379,6 +4409,16 @@ function gerarESalvarTermoPDF(dadosTermo) {
   }
 }
 
+function montarFonteAssinatura(base64, mimePadrao) {
+  if (!base64) {
+    return '';
+  }
+  if (typeof base64 === 'string' && base64.indexOf('data:') === 0) {
+    return base64;
+  }
+  var tipo = mimePadrao && mimePadrao.toString().trim() ? mimePadrao : 'image/png';
+  return 'data:' + tipo + ';base64,' + base64;
+}
 
 function criarHTMLTermo(dadosTermo) {
   var hospitalNome = 'Hospital Universitário do Ceará';
@@ -4454,8 +4494,9 @@ function criarHTMLTermo(dadosTermo) {
     conferenteTexto = '__________________________';
   }
 
-  var assinaturaInicialHtml = dadosTermo.assinaturaInicial
-    ? '<img src="data:image/png;base64,' + dadosTermo.assinaturaInicial + '" class="assinatura-img" alt="Assinatura inicial" />'
+  var assinaturaInicialSrc = montarFonteAssinatura(dadosTermo.assinaturaInicial, dadosTermo.assinaturaMimeInicial);
+  var assinaturaInicialHtml = assinaturaInicialSrc
+    ? '<img src="' + assinaturaInicialSrc + '" class="assinatura-img" alt="Assinatura inicial" />'
     : '<div class="assinatura-linha">Assinatura não registrada digitalmente.</div>';
 
   var assinaturaFinalHtml = '';
@@ -4464,7 +4505,10 @@ function criarHTMLTermo(dadosTermo) {
   } else if (dadosTermo.metodoFinal === 'manual') {
     assinaturaFinalHtml = '<div class="assinatura-linha">Finalização manual registrada no sistema.</div>';
   } else if (dadosTermo.assinaturaFinal) {
-    assinaturaFinalHtml = '<img src="data:image/png;base64,' + dadosTermo.assinaturaFinal + '" class="assinatura-img" alt="Assinatura final" />';
+    var assinaturaFinalSrc = montarFonteAssinatura(dadosTermo.assinaturaFinal, dadosTermo.assinaturaMimeFinal);
+    assinaturaFinalHtml = assinaturaFinalSrc
+      ? '<img src="' + assinaturaFinalSrc + '" class="assinatura-img" alt="Assinatura final" />'
+      : '<div class="assinatura-linha">Assinatura final não registrada.</div>';
   } else {
     assinaturaFinalHtml = '<div class="assinatura-linha">Assinatura final não registrada.</div>';
   }
