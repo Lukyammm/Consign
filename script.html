@@ -231,51 +231,10 @@
             };
         }
         function salvarRascunhoArmario() {
-            const storage = obterArmazenamentoLocal();
-            if (!storage || !elementos.armarioForm || elementos.armarioModal?.style.display === 'none') {
-                return;
-            }
-            const dados = coletarCamposArmario();
-            const possuiDados = Object.values(dados.valores).some(valor => {
-                if (typeof valor === 'boolean') return valor;
-                return (valor || '').toString().trim();
-            });
-            try {
-                if (!possuiDados) {
-                    removerRascunhoChave(STORAGE_KEYS.rascunhoArmario);
-                    return;
-                }
-                storage.setItem(STORAGE_KEYS.rascunhoArmario, JSON.stringify(dados));
-            } catch (erro) {
-                console.warn('Não foi possível salvar o rascunho do armário localmente:', erro);
-            }
+            limparRascunhoArmario();
         }
         function restaurarRascunhoArmario() {
-            const storage = obterArmazenamentoLocal();
-            if (!storage || !elementos.armarioForm) return;
-            try {
-                const bruto = storage.getItem(STORAGE_KEYS.rascunhoArmario);
-                if (!bruto) return;
-                const dados = JSON.parse(bruto);
-                const metaAtual = coletarCamposArmario().meta;
-                const metaSalva = dados?.meta || {};
-                const metaIncompativel = (metaAtual.armarioId && metaSalva.armarioId && metaAtual.armarioId !== metaSalva.armarioId)
-                    || (metaAtual.numero && metaSalva.numero && metaAtual.numero !== metaSalva.numero)
-                    || (metaAtual.tipo && metaSalva.tipo && metaAtual.tipo !== metaSalva.tipo);
-                if (metaIncompativel) return;
-                const valores = dados?.valores || {};
-                if (document.getElementById('nome-visitante')) document.getElementById('nome-visitante').value = valores.nomeVisitante || '';
-                if (document.getElementById('nome-paciente')) document.getElementById('nome-paciente').value = valores.nomePaciente || '';
-                if (document.getElementById('leito')) document.getElementById('leito').value = aplicarMascaraLeito(valores.leito || '');
-                if (document.getElementById('whatsapp-contato')) document.getElementById('whatsapp-contato').value = valores.whatsapp || '';
-                if (document.getElementById('volumes')) document.getElementById('volumes').value = valores.volumes || '';
-                if (elementos.horaPrevistaInput) elementos.horaPrevistaInput.value = valores.horaPrevista || '';
-                if (elementos.visitaEstendidaInput) elementos.visitaEstendidaInput.checked = Boolean(valores.visitaEstendida);
-                atualizarInterfaceVisitaEstendida({ manterHorarioManual: true });
-            } catch (erro) {
-                console.warn('Falha ao restaurar rascunho do armário:', erro);
-                removerRascunhoChave(STORAGE_KEYS.rascunhoArmario);
-            }
+            limparRascunhoArmario();
         }
         function limparRascunhoArmario() {
             removerRascunhoChave(STORAGE_KEYS.rascunhoArmario);
@@ -309,77 +268,10 @@
             };
         }
         function salvarRascunhoTermo() {
-            if (termoArmarioAtual === null) return;
-            const storage = obterArmazenamentoLocal();
-            if (!storage) return;
-            const rascunho = coletarRascunhoTermo();
-            const campos = [rascunho.valores.paciente, rascunho.valores.prontuario, rascunho.valores.nascimento,
-                rascunho.valores.setor, rascunho.valores.leito, rascunho.valores.consciente, rascunho.valores.acompanhante,
-                rascunho.valores.telefone, rascunho.valores.documento, rascunho.valores.parentesco];
-            const possuiDados = campos.some(valor => (valor || '').toString().trim())
-                || (rascunho.orientacoes && rascunho.orientacoes.length > 0)
-                || (rascunho.volumes && rascunho.volumes.some(v => (v.quantidade || v.descricao)))
-                || Boolean(rascunho.assinatura);
-            try {
-                if (!possuiDados) {
-                    removerRascunhoChave(STORAGE_KEYS.rascunhoTermo);
-                    return;
-                }
-                storage.setItem(STORAGE_KEYS.rascunhoTermo, JSON.stringify(rascunho));
-            } catch (erro) {
-                console.warn('Não foi possível salvar o rascunho do termo localmente:', erro);
-            }
+            limparRascunhoTermo();
         }
         function restaurarRascunhoTermo() {
-            const storage = obterArmazenamentoLocal();
-            if (!storage || termoArmarioAtual === null) return;
-            try {
-                const bruto = storage.getItem(STORAGE_KEYS.rascunhoTermo);
-                if (!bruto) return;
-                const dados = JSON.parse(bruto);
-                const metaSalva = dados?.meta || {};
-                const armarioAtual = normalizarIdentificador(termoArmarioAtual);
-                if (metaSalva.armarioId && normalizarIdentificador(metaSalva.armarioId) !== armarioAtual) return;
-                const valores = dados?.valores || {};
-                const nascimento = valores.nascimento || '';
-                if (document.getElementById('termo-paciente')) document.getElementById('termo-paciente').value = valores.paciente || '';
-                if (document.getElementById('termo-prontuario')) document.getElementById('termo-prontuario').value = valores.prontuario || '';
-                if (elementos.termoNascimento) {
-                    elementos.termoNascimento.value = nascimento;
-                    const iso = converterDataTextoParaISO(nascimento);
-                    if (iso) {
-                        elementos.termoNascimento.dataset.isoValue = iso;
-                    } else {
-                        delete elementos.termoNascimento.dataset.isoValue;
-                    }
-                }
-                if (elementos.termoSetor) elementos.termoSetor.value = valores.setor || '';
-                if (document.getElementById('termo-leito')) document.getElementById('termo-leito').value = aplicarMascaraLeito(valores.leito || '');
-                if (document.getElementById('termo-resp-nome')) document.getElementById('termo-resp-nome').value = valores.acompanhante || '';
-                if (document.getElementById('termo-resp-telefone')) document.getElementById('termo-resp-telefone').value = valores.telefone || '';
-                if (document.getElementById('termo-resp-doc')) document.getElementById('termo-resp-doc').value = valores.documento || '';
-                if (document.getElementById('termo-resp-parentesco')) document.getElementById('termo-resp-parentesco').value = valores.parentesco || '';
-                if (valores.consciente) {
-                    const radio = document.querySelector(`input[name="termo-consciente"][value="${valores.consciente}"]`);
-                    if (radio) radio.checked = true;
-                }
-                ['ori1', 'ori2', 'ori3'].forEach(chave => {
-                    const checkbox = document.getElementById(`termo-${chave}`);
-                    if (checkbox) {
-                        checkbox.checked = Boolean(dados?.orientacoes?.includes(chave));
-                    }
-                });
-                if (Array.isArray(dados?.volumes)) {
-                    prepararVolumesTermo(dados.volumes);
-                }
-                if (dados?.assinatura) {
-                    restaurarAssinaturaTermo(dados.assinatura);
-                }
-                mostrarPassoTermo(Number.isInteger(dados?.passo) ? dados.passo : 0);
-            } catch (erro) {
-                console.warn('Falha ao restaurar rascunho do termo:', erro);
-                removerRascunhoChave(STORAGE_KEYS.rascunhoTermo);
-            }
+            limparRascunhoTermo();
         }
         function limparRascunhoTermo() {
             removerRascunhoChave(STORAGE_KEYS.rascunhoTermo);
@@ -389,55 +281,25 @@
             return ['paciente', 'prontuario', 'acompanhante'].some(campo => (rascunho[campo] || '').toString().trim());
         }
         function persistirRascunhosOcupacaoLocal() {
-            const storage = obterArmazenamentoLocal();
-            if (!storage) return;
-            try {
-                const estadoOcupacao = obterEstadoOcupacaoAcompanhantes();
-                const rascunhosOriginais = estadoOcupacao.rascunhos || {};
-                const rascunhosFiltrados = {};
-                Object.entries(rascunhosOriginais).forEach(([id, valores]) => {
-                    if (rascunhoOcupacaoTemDados(valores)) {
-                        rascunhosFiltrados[id] = {
-                            paciente: (valores.paciente || '').toString(),
-                            prontuario: (valores.prontuario || '').toString(),
-                            acompanhante: (valores.acompanhante || '').toString()
-                        };
-                    }
-                });
-                estadoOcupacao.rascunhos = rascunhosFiltrados;
-                storage.setItem(STORAGE_KEYS.rascunhosOcupacao, JSON.stringify({ rascunhos: rascunhosFiltrados }));
-            } catch (erro) {
-                console.warn('Não foi possível salvar os rascunhos de ocupação localmente:', erro);
-            }
+            const estadoOcupacao = obterEstadoOcupacaoAcompanhantes();
+            const rascunhosOriginais = estadoOcupacao.rascunhos || {};
+            const rascunhosFiltrados = {};
+            Object.entries(rascunhosOriginais).forEach(([id, valores]) => {
+                if (rascunhoOcupacaoTemDados(valores)) {
+                    rascunhosFiltrados[id] = {
+                        paciente: (valores.paciente || '').toString(),
+                        prontuario: (valores.prontuario || '').toString(),
+                        acompanhante: (valores.acompanhante || '').toString()
+                    };
+                }
+            });
+            estadoOcupacao.rascunhos = rascunhosFiltrados;
+            removerRascunhoChave(STORAGE_KEYS.rascunhosOcupacao);
         }
         function restaurarRascunhosOcupacaoLocal() {
             if (rascunhosOcupacaoRestaurados) return;
-            const storage = obterArmazenamentoLocal();
-            if (!storage) return;
-            try {
-                const dados = storage.getItem(STORAGE_KEYS.rascunhosOcupacao);
-                if (!dados) return;
-                const json = JSON.parse(dados);
-                const rascunhosRestaurados = {};
-                Object.entries(json?.rascunhos || {}).forEach(([id, valores]) => {
-                    if (!id) return;
-                    rascunhosRestaurados[id] = {
-                        paciente: (valores?.paciente || '').toString(),
-                        prontuario: (valores?.prontuario || '').toString(),
-                        acompanhante: (valores?.acompanhante || '').toString()
-                    };
-                });
-                const estadoOcupacao = obterEstadoOcupacaoAcompanhantes();
-                estadoOcupacao.rascunhos = rascunhosRestaurados;
-                rascunhosOcupacaoRestaurados = true;
-            } catch (erro) {
-                console.warn('Falha ao restaurar rascunhos de ocupação:', erro);
-                try {
-                    storage.removeItem(STORAGE_KEYS.rascunhosOcupacao);
-                } catch (erroRemocao) {
-                    console.warn('Não foi possível limpar rascunhos inválidos do armazenamento local:', erroRemocao);
-                }
-            }
+            removerRascunhoChave(STORAGE_KEYS.rascunhosOcupacao);
+            rascunhosOcupacaoRestaurados = true;
         }
         function popularAvataresPadrao() {
             if (!elementos.avatarOptions) {
