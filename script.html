@@ -558,6 +558,21 @@
             ocupacaoSalvar: document.getElementById('ocupacao-btn-salvar'),
             tabelaOcupacaoAcompanhantes: document.getElementById('tabela-ocupacao-acompanhantes'),
             tabelaOcupacaoAcompanhantesBody: document.querySelector('#tabela-ocupacao-acompanhantes tbody'),
+            impressaoReservaModal: document.getElementById('impressao-reserva-modal'),
+            impressaoReservaClose: document.getElementById('impressao-reserva-close'),
+            impressaoReservaFechar: document.getElementById('impressao-reserva-fechar'),
+            impressaoReservaPrint: document.getElementById('impressao-reserva-print'),
+            impressaoReservaCard: document.getElementById('impressao-reserva-card'),
+            impressaoReservaCampos: {
+                armario: document.getElementById('print-armario'),
+                paciente: document.getElementById('print-paciente'),
+                acompanhante: document.getElementById('print-acompanhante'),
+                prontuario: document.getElementById('print-prontuario'),
+                leito: document.getElementById('print-leito'),
+                volumes: document.getElementById('print-volumes'),
+                inicio: document.getElementById('print-inicio'),
+                emissao: document.getElementById('print-emissao')
+            },
             logoutButton: document.getElementById('logout-button')
         };
         const mobileNavQuery = window.matchMedia('(max-width: 1024px)');
@@ -592,6 +607,7 @@
         let aplicacaoInicializada = false;
         let loginInicializado = false;
         let eventosInicializados = false;
+        const estadoImpressaoReserva = { dados: null };
         function aprimorarSeletoresCabecalho() {
             document.querySelectorAll('.selector-control .selector-input').forEach(select => criarSelectorPersonalizado(select));
         }
@@ -2433,6 +2449,22 @@
                     finalizarLoading();
                 }
             });
+            if (elementos.impressaoReservaClose) {
+                elementos.impressaoReservaClose.addEventListener('click', () => fecharModalImpressaoReserva());
+            }
+            if (elementos.impressaoReservaFechar) {
+                elementos.impressaoReservaFechar.addEventListener('click', () => fecharModalImpressaoReserva());
+            }
+            if (elementos.impressaoReservaPrint) {
+                elementos.impressaoReservaPrint.addEventListener('click', () => imprimirReservaArmario());
+            }
+            if (elementos.impressaoReservaModal) {
+                elementos.impressaoReservaModal.addEventListener('click', evento => {
+                    if (evento.target === elementos.impressaoReservaModal) {
+                        fecharModalImpressaoReserva();
+                    }
+                });
+            }
             // Tabela de termos
             elementos.tabelaTermos.addEventListener('click', tratarAcaoTermo);
             if (elementos.tabelaUnidadesBody) {
@@ -5247,6 +5279,82 @@
                 return valor;
             }
         }
+        function obterResumoVolumesTicket(volumes, valorArmario) {
+            if (Array.isArray(volumes) && volumes.length) {
+                const total = volumes.reduce((acc, volume) => {
+                    const quantidade = Number(volume.quantidade);
+                    return acc + (Number.isFinite(quantidade) && quantidade > 0 ? quantidade : 0);
+                }, 0);
+                if (total > 0) {
+                    return `${total} volume(s)`;
+                }
+                return `${volumes.length} volume(s)`;
+            }
+            if (valorArmario !== undefined && valorArmario !== null && valorArmario !== '') {
+                const numero = Number(valorArmario);
+                if (!Number.isNaN(numero)) {
+                    if (numero > 0) return `${numero} volume(s)`;
+                    return 'Nenhum volume informado';
+                }
+                return valorArmario.toString();
+            }
+            return 'Não informado';
+        }
+        function montarDadosImpressaoReserva(armario, dadosTermo, identificadores) {
+            const inicioBruto = (armario?.horaInicio || '').toString().trim();
+            const inicio = inicioBruto || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            return {
+                titulo: 'Guarda Volumes - HUC',
+                armario: identificadores?.numeroArmario || armario?.numero || '-',
+                paciente: dadosTermo?.paciente || armario?.nomePaciente || '-',
+                acompanhante: dadosTermo?.acompanhante || armario?.nomeVisitante || '-',
+                prontuario: dadosTermo?.prontuario || armario?.prontuario || '-',
+                leito: dadosTermo?.leito || armario?.leito || '-',
+                volumes: obterResumoVolumesTicket(dadosTermo?.volumes, armario?.volumes),
+                inicio,
+                emissao: formatarDataHora(new Date())
+            };
+        }
+        function preencherModalImpressaoReserva(dados) {
+            if (!elementos.impressaoReservaCampos) return;
+            const campos = elementos.impressaoReservaCampos;
+            campos.armario.textContent = dados.armario || '-';
+            campos.paciente.textContent = dados.paciente || '-';
+            campos.acompanhante.textContent = dados.acompanhante || '-';
+            campos.prontuario.textContent = dados.prontuario || '-';
+            campos.leito.textContent = dados.leito || '-';
+            campos.volumes.textContent = dados.volumes || '-';
+            campos.inicio.textContent = dados.inicio || '-';
+            campos.emissao.textContent = dados.emissao || '-';
+        }
+        function abrirModalImpressaoReserva(dados) {
+            if (!elementos.impressaoReservaModal) return;
+            estadoImpressaoReserva.dados = dados || null;
+            preencherModalImpressaoReserva(dados || {});
+            elementos.impressaoReservaModal.style.display = 'flex';
+            elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-print-open');
+            travaRolagem.aplicar();
+            requestAnimationFrame(() => {
+                elementos.impressaoReservaPrint?.focus({ preventScroll: true });
+            });
+        }
+        function fecharModalImpressaoReserva() {
+            if (!elementos.impressaoReservaModal) return;
+            if (elementos.impressaoReservaModal.style.display === 'flex') {
+                travaRolagem.remover();
+            }
+            elementos.impressaoReservaModal.style.display = 'none';
+            elementos.impressaoReservaModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-print-open');
+            estadoImpressaoReserva.dados = null;
+        }
+        function imprimirReservaArmario() {
+            window.print();
+        }
+        function deveGerarImpressaoReserva(tipo) {
+            return normalizarTexto(tipo) === 'acompanhante';
+        }
         function obterArmarioPorId(id) {
             const alvo = normalizarIdentificador(id);
             return estado.armarios.find(a => normalizarIdentificador(a.id) === alvo);
@@ -5681,9 +5789,13 @@
             dadosTermo.tipo = identificadores?.tipo || 'acompanhante';
             const resultado = await callGoogleScript('salvarTermoCompleto', dadosTermo);
             if (resultado.success) {
+                const dadosImpressao = montarDadosImpressaoReserva(armarioAtual, dadosTermo, identificadores);
                 fecharTermoModal();
                 await atualizarDadosPosOperacao('Atualizando informações do armário...');
                 mostrarSucesso('Etapa inicial do termo registrada. Finalize o termo ao encerrar o armário.');
+                if (deveGerarImpressaoReserva(identificadores?.tipo || armarioAtual.tipo || '')) {
+                    abrirModalImpressaoReserva(dadosImpressao);
+                }
             } else {
                 notificarErroPadrao(resultado);
             }
