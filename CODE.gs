@@ -4536,7 +4536,7 @@ function criarHTMLTermo(dadosTermo) {
   partes.push('  .mov-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }');
   partes.push('  .mov-table th, .mov-table td { border: 1px solid #0b1324; padding: 5px; vertical-align: top; }');
   partes.push('  .mov-table th { background: #eef3fb; }');
-  partes.push('  .devolucao-box, .descarte-box { border: 1px solid #0b1324; padding: 10px; margin-top: 10px; min-height: 70px; }');
+  partes.push('  .devolucao-box { border: 1px solid #0b1324; padding: 10px; margin-top: 10px; min-height: 70px; }');
   partes.push('  .observacoes { border: 1px solid #0b1324; min-height: 90px; margin-top: 12px; padding: 8px; font-size: 12px; }');
   partes.push('  .label { font-weight: bold; }');
   partes.push('</style>');
@@ -4604,11 +4604,6 @@ function criarHTMLTermo(dadosTermo) {
   partes.push('</table>');
   partes.push('<div class="section-title">Devolução de pertences</div>');
   partes.push('<div class="devolucao-box">Data: ' + dataDevolucaoTexto + ' &nbsp;&nbsp; Conferente: ' + conferenteTexto + '</div>');
-  partes.push('<div class="section-title">Descarte de pertences</div>');
-  partes.push('<div class="descarte-box">');
-  partes.push('  <p>Declaramos que o descarte dos devidos esclarecimentos por parte da equipe do ' + hospitalNome + ' sobre os pertences deixados pelo paciente.</p>');
-  partes.push('  <p>Informamos que o Núcleo Ético Clínica está ciente dos procedimentos adotados. O ato da entrega está acompanhado por dois colaboradores designados para este fim.</p>');
-  partes.push('</div>');
   partes.push('<div class="section-title">Observações complementares</div>');
   partes.push('<div class="observacoes"></div>');
   partes.push('<div class="assinatura-box">');
@@ -5152,104 +5147,6 @@ function getEstatisticasDashboard(tipoUsuario) {
   } catch (error) {
     return { success: false, error: error.toString() };
   }
-}
-
-function getItensDescarte() {
-  var chaveCache = montarChaveCache('descarte', 'painel');
-  return executarComCache(chaveCache, CACHE_TTL_PADRAO, function() {
-    try {
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var sheet = ss.getSheetByName('descarte');
-      var mapaInternacoes = obterMapaInternacoesBaseVitae();
-
-      if (!sheet || sheet.getLastRow() < 2) {
-        return { success: true, data: { itens: [], resumo: {} } };
-      }
-
-      var estrutura = obterEstruturaPlanilha(sheet);
-      var totalLinhas = sheet.getLastRow() - 1;
-      var totalColunas = estrutura.ultimaColuna || sheet.getLastColumn();
-      var dados = sheet.getRange(2, 1, totalLinhas, totalColunas).getValues();
-
-      var prontuarioIndex = obterIndiceColuna(estrutura, ['prontuario'], 0);
-      var pacienteIndex = obterIndiceColuna(estrutura, ['paciente', 'nome paciente'], 1);
-      var itemIndex = obterIndiceColuna(estrutura, ['item', 'descricao', 'descrição', 'objeto'], 2);
-      var armarioIndex = obterIndiceColuna(estrutura, ['armario', 'armário', 'numero armario', 'número armário'], 3);
-      var dataAltaIndex = obterIndiceColuna(estrutura, ['data alta', 'alta', 'alta em'], 4);
-      var descartadoIndex = obterIndiceColuna(estrutura, ['descartado em', 'data descarte', 'descarte'], -1);
-
-      var resumo = {
-        noPrazo: 0,
-        alerta: 0,
-        vencido: 0,
-        pendenteAlta: 0,
-        descartado: 0
-      };
-
-      var hoje = new Date();
-      var itens = dados.map(function(linha) {
-        var prontuarioValor = obterValorLinhaFlexivel(linha, estrutura, ['prontuario'], linha[prontuarioIndex]);
-        var prontuario = normalizarIdentificador(prontuarioValor);
-        if (!prontuario) {
-          return null;
-        }
-
-        var infoPaciente = mapaInternacoes[prontuario] || null;
-        var paciente = obterValorLinhaFlexivel(linha, estrutura, ['paciente', 'nome paciente'], linha[pacienteIndex]);
-        var itemDescricao = obterValorLinhaFlexivel(linha, estrutura, ['item', 'descricao', 'descrição', 'objeto'], linha[itemIndex]);
-        var armario = obterValorLinhaFlexivel(linha, estrutura, ['armario', 'armário', 'numero armario', 'número armário'], linha[armarioIndex]);
-        var dataAltaPlanilha = dataAltaIndex > -1 ? linha[dataAltaIndex] : '';
-        var dataAlta = obterDataValida(dataAltaPlanilha) || (infoPaciente ? infoPaciente.ultimaAlta : null);
-        var descartadoEm = descartadoIndex > -1 ? obterDataValida(linha[descartadoIndex]) : null;
-        var dataLimite = dataAlta ? adicionarDias(dataAlta, 15) : null;
-        var diasRestantes = null;
-        var status = 'pendente-alta';
-
-        if (descartadoEm) {
-          status = 'descartado';
-        } else if (dataAlta) {
-          diasRestantes = Math.ceil((dataLimite.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-          if (diasRestantes <= 0) {
-            status = 'vencido';
-          } else if (diasRestantes <= 2) {
-            status = 'alerta';
-          } else {
-            status = 'no-prazo';
-          }
-        }
-
-        if (status === 'no-prazo') {
-          resumo.noPrazo++;
-        } else if (status === 'alerta') {
-          resumo.alerta++;
-        } else if (status === 'vencido') {
-          resumo.vencido++;
-        } else if (status === 'descartado') {
-          resumo.descartado++;
-        } else {
-          resumo.pendenteAlta++;
-        }
-
-        return {
-          prontuario: prontuario,
-          paciente: paciente || '',
-          item: itemDescricao || '',
-          armario: armario || '',
-          dataAlta: dataAlta ? dataAlta.toISOString() : '',
-          dataLimite: dataLimite ? dataLimite.toISOString() : '',
-          diasRestantes: diasRestantes,
-          status: status,
-          descartadoEm: descartadoEm ? descartadoEm.toISOString() : '',
-          destinoAtual: infoPaciente ? (infoPaciente.destinoAtual || '') : ''
-        };
-      }).filter(Boolean);
-
-      return { success: true, data: { itens: itens, resumo: resumo } };
-    } catch (error) {
-      registrarLog('ERRO', 'Erro ao ler aba descarte: ' + error.toString());
-      return { success: false, error: error.toString() };
-    }
-  });
 }
 
 // Função para verificar se o sistema está inicializado
