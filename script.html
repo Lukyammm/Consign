@@ -2565,23 +2565,33 @@
                     const diasContingenciaHtml = ehContingencia
                         ? `<p><strong>Dias em contingência:</strong> ${diasContingencia !== null ? diasContingencia : '-'}</p>`
                         : '';
-                    detailsHTML += `
-                        <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
-                        <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
-                        <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
-                        <p><strong>Leito:</strong> ${armario.leito}</p>
-                        <p><strong>Volumes:</strong> ${armario.volumes}</p>
-                        ${armario.whatsapp ? `<p><strong>WhatsApp:</strong> ${armario.whatsapp}</p>` : ''}
-                        <p><strong>Início:</strong> ${armario.horaInicio}</p>
-                        ${armario.visitaEstendida
-                            ? '<p><strong>Visita:</strong> Estendida</p>'
-                            : (armario.horaPrevista ? `<p><strong>Previsão de saída:</strong> ${armario.horaPrevista}</p>` : '')
-                        }
-                        ${termoHtml}
-                        ${observacaoHtml}
-                        ${dataRegistroHtml}
-                        ${diasContingenciaHtml}
-                    `;
+
+                    if (ehContingencia) {
+                        detailsHTML += `
+                            <p><strong>Acompanhante:</strong> ${armario.nomeVisitante}</p>
+                            <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
+                            <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
+                            ${observacaoHtml}
+                            ${dataRegistroHtml}
+                            ${diasContingenciaHtml}
+                        `;
+                    } else {
+                        detailsHTML += `
+                            <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
+                            <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
+                            <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
+                            <p><strong>Leito:</strong> ${armario.leito}</p>
+                            <p><strong>Volumes:</strong> ${armario.volumes}</p>
+                            ${armario.whatsapp ? `<p><strong>WhatsApp:</strong> ${armario.whatsapp}</p>` : ''}
+                            <p><strong>Início:</strong> ${armario.horaInicio}</p>
+                            ${armario.visitaEstendida
+                                ? '<p><strong>Visita:</strong> Estendida</p>'
+                                : (armario.horaPrevista ? `<p><strong>Previsão de saída:</strong> ${armario.horaPrevista}</p>` : '')
+                            }
+                            ${termoHtml}
+                            ${dataRegistroHtml}
+                        `;
+                    }
                 }
                 const statusTexto = armarioEhContingencia(armario)
                     ? 'Contingência'
