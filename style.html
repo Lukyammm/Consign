@@ -1293,6 +1293,52 @@
             cursor: pointer;
             border-left: 4px solid var(--success-color);
         }
+        .armario-card.skeleton {
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+            border-left-color: color-mix(in srgb, var(--primary-color) 18%, transparent);
+            background: color-mix(in srgb, var(--surface-color) 90%, white 10%);
+        }
+        .armario-card.skeleton::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.16) 50%, transparent 100%);
+            transform: translateX(-100%);
+            animation: skeleton-shimmer 1.4s ease-in-out infinite;
+        }
+        .skeleton-line,
+        .skeleton-block,
+        .skeleton-chip,
+        .skeleton-status {
+            display: block;
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--border-color, #d8dce6) 35%, transparent);
+        }
+        .skeleton-line {
+            height: 12px;
+            margin-bottom: 8px;
+        }
+        .skeleton-line.short {
+            width: 60%;
+        }
+        .skeleton-block {
+            width: 64px;
+            height: 18px;
+        }
+        .skeleton-chip {
+            width: 110px;
+            height: 16px;
+        }
+        .skeleton-status {
+            width: 96px;
+            height: 24px;
+        }
+        @keyframes skeleton-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
         .armario-card.em-uso {
             border-left-color: var(--em-uso-border-color);
             background: var(--em-uso-card-bg);

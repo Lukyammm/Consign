@@ -1501,34 +1501,114 @@
             fecharMovimentacaoModal();
             fecharModalAvatar({ focusTrigger: false });
         }
+        const ARMARIOS_CACHE_KEY = 'dashboard-armarios-cache';
+        function agendarAtualizacaoResumoDashboard() {
+            const atualizar = () => atualizarResumoDashboardLocal();
+            if (typeof requestAnimationFrame === 'function') {
+                requestAnimationFrame(atualizar);
+            } else {
+                setTimeout(atualizar, 0);
+            }
+        }
+        function salvarArmariosNoCache(armarios) {
+            try {
+                sessionStorage.setItem(ARMARIOS_CACHE_KEY, JSON.stringify({
+                    armarios,
+                    atualizadoEm: Date.now()
+                }));
+            } catch (error) {
+                console.warn('Não foi possível salvar armários no cache', error);
+            }
+        }
+        function restaurarArmariosDoCache() {
+            try {
+                const dados = sessionStorage.getItem(ARMARIOS_CACHE_KEY);
+                if (!dados) {
+                    return false;
+                }
+                const { armarios } = JSON.parse(dados);
+                if (!Array.isArray(armarios) || !armarios.length) {
+                    return false;
+                }
+                estado.armarios = armarios;
+                estado.armariosCarregados = true;
+                renderizarArmarios();
+                agendarAtualizacaoResumoDashboard();
+                return true;
+            } catch (error) {
+                console.warn('Falha ao restaurar cache de armários', error);
+                return false;
+            }
+        }
+        function exibirSkeletonArmarios(quantidade = 6) {
+            if (!elementos.armariosContainer) return;
+            elementos.armariosContainer.innerHTML = '';
+            for (let i = 0; i < quantidade; i++) {
+                const skeletonCard = document.createElement('div');
+                skeletonCard.className = 'armario-card skeleton';
+                skeletonCard.innerHTML = `
+                    <div class="armario-header">
+                        <div class="armario-number skeleton-block" aria-hidden="true"></div>
+                        <div class="armario-header-right">
+                            <div class="skeleton-chip" aria-hidden="true"></div>
+                            <div class="skeleton-status" aria-hidden="true"></div>
+                        </div>
+                    </div>
+                    <div class="armario-details">
+                        <div class="skeleton-line" aria-hidden="true"></div>
+                        <div class="skeleton-line" aria-hidden="true"></div>
+                        <div class="skeleton-line short" aria-hidden="true"></div>
+                    </div>
+                `;
+                elementos.armariosContainer.appendChild(skeletonCard);
+            }
+        }
         async function carregarDadosIniciais() {
             if (!estado.autenticado) {
                 return;
             }
+            exibirSkeletonArmarios();
+            restaurarArmariosDoCache();
             try {
-                const resultado = await callGoogleScript('verificarInicializacao');
-                if (!resultado.success || !resultado.inicializado) {
-                    await callGoogleScript('inicializarPlanilha');
+                const inicializacaoPromise = (async () => {
+                    const resultado = await callGoogleScript('verificarInicializacao');
+                    if (!resultado.success || !resultado.inicializado) {
+                        await callGoogleScript('inicializarPlanilha');
+                    }
+                })();
+
+                const carregamentoArmariosPromise = (async () => {
+                    await inicializacaoPromise;
+                    return executarCarregamentoSeguro('carregar armários', () => carregarArmarios({ forcarAtualizacao: true }));
+                })();
+                const carregamentoUnidadesPromise = inicializacaoPromise.then(() => executarCarregamentoSeguro('carregar unidades', carregarUnidades));
+                const carregamentoSetoresPromise = inicializacaoPromise.then(() => executarCarregamentoSeguro('carregar setores', carregarSetores));
+                const carregamentoUsuariosPromise = inicializacaoPromise.then(() => executarCarregamentoSeguro('carregar usuários', carregarUsuarios));
+                const carregamentoEstatisticasPromise = inicializacaoPromise.then(() => executarCarregamentoSeguro('carregar estatísticas', carregarEstatisticas));
+                const carregamentoNotificacoesPromise = inicializacaoPromise.then(() => executarCarregamentoSeguro('carregar notificações', carregarNotificacoes));
+
+                const carregamentoArmarios = await carregamentoArmariosPromise;
+                if (carregamentoArmarios?.sucesso) {
+                    renderizarArmarios();
                 }
 
-                const carregamentoUnidades = await executarCarregamentoSeguro('carregar unidades', carregarUnidades);
-                const carregamentoSetores = await executarCarregamentoSeguro('carregar setores', carregarSetores);
                 const demaisCarregamentos = await Promise.all([
-                    executarCarregamentoSeguro('carregar armários', () => carregarArmarios({ forcarAtualizacao: true })),
-                    executarCarregamentoSeguro('carregar usuários', carregarUsuarios),
-                    executarCarregamentoSeguro('carregar estatísticas', carregarEstatisticas),
-                    executarCarregamentoSeguro('carregar notificações', carregarNotificacoes)
+                    carregamentoUnidadesPromise,
+                    carregamentoSetoresPromise,
+                    carregamentoUsuariosPromise,
+                    carregamentoEstatisticasPromise,
+                    carregamentoNotificacoesPromise
                 ]);
 
-                const resultados = [carregamentoUnidades, carregamentoSetores, ...demaisCarregamentos];
-                const houveSucesso = resultados.some(item => item.sucesso);
+                const resultados = [carregamentoArmarios, ...demaisCarregamentos];
+                const houveSucesso = resultados.some(item => item?.sucesso);
 
                 if (!houveSucesso) {
                     mostrarErro('Erro ao carregar dados do sistema');
                     return;
                 }
 
-                const falhasParciais = resultados.filter(item => !item.sucesso);
+                const falhasParciais = resultados.filter(item => item && !item.sucesso);
                 if (falhasParciais.length) {
                     console.warn('Falha ao carregar parte dos dados:', falhasParciais.map(item => item.descricao));
                 }
@@ -1566,7 +1646,8 @@
                 }));
                 estado.armarios = filtrarListaPorPermissao(armariosProcessados, item => item.unidade);
                 estado.armariosCarregados = true;
-                atualizarResumoDashboardLocal();
+                agendarAtualizacaoResumoDashboard();
+                salvarArmariosNoCache(estado.armarios);
                 return true;
             }
 
@@ -2427,32 +2508,27 @@
         }
         // Renderizar lista de armários no dashboard
         function renderizarArmarios() {
+            if (!elementos.armariosContainer) return;
             elementos.armariosContainer.innerHTML = '';
             if (elementos.dashboardSearch && elementos.dashboardSearch.value !== (estado.buscaDashboard || '')) {
                 elementos.dashboardSearch.value = estado.buscaDashboard || '';
             }
-            const perfil = estado.perfilAtual;
-            const unidadeFiltro = estado.unidadeAtual;
-            const perfilNormalizado = normalizarTexto(perfil);
-            const unidadeFiltroNormalizado = normalizarTexto(unidadeFiltro);
-            let armariosParaExibir = estado.armarios.filter(a => {
-                const tipoNormalizado = normalizarTexto(a.tipo);
-                const correspondePerfil = perfilNormalizado === 'geral' || perfilNormalizado === 'todos' || tipoNormalizado === perfilNormalizado;
-                const correspondeUnidade = unidadeFiltroNormalizado === 'todas' ||
-                    normalizarTexto(a.unidade) === unidadeFiltroNormalizado;
-                return correspondePerfil && correspondeUnidade;
-            }).filter(a => !(armarioEhContingencia(a) && normalizarTexto(a.status) === 'livre'));
-            // Aplicar filtro
+            const perfilNormalizado = normalizarTexto(estado.perfilAtual);
+            const unidadeFiltroNormalizado = normalizarTexto(estado.unidadeAtual);
             const filtrosAtivos = obterFiltrosAtivosDashboard();
-            if (!filtrosAtivos.includes('todos')) {
-                armariosParaExibir = armariosParaExibir.filter(a => filtrosAtivos.includes(a.status));
-            }
-            // Aplicar busca por texto
             const termoBusca = estado.buscaDashboard;
-            if (termoBusca) {
-                armariosParaExibir = armariosParaExibir.filter(armario => armarioCorrespondeBusca(armario, termoBusca));
-            }
-            armariosParaExibir.forEach(armario => {
+            const armariosParaExibir = estado.armarios
+                .filter(a => {
+                    const tipoNormalizado = normalizarTexto(a.tipo);
+                    const correspondePerfil = perfilNormalizado === 'geral' || perfilNormalizado === 'todos' || tipoNormalizado === perfilNormalizado;
+                    const correspondeUnidade = unidadeFiltroNormalizado === 'todas' || normalizarTexto(a.unidade) === unidadeFiltroNormalizado;
+                    return correspondePerfil && correspondeUnidade;
+                })
+                .filter(a => !(armarioEhContingencia(a) && normalizarTexto(a.status) === 'livre'))
+                .filter(a => filtrosAtivos.includes('todos') || filtrosAtivos.includes(a.status))
+                .filter(armario => !termoBusca || armarioCorrespondeBusca(armario, termoBusca));
+
+            const criarCardArmario = (armario) => {
                 const card = document.createElement('div');
                 const classeStatus = armarioEhContingencia(armario) ? 'contingencia' : armario.status;
                 card.className = `armario-card ${classeStatus}`;
@@ -2499,7 +2575,8 @@
                         <p><strong>Início:</strong> ${armario.horaInicio}</p>
                         ${armario.visitaEstendida
                             ? '<p><strong>Visita:</strong> Estendida</p>'
-                            : (armario.horaPrevista ? `<p><strong>Previsão de saída:</strong> ${armario.horaPrevista}</p>` : '')}
+                            : (armario.horaPrevista ? `<p><strong>Previsão de saída:</strong> ${armario.horaPrevista}</p>` : '')
+                        }
                         ${termoHtml}
                         ${observacaoHtml}
                         ${dataRegistroHtml}
@@ -2537,10 +2614,39 @@
                     </div>
                 `;
                 card.addEventListener('click', () => abrirModalArmario(armario));
-                elementos.armariosContainer.appendChild(card);
-            });
-        }
+                return card;
+            };
 
+            const processarLote = (deadline) => {
+                const tamanhoLote = 50;
+                let itensProcessados = 0;
+                while (
+                    itensProcessados < tamanhoLote &&
+                    armariosParaExibir[renderizarArmarios.indiceAtual]
+                ) {
+                    elementos.armariosContainer.appendChild(
+                        criarCardArmario(armariosParaExibir[renderizarArmarios.indiceAtual])
+                    );
+                    renderizarArmarios.indiceAtual += 1;
+                    itensProcessados += 1;
+                    if (deadline && deadline.timeRemaining && deadline.timeRemaining() <= 0) {
+                        break;
+                    }
+                }
+                if (renderizarArmarios.indiceAtual < armariosParaExibir.length) {
+                    const agendar = typeof requestIdleCallback === 'function'
+                        ? requestIdleCallback
+                        : (cb) => setTimeout(cb, 0);
+                    agendar(processarLote);
+                }
+            };
+
+            renderizarArmarios.indiceAtual = 0;
+            const agendar = typeof requestIdleCallback === 'function'
+                ? requestIdleCallback
+                : (cb) => setTimeout(cb, 0);
+            agendar(processarLote);
+        }
         function atualizarResumoDashboardLocal() {
             const totais = {
                 livres: 0,
