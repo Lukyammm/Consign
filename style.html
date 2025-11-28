@@ -1692,7 +1692,7 @@
             max-width: 500px;
             box-shadow: 0 24px 48px var(--shadow-color);
             border: 1px solid color-mix(in srgb, var(--dark-color) 6%, transparent);
-            max-height: calc(100vh - 40px);
+            max-height: calc(100vh - 32px);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -1723,7 +1723,17 @@
         .modal-body {
             padding: 20px;
             overflow-y: auto;
-            max-height: calc(100vh - 180px);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+        }
+        .modal-body form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 100%;
         }
         .modal-large .modal-content {
             max-width: 960px;
@@ -1750,7 +1760,8 @@
             bottom: 0;
             background: linear-gradient(180deg, transparent 0%, var(--surface-color) 18%);
             padding-top: 14px;
-            margin-top: 24px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+            margin-top: auto;
             border-top: 1px solid color-mix(in srgb, var(--dark-color) 6%, transparent);
         }
         .modal-actions {
@@ -1763,6 +1774,29 @@
         }
         .modal-actions .btn-primary {
             min-width: 140px;
+        }
+        @media (max-width: 640px) {
+            .modal-content {
+                width: 96%;
+                max-width: 96%;
+                max-height: calc(100vh - 20px);
+            }
+            .modal-body {
+                padding: 16px;
+            }
+            .prontuario-input-group {
+                flex-direction: column;
+            }
+            .prontuario-input-group .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            .modal-actions {
+                flex-direction: column-reverse;
+            }
+            .modal-actions .btn {
+                width: 100%;
+            }
         }
         /* Termo Wizard */
         .wizard-card {
@@ -2130,6 +2164,65 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 500;
+        }
+        .prontuario-search {
+            border: 1px dashed color-mix(in srgb, var(--primary-color) 30%, var(--border-color) 70%);
+            border-radius: 12px;
+            padding: 14px 14px 10px;
+            background: color-mix(in srgb, var(--primary-color) 4%, var(--light-color) 96%);
+            margin-bottom: 18px;
+        }
+        .prontuario-search-header {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .prontuario-search-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .prontuario-input-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .prontuario-input-group .form-control {
+            flex: 1;
+            min-width: 0;
+        }
+        .prontuario-input-group .btn {
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tag-opcional {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: var(--muted-color);
+            background: color-mix(in srgb, var(--primary-color) 10%, white 90%);
+            border: 1px solid color-mix(in srgb, var(--primary-color) 24%, var(--border-color) 76%);
+            padding: 3px 8px;
+            border-radius: 999px;
+            margin-left: 6px;
+        }
+        .search-feedback {
+            font-size: 0.85rem;
+            margin-top: 6px;
+            min-height: 18px;
+            color: var(--muted-color);
+        }
+        .search-feedback.is-loading {
+            color: var(--primary-color);
+        }
+        .search-feedback.is-success {
+            color: color-mix(in srgb, var(--success-color) 80%, black 20%);
+        }
+        .search-feedback.is-error {
+            color: color-mix(in srgb, var(--danger-color) 82%, black 18%);
         }
         .field-hint {
             font-size: 0.8rem;

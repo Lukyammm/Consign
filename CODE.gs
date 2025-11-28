@@ -1478,29 +1478,66 @@ function obterMapaPacientesBaseVitae() {
 
 function buscarPacienteBaseVitae(dados) {
   try {
-    var prontuario = dados && dados.prontuario ? normalizarIdentificador(dados.prontuario) : '';
-    if (!prontuario) {
+    var prontuarioEntrada = dados && dados.prontuario ? normalizarIdentificador(dados.prontuario) : '';
+    if (!prontuarioEntrada) {
       return { success: false, error: 'Prontuário não informado' };
     }
 
-    var mapa = obterMapaPacientesBaseVitae();
-    var registro = mapa[prontuario];
+    var prontuarioSemZeros = prontuarioEntrada.replace(/^0+/, '') || prontuarioEntrada;
 
-    if (!registro) {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Base Vitae 1');
+    if (!sheet) {
+      return { success: false, error: 'Aba "Base Vitae 1" não encontrada' };
+    }
+
+    var ultimaLinha = sheet.getLastRow();
+    if (ultimaLinha < 2) {
       return { success: false, error: 'Prontuário não localizado na aba "Base Vitae 1"' };
     }
 
-    var leitoCompleto = '';
-    if (registro.enfermaria || registro.leito) {
-      leitoCompleto = [registro.enfermaria, registro.leito].filter(Boolean).join(' - ');
+    var totalColunas = Math.max(sheet.getLastColumn(), 13);
+    var dadosSheet = sheet.getRange(2, 1, ultimaLinha - 1, totalColunas).getValues();
+
+    var registroMaisRecente = null;
+
+    dadosSheet.forEach(function(linha) {
+      var prontuarioLinha = normalizarIdentificador(linha[0]);
+      if (!prontuarioLinha) {
+        return;
+      }
+      var prontuarioLinhaSemZeros = prontuarioLinha.replace(/^0+/, '') || prontuarioLinha;
+      var corresponde = prontuarioLinha === prontuarioEntrada || prontuarioLinhaSemZeros === prontuarioSemZeros;
+      if (!corresponde) {
+        return;
+      }
+
+      var dataReferencia = obterDataValida(linha[12]);
+      var timestampReferencia = dataReferencia ? dataReferencia.getTime() : 0;
+
+      if (!registroMaisRecente || timestampReferencia >= registroMaisRecente.dataReferencia) {
+        registroMaisRecente = {
+          nome: linha[1] ? linha[1].toString().trim() : '',
+          parteLeitoA: linha[9] ? linha[9].toString().trim() : '',
+          parteLeitoB: linha[10] ? linha[10].toString().trim() : '',
+          dataReferencia: timestampReferencia
+        };
+      }
+    });
+
+    if (!registroMaisRecente) {
+      return { success: false, error: 'Prontuário não localizado na aba "Base Vitae 1"' };
     }
+
+    var leitoCombinado = [registroMaisRecente.parteLeitoA, registroMaisRecente.parteLeitoB]
+      .filter(Boolean)
+      .join(' - ');
 
     return {
       success: true,
       data: {
-        nome: registro.nome || '',
-        setor: registro.setor || '',
-        leito: leitoCompleto || registro.leito || ''
+        nome: registroMaisRecente.nome || '',
+        leito: leitoCombinado
       }
     };
   } catch (erroBusca) {

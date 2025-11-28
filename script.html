@@ -460,6 +460,9 @@
             usuarioModal: document.getElementById('usuario-modal'),
             modalTitle: document.getElementById('modal-title'),
             armarioForm: document.getElementById('armario-form'),
+            prontuarioBuscaInput: document.getElementById('prontuario-busca'),
+            prontuarioBuscaBtn: document.getElementById('btn-buscar-prontuario'),
+            prontuarioBuscaFeedback: document.getElementById('prontuario-busca-feedback'),
             usuarioForm: document.getElementById('usuario-form'),
             usuarioModalTitle: document.getElementById('usuario-modal-title'),
             usuarioSenha: document.getElementById('usuario-senha'),
@@ -1973,6 +1976,47 @@
                 }
             });
         }
+        function atualizarFeedbackBuscaProntuario(mensagem, classe = '') {
+            const feedback = elementos.prontuarioBuscaFeedback;
+            if (!feedback) return;
+            feedback.textContent = mensagem || '';
+            feedback.classList.remove('is-loading', 'is-success', 'is-error');
+            if (classe) {
+                feedback.classList.add(classe);
+            }
+        }
+        function preencherCamposPacienteBaseVitae(dados) {
+            if (!dados || typeof dados !== 'object') return;
+            const campoPaciente = document.getElementById('nome-paciente');
+            const campoLeito = document.getElementById('leito');
+            if (campoPaciente && dados.nome) {
+                campoPaciente.value = dados.nome;
+            }
+            if (campoLeito && dados.leito) {
+                campoLeito.value = dados.leito;
+            }
+        }
+        async function buscarPacientePorProntuario() {
+            const prontuario = (elementos.prontuarioBuscaInput?.value || '').trim();
+            if (!prontuario) {
+                atualizarFeedbackBuscaProntuario('Informe o prontuário para buscar.', 'is-error');
+                elementos.prontuarioBuscaInput?.focus();
+                return;
+            }
+            atualizarFeedbackBuscaProntuario('Pesquisando prontuário...', 'is-loading');
+            try {
+                const resultado = await callGoogleScript('buscarPacienteBaseVitae', { prontuario });
+                if (resultado && resultado.success && resultado.data) {
+                    preencherCamposPacienteBaseVitae(resultado.data);
+                    atualizarFeedbackBuscaProntuario('Dados encontrados e preenchidos automaticamente.', 'is-success');
+                } else {
+                    atualizarFeedbackBuscaProntuario(resultado?.error || 'Prontuário não localizado na aba Base Vitae 1.', 'is-error');
+                }
+            } catch (erroBusca) {
+                console.error('Erro ao buscar prontuário na Base Vitae:', erroBusca);
+                atualizarFeedbackBuscaProntuario('Não foi possível buscar o prontuário agora.', 'is-error');
+            }
+        }
         function mostrarErro(mensagem) {
             Swal.fire({
                 title: 'Erro',
@@ -2231,6 +2275,17 @@
                 campo.addEventListener('input', salvarRascunhoArmario);
                 campo.addEventListener('change', salvarRascunhoArmario);
             });
+            if (elementos.prontuarioBuscaBtn) {
+                configurarBotaoAcao(elementos.prontuarioBuscaBtn, buscarPacientePorProntuario);
+            }
+            if (elementos.prontuarioBuscaInput) {
+                elementos.prontuarioBuscaInput.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        buscarPacientePorProntuario();
+                    }
+                });
+            }
             [document.getElementById('leito'), elementos.termoLeito].forEach(campo => aplicarMascaraLeitoCampo(campo));
             elementos.usuarioForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -4193,6 +4248,10 @@
                 }
                 elementos.modalTitle.textContent = `Cadastrar Armário ${armario.numero}`;
                 elementos.armarioForm.reset();
+                if (elementos.prontuarioBuscaInput) {
+                    elementos.prontuarioBuscaInput.value = '';
+                }
+                atualizarFeedbackBuscaProntuario('');
                 elementos.nomeVisitanteLabel.textContent =
                     armario.tipo === 'visitante' ? 'Nome do Visitante' : 'Nome do Acompanhante';
                 document.getElementById('nome-visitante').placeholder =
