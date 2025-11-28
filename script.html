@@ -446,6 +446,8 @@
             loginSenha: document.getElementById('login-senha'),
             loginSubmit: document.getElementById('login-submit'),
             loginFeedback: document.getElementById('login-feedback'),
+            sidebarToggle: document.getElementById('sidebar-toggle'),
+            sidebarBackdrop: document.getElementById('sidebar-backdrop'),
             profileSelect: document.getElementById('profile-select'),
             unitSelect: document.getElementById('unit-select'),
             notificationBell: document.getElementById('notification-bell'),
@@ -553,6 +555,30 @@
             tabelaOcupacaoAcompanhantesBody: document.querySelector('#tabela-ocupacao-acompanhantes tbody'),
             logoutButton: document.getElementById('logout-button')
         };
+        const mobileNavQuery = window.matchMedia('(max-width: 1024px)');
+        function fecharSidebarMobile() {
+            if (!mobileNavQuery.matches) return;
+            elementos.appShell.classList.remove('nav-open');
+            if (elementos.sidebarToggle) {
+                elementos.sidebarToggle.setAttribute('aria-expanded', 'false');
+            }
+        }
+        function alternarSidebarMobile() {
+            if (!mobileNavQuery.matches) return;
+            const aberta = elementos.appShell.classList.toggle('nav-open');
+            if (elementos.sidebarToggle) {
+                elementos.sidebarToggle.setAttribute('aria-expanded', aberta ? 'true' : 'false');
+            }
+        }
+        function sincronizarSidebarComViewport(evento) {
+            const estaEmMobile = evento.matches;
+            if (!estaEmMobile) {
+                elementos.appShell.classList.remove('nav-open');
+                if (elementos.sidebarToggle) {
+                    elementos.sidebarToggle.setAttribute('aria-expanded', 'false');
+                }
+            }
+        }
         popularAvataresPadrao();
         sincronizarSelecaoAvatar();
         const customSelectorInstances = new WeakMap();
@@ -1954,6 +1980,14 @@
                 return;
             }
             eventosInicializados = true;
+            mobileNavQuery.addEventListener('change', sincronizarSidebarComViewport);
+            sincronizarSidebarComViewport(mobileNavQuery);
+            if (elementos.sidebarToggle) {
+                elementos.sidebarToggle.addEventListener('click', alternarSidebarMobile);
+            }
+            if (elementos.sidebarBackdrop) {
+                elementos.sidebarBackdrop.addEventListener('click', fecharSidebarMobile);
+            }
             // Seletor de perfil
             if (elementos.profileSelect) {
                 elementos.profileSelect.addEventListener('change', async function() {
@@ -2150,6 +2184,7 @@
                         return;
                     }
                     navegarParaPagina(targetPage);
+                    fecharSidebarMobile();
                 });
             });
             if (elementos.logoutButton) {
