@@ -2478,6 +2478,17 @@
                         : '';
                     const dataRegistroFormatada = formatarDataComDiaSemana(armario.dataRegistro);
                     const dataRegistroHtml = `<p><strong>Data:</strong> ${dataRegistroFormatada}</p>`;
+                    const ehContingencia = armarioEhContingencia(armario);
+                    const observacaoTexto = ehContingencia
+                        ? (armario.observacoes && armario.observacoes.toString().trim() ? armario.observacoes.toString().trim() : '-')
+                        : '';
+                    const observacaoHtml = ehContingencia
+                        ? `<p><strong>Observação:</strong> ${observacaoTexto}</p>`
+                        : '';
+                    const diasContingencia = ehContingencia ? calcularDiasEmContingencia(armario.dataRegistro) : null;
+                    const diasContingenciaHtml = ehContingencia
+                        ? `<p><strong>Dias em contingência:</strong> ${diasContingencia !== null ? diasContingencia : '-'}</p>`
+                        : '';
                     detailsHTML += `
                         <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
                         <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
@@ -2490,7 +2501,9 @@
                             ? '<p><strong>Visita:</strong> Estendida</p>'
                             : (armario.horaPrevista ? `<p><strong>Previsão de saída:</strong> ${armario.horaPrevista}</p>` : '')}
                         ${termoHtml}
+                        ${observacaoHtml}
                         ${dataRegistroHtml}
+                        ${diasContingenciaHtml}
                     `;
                 }
                 const statusTexto = armarioEhContingencia(armario)
@@ -4899,6 +4912,18 @@
             const mes = String(data.getMonth() + 1).padStart(2, '0');
             const ano = String(data.getFullYear()).padStart(4, '0');
             return `${dia}/${mes}/${ano}`;
+        }
+        function calcularDiasEmContingencia(dataRegistro) {
+            const dataInicio = tentarConverterParaData(dataRegistro);
+            if (!dataInicio) {
+                return null;
+            }
+            const agora = new Date();
+            const diferenca = agora.getTime() - dataInicio.getTime();
+            if (!Number.isFinite(diferenca) || diferenca < 0) {
+                return 0;
+            }
+            return Math.floor(diferenca / (1000 * 60 * 60 * 24));
         }
         function aplicarMascaraDataNascimento(campo) {
             if (!campo) return;
