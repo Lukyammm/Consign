@@ -573,6 +573,7 @@
                 inicio: document.getElementById('print-inicio'),
                 emissao: document.getElementById('print-emissao')
             },
+            printArea: document.getElementById('print-area'),
             logoutButton: document.getElementById('logout-button')
         };
         const mobileNavQuery = window.matchMedia('(max-width: 1024px)');
@@ -4335,16 +4336,27 @@
                 elementos.armarioForm.dataset.tipo = armario.tipo;
                 elementos.armarioForm.dataset.numero = armario.numero;
                 restaurarRascunhoArmario();
-                if (elementos.armarioModal.style.display !== 'flex') {
-                    travaRolagem.aplicar();
-                }
-                elementos.armarioModal.style.display = 'flex';
-            } else {
-                const ehContingencia = armarioEhContingencia(armario);
-                const termoStatusNormalizado = normalizarTexto(armario.termoStatus);
-                const termoStatusTexto = formatarStatusTermo(armario.termoStatus);
-                const termoPendente = termoStatusNormalizado === 'pendente';
-                const termoEmAndamento = termoStatusNormalizado === 'em andamento';
+            if (elementos.armarioModal.style.display !== 'flex') {
+                travaRolagem.aplicar();
+            }
+            elementos.armarioModal.style.display = 'flex';
+        } else {
+            const dadosTermoAtual = armario.termoInfo || {
+                paciente: armario.nomePaciente,
+                acompanhante: armario.nomeVisitante,
+                prontuario: armario.prontuario,
+                leito: armario.leito,
+                volumes: armario.volumes
+            };
+            const identificadoresArmario = montarIdentificadoresArmario(armario);
+            const dadosImpressaoArmario = armario.tipo === 'acompanhante'
+                ? montarDadosImpressaoReserva(armario, dadosTermoAtual, identificadoresArmario)
+                : null;
+            const ehContingencia = armarioEhContingencia(armario);
+            const termoStatusNormalizado = normalizarTexto(armario.termoStatus);
+            const termoStatusTexto = formatarStatusTermo(armario.termoStatus);
+            const termoPendente = termoStatusNormalizado === 'pendente';
+            const termoEmAndamento = termoStatusNormalizado === 'em andamento';
                 const termoAviso = armario.tipo === 'acompanhante'
                     ? (termoEmAndamento
                         ? '<br><small>Finalize o termo durante a liberação do armário.</small>'
@@ -4362,6 +4374,9 @@
                     : '';
                 const moverContingenciaHtml = ehContingencia
                     ? `<div class="swal-extra-actions" style="margin-top:8px;"><button id="btn-mover-contingencia" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#0f766e;">Mover para armário livre</button></div>`
+                    : '';
+                const reimpressaoHtml = armario.tipo === 'acompanhante'
+                    ? `<div class="swal-extra-actions" style="margin-top:8px;"><button id="btn-reimprimir-ticket" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#1f2937;">Reimprimir comprovante</button></div>`
                     : '';
                 Swal.fire({
                     title: `Armário ${armario.numero}`,
@@ -4385,6 +4400,7 @@
                         ${termoHtml}
                         ${botoesEdicao}
                         ${moverContingenciaHtml}
+                        ${reimpressaoHtml}
                         ${armario.tipo === 'acompanhante' && termoPendente ? `<div style="margin-top:16px;"><button id="btn-aplicar-termo" class="swal2-confirm swal2-styled" style="background-color:#2c6e8f;">Aplicar termo agora</button></div>` : ''}
                     `,
                     icon: 'info',
@@ -4413,6 +4429,15 @@
                                 moverContingenciaButton.addEventListener('click', event => {
                                     event.preventDefault();
                                     moverContingenciaParaArmarioLivre(armario);
+                                });
+                            }
+                        }
+                        if (armario.tipo === 'acompanhante' && dadosImpressaoArmario) {
+                            const botaoReimprimir = Swal.getHtmlContainer().querySelector('#btn-reimprimir-ticket');
+                            if (botaoReimprimir) {
+                                botaoReimprimir.addEventListener('click', event => {
+                                    event.preventDefault();
+                                    abrirModalImpressaoReserva(dadosImpressaoArmario);
                                 });
                             }
                         }
@@ -5327,10 +5352,19 @@
             campos.inicio.textContent = dados.inicio || '-';
             campos.emissao.textContent = dados.emissao || '-';
         }
+        function sincronizarAreaImpressaoReserva() {
+            if (!elementos.printArea || !elementos.impressaoReservaCard) return;
+            const clone = elementos.impressaoReservaCard.cloneNode(true);
+            clone.id = 'impressao-reserva-card-print';
+            clone.removeAttribute('aria-live');
+            elementos.printArea.innerHTML = '';
+            elementos.printArea.appendChild(clone);
+        }
         function abrirModalImpressaoReserva(dados) {
             if (!elementos.impressaoReservaModal) return;
             estadoImpressaoReserva.dados = dados || null;
             preencherModalImpressaoReserva(dados || {});
+            sincronizarAreaImpressaoReserva();
             elementos.impressaoReservaModal.style.display = 'flex';
             elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('modal-print-open');
@@ -5351,10 +5385,11 @@
         }
         function imprimirReservaArmario() {
             if (!elementos.impressaoReservaModal) return;
+            sincronizarAreaImpressaoReserva();
             document.body.classList.add('modal-print-open');
             elementos.impressaoReservaModal.style.display = 'flex';
             elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
-            requestAnimationFrame(() => window.print());
+            requestAnimationFrame(() => setTimeout(() => window.print(), 80));
         }
         window.addEventListener('afterprint', () => {
             document.body.classList.remove('modal-print-open');
