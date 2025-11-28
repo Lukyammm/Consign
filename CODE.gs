@@ -4420,9 +4420,14 @@ function gerarESalvarTermoPDF(dadosTermo) {
     // Criar HTML do termo
     var htmlContent = criarHTMLTermo(dadosTermo);
     
+    // Renderizar HTML em um output para conversão confiável
+    var htmlOutput = HtmlService
+      .createHtmlOutput(htmlContent)
+      .setWidth(800)
+      .setHeight(1200);
+
     // Criar arquivo temporário como PDF
-    var blob = Utilities.newBlob(htmlContent, 'text/html', 'temp.html')
-      .getAs('application/pdf');
+    var blob = htmlOutput.getBlob().getAs('application/pdf');
     
     // Nome do arquivo
     var nomeArquivo = 'Termo_Responsabilidade_' + dadosTermo.numeroArmario + '_' + 
