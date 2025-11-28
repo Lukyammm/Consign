@@ -5350,8 +5350,15 @@
             estadoImpressaoReserva.dados = null;
         }
         function imprimirReservaArmario() {
-            window.print();
+            if (!elementos.impressaoReservaModal) return;
+            document.body.classList.add('modal-print-open');
+            elementos.impressaoReservaModal.style.display = 'flex';
+            elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
+            requestAnimationFrame(() => window.print());
         }
+        window.addEventListener('afterprint', () => {
+            document.body.classList.remove('modal-print-open');
+        });
         function deveGerarImpressaoReserva(tipo) {
             return normalizarTexto(tipo) === 'acompanhante';
         }
