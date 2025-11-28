@@ -430,7 +430,7 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease, transform 0.2s ease;
-            z-index: 50;
+            z-index: 1200;
         }
         .selector-dropdown::before,
         .selector-dropdown::after {
@@ -454,7 +454,7 @@
             opacity: 1;
             pointer-events: auto;
             transform: translate(-50%, 0);
-            z-index: 2100;
+            z-index: 2500;
         }
         .selector-options {
             list-style: none;
@@ -2574,7 +2574,7 @@
                 bottom: auto;
                 max-height: min(420px, calc(80vh));
                 padding-bottom: 18px;
-                z-index: 1800;
+                z-index: 2500;
             }
             .selector-control.open .selector-dropdown {
                 transform: translate(-50%, 16px);
@@ -2743,6 +2743,7 @@
                 bottom: auto;
                 max-height: min(400px, calc(78vh));
                 padding-bottom: 18px;
+                z-index: 2500;
             }
             .selector-control.open .selector-dropdown {
                 transform: translate(-50%, 16px);
