@@ -58,6 +58,7 @@
             color: var(--text-color);
             display: flex;
             min-height: 100vh;
+            overflow-x: hidden;
         }
         body.modal-open {
             overflow: hidden;
@@ -236,6 +237,27 @@
             gap: 16px;
             position: relative;
             z-index: 2;
+        }
+        .sidebar-toggle {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid color-mix(in srgb, var(--dark-color) 12%, transparent);
+            background: white;
+            color: var(--dark-color);
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+            transition: all 0.2s ease;
+        }
+        .sidebar-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+        }
+        .sidebar-toggle i {
+            font-size: 1.1rem;
         }
         .header-title h1 {
             font-size: 1.8rem;
@@ -2654,6 +2676,43 @@
                 z-index: 1900;
             }
         }
+        @media (max-width: 1024px) {
+            body {
+                display: block;
+            }
+            .app-shell {
+                position: relative;
+                min-height: 100vh;
+            }
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            }
+            .sidebar-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.35);
+                backdrop-filter: blur(2px);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease;
+                z-index: 900;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 16px;
+            }
+            .sidebar-toggle {
+                display: inline-flex;
+            }
+            .app-shell.nav-open .sidebar {
+                transform: translateX(0);
+            }
+            .app-shell.nav-open .sidebar-backdrop {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
         @media (max-width: 768px) {
             .cards-hero {
                 grid-template-columns: 1fr 1fr;
@@ -2795,9 +2854,6 @@
                 padding: 14px 0;
                 border: none;
                 gap: 0;
-            }
-            .main-content {
-                margin-left: var(--sidebar-width);
             }
             .cards-hero {
                 grid-template-columns: 1fr;
