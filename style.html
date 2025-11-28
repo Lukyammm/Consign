@@ -2795,8 +2795,9 @@
             }
             .header-quick-actions {
                 width: 100%;
-                justify-content: flex-start;
+                justify-content: flex-end;
                 gap: 10px;
+                order: -1;
             }
             .selector-group {
                 width: 100%;
@@ -2848,7 +2849,7 @@
             }
             .header-quick-actions {
                 width: 100%;
-                justify-content: flex-start;
+                justify-content: flex-end;
             }
             .modal {
                 align-items: flex-start;
@@ -2907,8 +2908,41 @@
                 border: none;
                 gap: 0;
             }
+            .header {
+                align-items: flex-start;
+            }
+            .header-actions {
+                gap: 10px;
+            }
+            .header-quick-actions {
+                order: -1;
+                justify-content: flex-end;
+                align-self: flex-end;
+            }
+            .header-selectors {
+                align-items: flex-start;
+            }
             .cards-hero {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(4, minmax(120px, 1fr));
+                gap: 10px;
+                overflow-x: auto;
+                padding-bottom: 6px;
+            }
+            .cards-hero .card {
+                min-width: 120px;
+                padding: 12px;
+            }
+            .cards-hero .card-title {
+                font-size: 0.9rem;
+            }
+            .cards-hero .card-icon {
+                font-size: 1.2rem;
+            }
+            .cards-hero .card-value {
+                font-size: 1.4rem;
+            }
+            .cards-hero .card-description {
+                font-size: 0.8rem;
             }
             .table-header-controls button {
                 width: 100%;
