@@ -60,6 +60,10 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
+        html, body, .app-shell, .main-content, #pages-container, .page {
+            width: 100%;
+            max-width: 100%;
+        }
         body.modal-open {
             overflow: hidden;
             touch-action: none;
@@ -224,6 +228,7 @@
             margin-left: var(--sidebar-width);
             padding: 20px;
             transition: all 0.3s;
+            overflow-x: hidden;
         }
         /* Header */
         .header {
@@ -270,6 +275,7 @@
             flex-wrap: wrap;
             justify-content: flex-end;
             flex: 1 1 auto;
+            min-width: 0;
         }
         .header-selectors {
             display: flex;
@@ -277,12 +283,14 @@
             gap: 10px;
             flex-wrap: nowrap;
             flex: 0 0 auto;
+            min-width: 0;
         }
         .selector-group {
             display: flex;
             flex-direction: column;
             gap: 4px;
             flex: 1 1 220px;
+            min-width: 0;
         }
         .selector-group label {
             font-size: 0.75rem;
@@ -304,6 +312,7 @@
             transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
             width: 100%;
             min-width: 0;
+            max-width: 100%;
         }
         .selector-group.compact,
         .selector-group.compact .selector-control {
@@ -372,6 +381,8 @@
             flex-direction: column;
             align-items: flex-start;
             gap: 2px;
+            min-width: 0;
+            overflow: hidden;
         }
         .selector-trigger-label {
             font-size: 1rem;
@@ -382,6 +393,9 @@
             font-size: 0.75rem;
             font-weight: 500;
             color: var(--muted-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .selector-arrow {
             color: var(--muted-color);
@@ -558,7 +572,9 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            flex-shrink: 0;
+            flex-shrink: 1;
+            flex-wrap: wrap;
+            min-width: 0;
         }
         .notification-bell {
             position: relative;
@@ -2756,6 +2772,11 @@
                 align-items: stretch;
                 gap: 10px;
             }
+            .header-quick-actions {
+                width: 100%;
+                justify-content: flex-start;
+                gap: 10px;
+            }
             .selector-group {
                 width: 100%;
             }
@@ -2763,15 +2784,24 @@
                 width: 100%;
             }
             .header-selectors.compact {
-                flex-direction: row;
-                justify-content: flex-end;
+                flex-direction: column;
+                align-items: stretch;
                 width: 100%;
+                gap: 10px;
             }
             .selector-group.compact {
-                width: auto;
+                width: 100%;
             }
             .selector-control.compact {
-                width: 46px;
+                width: 100%;
+            }
+            .selector-control.compact .selector-trigger-text,
+            .selector-control.compact .selector-arrow {
+                display: flex;
+            }
+            .selector-control.compact .selector-arrow {
+                align-items: center;
+                justify-content: center;
             }
             .selector-control .selector-dropdown {
                 position: fixed;
@@ -2796,7 +2826,7 @@
             }
             .header-quick-actions {
                 width: 100%;
-                justify-content: flex-end;
+                justify-content: flex-start;
             }
             .modal {
                 align-items: flex-start;
