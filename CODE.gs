@@ -4617,10 +4617,15 @@ function gerarESalvarTermoPDF(dadosTermo, opcoes) {
     var arquivoPDF = pastaDestino.createFile(blob).setName(nomeArquivo);
     arquivoPDF.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
+    var fileId = arquivoPDF.getId();
+    var previewUrl = 'https://drive.google.com/file/d/' + fileId + '/preview';
+    var downloadUrl = 'https://drive.google.com/uc?export=download&id=' + fileId;
+
     return {
       success: true,
-      pdfUrl: arquivoPDF.getUrl(),
-      fileId: arquivoPDF.getId(),
+      pdfUrl: previewUrl,
+      downloadUrl: downloadUrl,
+      fileId: fileId,
       pastaId: pastaDestino.getId()
     };
 
@@ -4914,7 +4919,7 @@ function gerarTermoPDFTemporario(dados) {
 
     registrarLog('TERMO_PDF_TEMP', 'PDF temporário gerado para armário ' + (termo.numeroArmario || termo.armarioId || ''));
 
-    return { success: true, data: { pdfUrl: resultadoPDF.pdfUrl, fileId: resultadoPDF.fileId } };
+    return { success: true, data: { pdfUrl: resultadoPDF.pdfUrl, downloadUrl: resultadoPDF.downloadUrl, fileId: resultadoPDF.fileId } };
 
   } catch (error) {
     registrarLog('ERRO_TERMO', 'Erro ao gerar PDF temporário: ' + error.toString());

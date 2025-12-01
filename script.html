@@ -66,7 +66,7 @@
             }
             return estado.ocupacaoAcompanhantes;
         }
-        let estadoPdfTemporario = { fileId: '', url: '', timeoutId: null };
+        let estadoPdfTemporario = { fileId: '', url: '', embedUrl: '', timeoutId: null };
         const STORAGE_KEYS = {
             sessaoUsuario: 'locknac_sessao_usuario',
             rascunhosOcupacao: 'locknac_rascunhos_ocupacao',
@@ -5660,13 +5660,38 @@
                     console.warn('Falha ao descartar PDF temporário:', erro);
                 }
             }
-            estadoPdfTemporario = { fileId: '', url: '', timeoutId: null };
+            estadoPdfTemporario = { fileId: '', url: '', embedUrl: '', timeoutId: null };
             if (elementos.pdfViewerFrame) {
                 elementos.pdfViewerFrame.src = 'about:blank';
             }
             if (elementos.pdfViewerEmpty) {
                 elementos.pdfViewerEmpty.classList.remove('hidden');
             }
+        }
+        function extrairFileIdDeUrl(url) {
+            if (!url) return '';
+            const padrao = /\/d\/([\w-]+)/;
+            const padraoId = /[?&#]id=([\w-]+)/;
+            const match = url.match(padrao) || url.match(padraoId);
+            return match && match[1] ? match[1] : '';
+        }
+        function montarUrlPdfParaVisualizacao(url, fileId) {
+            const id = fileId || extrairFileIdDeUrl(url);
+            if (id) {
+                return `https://drive.google.com/file/d/${id}/preview`;
+            }
+            if (url) {
+                const urlEncodada = encodeURIComponent(url);
+                return `https://docs.google.com/gview?embedded=1&url=${urlEncodada}`;
+            }
+            return '';
+        }
+        function montarUrlPdfParaDownload(url, fileId) {
+            const id = fileId || extrairFileIdDeUrl(url);
+            if (id) {
+                return `https://drive.google.com/uc?export=download&id=${id}`;
+            }
+            return url || '';
         }
         async function fecharModalPdfViewer() {
             if (elementos.pdfViewerModal && elementos.pdfViewerModal.style.display === 'flex') {
@@ -5682,9 +5707,16 @@
                 return;
             }
             await descartarPdfTemporario();
-            estadoPdfTemporario = { fileId: fileId || '', url, timeoutId: null };
+            const embedUrl = montarUrlPdfParaVisualizacao(url, fileId);
+            const downloadUrl = montarUrlPdfParaDownload(url, fileId);
+            if (!embedUrl && !downloadUrl) {
+                mostrarErro('Não foi possível carregar o PDF gerado.');
+                return;
+            }
+            const urlFrame = embedUrl || downloadUrl;
+            estadoPdfTemporario = { fileId: fileId || '', url: downloadUrl || embedUrl, embedUrl: urlFrame, timeoutId: null };
             if (elementos.pdfViewerFrame) {
-                elementos.pdfViewerFrame.src = url;
+                elementos.pdfViewerFrame.src = urlFrame;
             }
             if (elementos.pdfViewerEmpty) {
                 elementos.pdfViewerEmpty.classList.add('hidden');
@@ -5698,7 +5730,10 @@
             estadoPdfTemporario.timeoutId = setTimeout(() => descartarPdfTemporario(), 5 * 60 * 1000);
         }
         function imprimirPdfTemporario() {
-            if (elementos.pdfViewerFrame && elementos.pdfViewerFrame.contentWindow) {
+            const iframeDisponivel = elementos.pdfViewerFrame && elementos.pdfViewerFrame.contentWindow;
+            const urlFallback = estadoPdfTemporario.embedUrl || estadoPdfTemporario.url;
+
+            if (iframeDisponivel) {
                 try {
                     elementos.pdfViewerFrame.contentWindow.focus();
                     elementos.pdfViewerFrame.contentWindow.print();
@@ -5707,14 +5742,18 @@
                     console.warn('Não foi possível disparar impressão do PDF integrado.', erro);
                 }
             }
-            if (estadoPdfTemporario.url) {
-                const novaAba = window.open(estadoPdfTemporario.url, '_blank');
+
+            if (urlFallback) {
+                const novaAba = window.open(urlFallback, '_blank', 'noopener');
                 if (novaAba) {
-                    try {
-                        novaAba.print();
-                    } catch (erro) {
-                        console.warn('Não foi possível iniciar impressão na nova aba.', erro);
-                    }
+                    setTimeout(() => {
+                        try {
+                            novaAba.focus();
+                            novaAba.print();
+                        } catch (erro) {
+                            console.warn('Não foi possível iniciar impressão na nova aba.', erro);
+                        }
+                    }, 1000);
                 }
             }
         }
@@ -5723,8 +5762,9 @@
             try {
                 const resposta = await callGoogleScript('gerarTermoPDFTemporario', montarPayloadTermo(armario, { incluirFinalizados: true }));
                 const dados = resposta?.data || resposta;
-                if (resposta && resposta.success && dados?.pdfUrl) {
-                    await mostrarModalPdfViewer(dados.pdfUrl, dados.fileId);
+                const urlBasicaPdf = dados?.downloadUrl || dados?.pdfUrl;
+                if (resposta && resposta.success && urlBasicaPdf) {
+                    await mostrarModalPdfViewer(urlBasicaPdf, dados.fileId);
                 } else {
                     notificarErroPadrao(resposta);
                 }
