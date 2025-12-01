@@ -5556,6 +5556,16 @@
             elementos.printArea.innerHTML = '';
             elementos.printArea.appendChild(clone);
             elementos.printArea.setAttribute('aria-hidden', 'false');
+            elementos.printArea.dataset.printReady = 'true';
+        }
+        function obterDadosImpressaoReserva() {
+            if (estadoImpressaoReserva.dados && typeof estadoImpressaoReserva.dados === 'object') {
+                return estadoImpressaoReserva.dados;
+            }
+            if (ultimoTicketImpressao && typeof ultimoTicketImpressao === 'object') {
+                return ultimoTicketImpressao;
+            }
+            return null;
         }
         function obterDadosImpressaoReserva() {
             if (estadoImpressaoReserva.dados && typeof estadoImpressaoReserva.dados === 'object') {
@@ -5610,6 +5620,7 @@
             sincronizarAreaImpressaoReserva();
             if (elementos.printArea) {
                 elementos.printArea.setAttribute('aria-hidden', 'false');
+                elementos.printArea.dataset.printReady = 'true';
             }
             document.body.classList.add('modal-print-open');
             elementos.impressaoReservaModal.style.display = 'flex';
@@ -5628,9 +5639,7 @@
                 return;
             }
             estadoImpressaoReserva.dados = { ...dados };
-            if (!document.body.classList.contains('modal-print-open')) {
-                document.body.classList.add('modal-print-open');
-            }
+            document.body.classList.add('modal-print-open');
             preencherModalImpressaoReserva(estadoImpressaoReserva.dados);
             sincronizarAreaImpressaoReserva();
             if (elementos.impressaoReservaModal) {
@@ -5639,6 +5648,7 @@
             }
             if (elementos.printArea) {
                 elementos.printArea.setAttribute('aria-hidden', 'false');
+                elementos.printArea.dataset.printReady = 'true';
             }
         });
         window.addEventListener('afterprint', () => {
