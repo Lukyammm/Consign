@@ -1973,62 +1973,42 @@
             }
         }
         @media print {
-            body.modal-print-open * {
+            body * {
                 visibility: hidden;
             }
-            body.modal-print-open #impressao-reserva-modal,
-            body.modal-print-open #impressao-reserva-modal *,
-            body.modal-print-open #print-area,
-            body.modal-print-open #print-area * {
-                visibility: visible;
+            #print-area,
+            #print-area * {
+                visibility: visible !important;
             }
-            body.modal-print-open::before {
-                display: none !important;
-            }
-            body.modal-print-open #impressao-reserva-modal {
-                position: static;
-                display: block !important;
-                background: transparent;
-                padding: 0;
-                height: auto;
-                width: auto;
-            }
-            body.modal-print-open #impressao-reserva-modal .modal-content {
-                box-shadow: none;
-                border: none;
-                width: auto;
-                max-width: none;
-                height: auto;
-            }
-            body.modal-print-open .print-actions,
-            body.modal-print-open .modal-close {
-                display: none !important;
-            }
-            body.modal-print-open #print-area {
+            #print-area {
                 display: flex !important;
                 justify-content: center;
                 align-items: flex-start;
                 position: static;
-                visibility: visible !important;
                 inset: auto;
                 left: auto;
                 top: auto;
                 padding: 0;
+                background: #fff;
             }
-            body.modal-print-open #print-area #impressao-reserva-card-print {
+            #impressao-reserva-card-print {
                 display: block !important;
                 visibility: visible !important;
             }
-            body.modal-print-open .print-ticket {
+            #print-area .print-ticket {
                 box-shadow: none;
                 border: 1px solid #000;
                 width: 110mm;
                 max-width: 110mm;
                 padding: 18px 20px 16px;
             }
-            body.modal-print-open .print-ticket::before {
+            #print-area .print-ticket::before {
                 inset: 8px;
                 border-color: #000;
+            }
+            .modal-close,
+            .print-actions {
+                display: none !important;
             }
         }
         /* Termo Wizard */
