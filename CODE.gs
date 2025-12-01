@@ -5034,19 +5034,37 @@ function excluirArquivoTemporario(dados) {
 
 // Funções para Movimentações
 function garantirEstruturaMovimentacoes(sheet) {
-  if (!sheet) {
-    return 10;
-  }
   var colunaStatus = 10;
-  var totalColunas = sheet.getLastColumn();
-  if (totalColunas < colunaStatus) {
-    sheet.insertColumnsAfter(totalColunas, colunaStatus - totalColunas);
+  var colunaItens = 11;
+
+  if (!sheet) {
+    return {
+      colunaStatus: colunaStatus,
+      colunaItens: colunaItens,
+      ultimaColuna: colunaItens
+    };
   }
-  var cabecalhoStatus = sheet.getRange(1, colunaStatus).getValue();
-  if (!cabecalhoStatus) {
+
+  var minimoColunas = Math.max(colunaItens, colunaStatus);
+  var totalColunas = sheet.getLastColumn();
+  if (totalColunas < minimoColunas) {
+    sheet.insertColumnsAfter(totalColunas, minimoColunas - totalColunas);
+    totalColunas = sheet.getLastColumn();
+  }
+
+  var cabecalhos = sheet.getRange(1, 1, 1, Math.max(totalColunas, minimoColunas)).getValues()[0];
+  if (!cabecalhos[colunaStatus - 1]) {
     sheet.getRange(1, colunaStatus).setValue('Status');
   }
-  return colunaStatus;
+  if (!cabecalhos[colunaItens - 1]) {
+    sheet.getRange(1, colunaItens).setValue('Itens');
+  }
+
+  return {
+    colunaStatus: colunaStatus,
+    colunaItens: colunaItens,
+    ultimaColuna: Math.max(totalColunas, minimoColunas)
+  };
 }
 
 function garantirEstruturaHistorico(sheet) {
@@ -5141,7 +5159,9 @@ function garantirColunaObservacoesAcompanhantes(sheet, estrutura) {
 function getMovimentacoes(dados) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Movimentações');
-  var colunaStatus = garantirEstruturaMovimentacoes(sheet);
+  var estruturaMov = garantirEstruturaMovimentacoes(sheet);
+  var colunaStatus = estruturaMov.colunaStatus;
+  var colunaItens = estruturaMov.colunaItens;
   var possuiArmario = dados && dados.armarioId !== undefined && dados.armarioId !== null;
   var armarioId = possuiArmario ? dados.armarioId : null;
   var armarioIdTexto = possuiArmario && armarioId !== null && armarioId !== undefined ? armarioId.toString().trim() : '';
@@ -5162,7 +5182,7 @@ function getMovimentacoes(dados) {
       }
 
       var linhasEncontradas = [];
-      var largura = Math.max(colunaStatus, sheet.getLastColumn());
+      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens);
       var intervaloIds = sheet.getRange(2, 2, totalLinhas, 1);
       var textoFinder = intervaloIds.createTextFinder(armarioIdTexto).useRegularExpression(false);
       var correspondencias = textoFinder.findAll();
@@ -5213,6 +5233,21 @@ function getMovimentacoes(dados) {
           continue;
         }
 
+        var itensValor = colunaItens && colunaItens <= linhaDados.length ? linhaDados[colunaItens - 1] : '';
+        var itens = [];
+        if (Array.isArray(itensValor)) {
+          itens = itensValor;
+        } else if (typeof itensValor === 'string' && itensValor.trim()) {
+          try {
+            var itensParse = JSON.parse(itensValor);
+            if (Array.isArray(itensParse)) {
+              itens = itensParse;
+            }
+          } catch (erroItens) {
+            itens = [];
+          }
+        }
+
         movimentacoes.push({
           id: linhaDados[0],
           armarioId: linhaDados[1],
@@ -5223,7 +5258,8 @@ function getMovimentacoes(dados) {
           data: formatarDataPlanilha(linhaDados[6]),
           hora: formatarHorarioPlanilha(linhaDados[7]),
           dataHoraRegistro: converterParaDataHoraIso(linhaDados[8], ''),
-          status: statusLinha || ''
+          status: statusLinha || '',
+          itens: itens
         });
       }
 
@@ -5245,7 +5281,10 @@ function salvarMovimentacao(dados) {
       return { success: false, error: 'Aba de movimentações não encontrada' };
     }
 
-    var colunaStatus = garantirEstruturaMovimentacoes(sheet);
+    var estruturaMov = garantirEstruturaMovimentacoes(sheet);
+    var colunaStatus = estruturaMov.colunaStatus;
+    var colunaItens = estruturaMov.colunaItens;
+    var larguraMovimentacao = Math.max(colunaItens, estruturaMov.ultimaColuna, sheet.getLastColumn());
 
     // Buscar número do armário
     var tipoArmarioNormalizado = normalizarTextoBasico(dados.tipoArmario);
@@ -5275,36 +5314,58 @@ function salvarMovimentacao(dados) {
     }
 
     var lastRow = sheet.getLastRow();
-    var novoId = lastRow > 1 ? Math.max(...sheet.getRange(2, 1, sheet.getLastRow()-1, 1).getValues().flat()) + 1 : 1;
-    
+    var novoId = lastRow > 1 ? Math.max.apply(null, sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().flat()) + 1 : 1;
+
     var registroAtual = obterDataHoraAtualFormatada();
     var dataMovimentacao = formatarDataPlanilha(dados.data);
     var horaMovimentacao = formatarHorarioPlanilha(dados.hora);
     var registroMovimento = registroAtual.dataHoraIso;
 
-    var novaLinha = [
-      novoId,
-      dados.armarioId,
-      numeroArmario,
-      dados.tipo,
-      dados.descricao,
-      dados.responsavel,
-      dataMovimentacao,
-      horaMovimentacao,
-      registroMovimento,
-      'ativo'
-    ];
+    var itensSerializados = '';
+    if (Array.isArray(dados.itens) && dados.itens.length) {
+      try {
+        var itensNormalizados = dados.itens.map(function(item) {
+          var quantidadeNumero = Number(item.quantidade);
+          return {
+            quantidade: Number.isFinite(quantidadeNumero) ? quantidadeNumero : 0,
+            descricao: item && item.descricao ? item.descricao.toString() : ''
+          };
+        }).filter(function(item) {
+          return item.quantidade > 0 && item.descricao;
+        });
+        if (itensNormalizados.length) {
+          itensSerializados = JSON.stringify(itensNormalizados);
+        }
+      } catch (erroItens) {
+        itensSerializados = '';
+      }
+    }
 
-    sheet.getRange(lastRow + 1, 1, 1, colunaStatus).setValues([novaLinha]);
+    var novaLinha = new Array(larguraMovimentacao).fill('');
+    novaLinha[0] = novoId;
+    novaLinha[1] = dados.armarioId;
+    novaLinha[2] = numeroArmario;
+    novaLinha[3] = dados.tipo;
+    novaLinha[4] = dados.descricao;
+    novaLinha[5] = dados.responsavel;
+    novaLinha[6] = dataMovimentacao;
+    novaLinha[7] = horaMovimentacao;
+    novaLinha[8] = registroMovimento;
+    novaLinha[colunaStatus - 1] = 'ativo';
+    if (colunaItens) {
+      novaLinha[colunaItens - 1] = itensSerializados;
+    }
 
-    registrarLog('MOVIMENTAÇÃO', `Movimentação registrada para armário ${numeroArmario}`);
+    sheet.getRange(lastRow + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
+
+    registrarLog('MOVIMENTAÇÃO', "Movimentação registrada para armário " + numeroArmario);
 
     limparCacheMovimentacoes(dados.armarioId, numeroArmario, tipoArmarioNormalizado || tipoNormalizado);
 
     return { success: true, message: 'Movimentação registrada com sucesso', id: novoId };
 
   } catch (error) {
-    registrarLog('ERRO', `Erro ao salvar movimentação: ${error.toString()}`);
+    registrarLog('ERRO', "Erro ao salvar movimentação: " + error.toString());
     return { success: false, error: error.toString() };
   }
 }
@@ -5318,7 +5379,8 @@ function finalizarMovimentacoesArmario(armarioId, numeroArmario, tipo) {
       return;
     }
 
-    var colunaStatus = garantirEstruturaMovimentacoes(sheet);
+    var estruturaMov = garantirEstruturaMovimentacoes(sheet);
+    var colunaStatus = estruturaMov.colunaStatus;
     var totalLinhas = sheet.getLastRow() - 1;
     if (totalLinhas <= 0) {
       return;
