@@ -1954,6 +1954,7 @@
             top: -9999px;
             pointer-events: none;
             display: none;
+            visibility: hidden;
         }
         #print-area .print-ticket {
             box-shadow: none;
@@ -1981,6 +1982,9 @@
             body.modal-print-open #print-area * {
                 visibility: visible;
             }
+            body.modal-print-open::before {
+                display: none !important;
+            }
             body.modal-print-open #impressao-reserva-modal {
                 position: static;
                 display: block !important;
@@ -2001,10 +2005,14 @@
                 display: none !important;
             }
             body.modal-print-open #print-area {
-                display: flex;
+                display: flex !important;
                 justify-content: center;
                 align-items: flex-start;
                 position: static;
+                visibility: visible !important;
+                inset: auto;
+                left: auto;
+                top: auto;
                 padding: 0;
             }
             body.modal-print-open .print-ticket {
