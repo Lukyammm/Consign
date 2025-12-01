@@ -4369,9 +4369,11 @@
                     : '';
                 const dataRegistroFormatada = formatarDataComDiaSemana(armario.dataRegistro);
                 const dataRegistroHtml = `<p><strong>Data:</strong> ${dataRegistroFormatada}</p>`;
-                const botoesEdicao = armario.tipo === 'visitante'
-                    ? `<div class="swal-extra-actions"><button id="btn-editar-horario" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#2c6e8f;">Editar horário/visita</button></div>`
-                    : '';
+                const botoesEdicao = `
+                    <div class="swal-extra-actions">
+                        <button id="btn-editar-dados" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#1f2937;">Editar dados</button>
+                        ${armario.tipo === 'visitante' ? '<button id="btn-editar-horario" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#2c6e8f;">Editar horário/visita</button>' : ''}
+                    </div>`;
                 const moverContingenciaHtml = ehContingencia
                     ? `<div class="swal-extra-actions" style="margin-top:8px;"><button id="btn-mover-contingencia" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#0f766e;">Mover para armário livre</button></div>`
                     : '';
@@ -4431,6 +4433,19 @@
                                     moverContingenciaParaArmarioLivre(armario);
                                 });
                             }
+                        }
+                        const botaoEditarDados = Swal.getHtmlContainer().querySelector('#btn-editar-dados');
+                        if (botaoEditarDados) {
+                            botaoEditarDados.addEventListener('click', async event => {
+                                event.preventDefault();
+                                const finalizar = iniciarLoadingBotao(botaoEditarDados);
+                                try {
+                                    Swal.close();
+                                    await abrirEdicaoDadosArmario(armario.id);
+                                } finally {
+                                    finalizar();
+                                }
+                            });
                         }
                         if (armario.tipo === 'acompanhante' && dadosImpressaoArmario) {
                             const botaoReimprimir = Swal.getHtmlContainer().querySelector('#btn-reimprimir-ticket');
@@ -4673,6 +4688,186 @@
                 }
             } finally {
                 overlay();
+            }
+        }
+        // Abrir edição completa dos dados do armário
+        async function abrirEdicaoDadosArmario(idArmario) {
+            const armario = obterArmarioPorId(idArmario);
+            if (!armario) {
+                mostrarErro('Armário não encontrado. Atualize a lista e tente novamente.');
+                return;
+            }
+
+            const tipoNormalizado = normalizarTexto(armario.tipo) || 'visitante';
+            const visitaEstendidaAtual = Boolean(armario.visitaEstendida);
+            const horaPrevistaAtual = armario.horaPrevista || '';
+            const htmlCamposVisitante = `
+                <div class="swal-form-group">
+                    <label for="editar-hora-prevista">Previsão de saída</label>
+                    <input type="time" id="editar-hora-prevista" class="swal2-input" value="${horaPrevistaAtual}" ${visitaEstendidaAtual ? 'disabled' : ''}>
+                </div>
+                <div class="swal-form-group">
+                    <label class="swal2-checkbox" style="margin-top:12px;">
+                        <input type="checkbox" id="editar-visita-estendida" ${visitaEstendidaAtual ? 'checked' : ''}>
+                        <span style="margin-left:8px;">Visita estendida (sem horário previsto)</span>
+                    </label>
+                </div>`;
+            const htmlObservacoes = tipoNormalizado === 'acompanhante'
+                ? `<div class="swal-form-group">
+                        <label for="editar-observacoes">Observações</label>
+                        <textarea id="editar-observacoes" class="swal2-textarea" placeholder="Anotações adicionais">${armario.observacoes || ''}</textarea>
+                   </div>`
+                : '';
+
+            const resultado = await Swal.fire({
+                title: `Editar dados - Armário ${armario.numero}`,
+                html: `
+                    <div class="swal-form-grid">
+                        <div class="swal-form-group">
+                            <label for="editar-nome-visitante">${tipoNormalizado === 'acompanhante' ? 'Nome do acompanhante' : 'Nome do visitante'}</label>
+                            <input type="text" id="editar-nome-visitante" class="swal2-input" value="${armario.nomeVisitante || ''}" required>
+                        </div>
+                        <div class="swal-form-group">
+                            <label for="editar-nome-paciente">Nome do paciente</label>
+                            <input type="text" id="editar-nome-paciente" class="swal2-input" value="${armario.nomePaciente || ''}" required>
+                        </div>
+                        <div class="swal-form-group">
+                            <label for="editar-prontuario">Prontuário</label>
+                            <input type="text" id="editar-prontuario" class="swal2-input" value="${armario.prontuario || ''}" placeholder="Opcional">
+                        </div>
+                        <div class="swal-form-group">
+                            <label for="editar-leito">Leito</label>
+                            <input type="text" id="editar-leito" class="swal2-input" value="${armario.leito || ''}" required>
+                        </div>
+                        <div class="swal-form-group">
+                            <label for="editar-volumes">Volumes</label>
+                            <input type="number" id="editar-volumes" class="swal2-input" min="0" value="${armario.volumes || 0}" required>
+                        </div>
+                        <div class="swal-form-group">
+                            <label for="editar-whatsapp">WhatsApp</label>
+                            <input type="tel" id="editar-whatsapp" class="swal2-input" value="${armario.whatsapp || ''}" placeholder="(00) 00000-0000">
+                        </div>
+                        ${tipoNormalizado === 'visitante' ? htmlCamposVisitante : ''}
+                        ${htmlObservacoes}
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Salvar alterações',
+                cancelButtonText: 'Cancelar',
+                didOpen: () => {
+                    const checkbox = Swal.getPopup().querySelector('#editar-visita-estendida');
+                    const inputHora = Swal.getPopup().querySelector('#editar-hora-prevista');
+                    if (checkbox && inputHora) {
+                        checkbox.addEventListener('change', () => {
+                            const estendida = checkbox.checked;
+                            inputHora.disabled = estendida;
+                            if (estendida) {
+                                inputHora.value = '';
+                            } else if (!inputHora.value) {
+                                inputHora.value = calcularHoraPrevistaSaida();
+                            }
+                        });
+                    }
+                },
+                preConfirm: () => {
+                    const popup = Swal.getPopup();
+                    const nomeVisitante = popup.querySelector('#editar-nome-visitante').value.trim();
+                    const nomePaciente = popup.querySelector('#editar-nome-paciente').value.trim();
+                    const prontuario = popup.querySelector('#editar-prontuario').value.trim();
+                    const leito = popup.querySelector('#editar-leito').value.trim();
+                    const volumesValor = parseInt(popup.querySelector('#editar-volumes').value, 10);
+                    const whatsapp = popup.querySelector('#editar-whatsapp').value.trim();
+                    const visitaEstendida = tipoNormalizado === 'visitante' ? popup.querySelector('#editar-visita-estendida').checked : false;
+                    const horaPrevista = tipoNormalizado === 'visitante' ? popup.querySelector('#editar-hora-prevista').value : '';
+                    const observacoes = tipoNormalizado === 'acompanhante' ? (popup.querySelector('#editar-observacoes')?.value || '').trim() : '';
+
+                    if (!nomeVisitante || !nomePaciente || !leito) {
+                        Swal.showValidationMessage('Preencha nome do visitante/acompanhante, paciente e leito.');
+                        return false;
+                    }
+                    if (!Number.isFinite(volumesValor) || volumesValor < 0) {
+                        Swal.showValidationMessage('Informe a quantidade de volumes corretamente.');
+                        return false;
+                    }
+                    if (tipoNormalizado === 'visitante' && !visitaEstendida && !horaPrevista) {
+                        Swal.showValidationMessage('Informe a previsão de saída ou marque visita estendida.');
+                        return false;
+                    }
+
+                    return {
+                        nomeVisitante,
+                        nomePaciente,
+                        prontuario,
+                        leito,
+                        volumes: volumesValor,
+                        whatsapp,
+                        visitaEstendida,
+                        horaPrevista,
+                        observacoes
+                    };
+                }
+            });
+
+            if (!resultado.isConfirmed || !resultado.value) {
+                return;
+            }
+
+            const dadosForm = resultado.value;
+            const payload = {
+                id: armario.idPlanilha || armario.id,
+                numero: armario.numero,
+                tipo: tipoNormalizado,
+                nomeVisitante: dadosForm.nomeVisitante,
+                nomePaciente: dadosForm.nomePaciente,
+                prontuario: dadosForm.prontuario,
+                leito: dadosForm.leito,
+                volumes: dadosForm.volumes,
+                whatsapp: dadosForm.whatsapp,
+                visitaEstendida: dadosForm.visitaEstendida,
+                horaPrevista: dadosForm.visitaEstendida ? '' : dadosForm.horaPrevista,
+                observacoes: dadosForm.observacoes,
+                usuarioResponsavel: obterDescricaoResponsavelAtual()
+            };
+
+            const ocultar = mostrarOverlayCarregamento('Atualizando dados do armário...');
+            try {
+                const resposta = await callGoogleScript('atualizarDadosArmario', payload);
+                if (resposta.success) {
+                    const dadosResposta = resposta.data || {};
+                    const atualizacoesLocais = {
+                        nomeVisitante: dadosForm.nomeVisitante,
+                        nomePaciente: dadosForm.nomePaciente,
+                        prontuario: dadosForm.prontuario,
+                        leito: dadosForm.leito,
+                        volumes: dadosForm.volumes,
+                        whatsapp: dadosForm.whatsapp,
+                        observacoes: dadosForm.observacoes,
+                        status: dadosResposta.status || armario.status
+                    };
+                    if (tipoNormalizado === 'visitante') {
+                        atualizacoesLocais.horaPrevista = dadosForm.visitaEstendida ? '' : dadosForm.horaPrevista;
+                        atualizacoesLocais.visitaEstendida = dadosForm.visitaEstendida;
+                    }
+                    if (dadosResposta.dataRegistro) {
+                        atualizacoesLocais.dataRegistro = dadosResposta.dataRegistro;
+                    }
+                    if (dadosResposta.unidade) {
+                        atualizacoesLocais.unidade = dadosResposta.unidade;
+                    }
+                    const atualizado = atualizarArmarioLocal(armario.id, atualizacoesLocais);
+                    if (!atualizado) {
+                        console.warn('Armário não encontrado para atualização local imediata:', armario.id);
+                    }
+                    atualizarResumoDashboardLocal();
+                    atualizarInterface();
+                    carregarDadosTabelas({ recarregarArmarios: false }).catch(console.error);
+                    mostrarSucesso('Dados atualizados com sucesso');
+                } else {
+                    notificarErroPadrao(resposta, 'Não foi possível atualizar os dados do armário');
+                }
+            } finally {
+                ocultar();
             }
         }
         // Abrir modal para novo armário
