@@ -5556,6 +5556,39 @@
             elementos.printArea.appendChild(clone);
             elementos.printArea.setAttribute('aria-hidden', 'false');
         }
+        function obterEstilosParaImpressao() {
+            const estilos = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
+            return estilos.map(no => no.outerHTML).join('\n');
+        }
+        function gerarHtmlImpressaoReserva() {
+            if (!elementos.printArea) return '';
+            sincronizarAreaImpressaoReserva();
+            const conteudo = elementos.printArea.innerHTML;
+            const estilos = obterEstilosParaImpressao();
+            return `
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    ${estilos}
+                </head>
+                <body class="modal-print-open">
+                    <div class="modal modal-full modal-print" style="display:flex; align-items:center; justify-content:center;">
+                        <div class="modal-content modal-print-content">
+                            <div class="modal-print-wrapper">
+                                ${conteudo}
+                            </div>
+                        </div>
+                    </div>
+                    <script>
+                        window.addEventListener('afterprint', () => window.close());
+                        window.print();
+                    <\/script>
+                </body>
+                </html>
+            `;
+        }
         function abrirModalImpressaoReserva(dados) {
             if (!elementos.impressaoReservaModal) return;
             estadoImpressaoReserva.dados = dados || null;
@@ -5584,11 +5617,15 @@
         }
         function imprimirReservaArmario() {
             if (!elementos.impressaoReservaModal) return;
-            sincronizarAreaImpressaoReserva();
-            document.body.classList.add('modal-print-open');
-            elementos.impressaoReservaModal.style.display = 'flex';
-            elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
-            requestAnimationFrame(() => setTimeout(() => window.print(), 120));
+            const html = gerarHtmlImpressaoReserva();
+            if (!html) return;
+            const janelaImpressao = window.open('', '_blank');
+            if (!janelaImpressao) return;
+            janelaImpressao.document.open();
+            janelaImpressao.document.write(html);
+            janelaImpressao.document.close();
+            janelaImpressao.focus();
+            fecharModalImpressaoReserva();
         }
         window.addEventListener('beforeprint', () => {
             if (!document.body.classList.contains('modal-print-open')) return;
