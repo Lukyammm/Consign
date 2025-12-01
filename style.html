@@ -1843,10 +1843,10 @@
             color: #0f172a;
         }
         .print-ticket {
-            width: min(100%, 380px);
+            width: min(100%, 440px);
             background: #ffffff;
             border-radius: 16px;
-            padding: 18px 18px 14px;
+            padding: 20px 22px 16px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16);
             color: #0f172a;
@@ -1948,6 +1948,17 @@
         .print-actions .btn {
             min-width: 120px;
         }
+        #print-area {
+            position: fixed;
+            left: -9999px;
+            top: -9999px;
+            pointer-events: none;
+            display: none;
+        }
+        #print-area .print-ticket {
+            box-shadow: none;
+            margin: 0 auto;
+        }
         @media (max-width: 640px) {
             .modal.modal-print {
                 padding: 12px 6px;
@@ -1965,7 +1976,9 @@
                 visibility: hidden;
             }
             body.modal-print-open #impressao-reserva-modal,
-            body.modal-print-open #impressao-reserva-modal * {
+            body.modal-print-open #impressao-reserva-modal *,
+            body.modal-print-open #print-area,
+            body.modal-print-open #print-area * {
                 visibility: visible;
             }
             body.modal-print-open #impressao-reserva-modal {
@@ -1987,12 +2000,19 @@
             body.modal-print-open .modal-close {
                 display: none !important;
             }
+            body.modal-print-open #print-area {
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                position: static;
+                padding: 0;
+            }
             body.modal-print-open .print-ticket {
                 box-shadow: none;
                 border: 1px solid #000;
-                width: 80mm;
-                max-width: 80mm;
-                padding: 16px;
+                width: 110mm;
+                max-width: 110mm;
+                padding: 18px 20px 16px;
             }
             body.modal-print-open .print-ticket::before {
                 inset: 8px;
