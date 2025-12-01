@@ -5584,18 +5584,32 @@
         }
         function imprimirReservaArmario() {
             if (!elementos.impressaoReservaModal) return;
+            const dados = estadoImpressaoReserva.dados || {};
+            preencherModalImpressaoReserva(dados);
             sincronizarAreaImpressaoReserva();
+            if (elementos.printArea) {
+                elementos.printArea.setAttribute('aria-hidden', 'false');
+            }
             document.body.classList.add('modal-print-open');
             elementos.impressaoReservaModal.style.display = 'flex';
             elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
             requestAnimationFrame(() => setTimeout(() => window.print(), 120));
         }
         window.addEventListener('beforeprint', () => {
-            if (!document.body.classList.contains('modal-print-open')) return;
+            if (!elementos.impressaoReservaModal) return;
+            if (!document.body.classList.contains('modal-print-open')) {
+                document.body.classList.add('modal-print-open');
+            }
+            if (estadoImpressaoReserva.dados) {
+                preencherModalImpressaoReserva(estadoImpressaoReserva.dados);
+            }
             sincronizarAreaImpressaoReserva();
             if (elementos.impressaoReservaModal) {
                 elementos.impressaoReservaModal.style.display = 'flex';
                 elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
+            }
+            if (elementos.printArea) {
+                elementos.printArea.setAttribute('aria-hidden', 'false');
             }
         });
         window.addEventListener('afterprint', () => {
