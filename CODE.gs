@@ -550,6 +550,7 @@ function resolverIdsUnidadesArmazenadas(unidadesValor, mapas) {
 
 // ID da pasta do Drive para salvar os PDFs - ATUALIZE COM SEU ID
 const PASTA_DRIVE_ID = '1nYsGJJUIufxDYVvIanVXCbPx7YuBOYDP';
+const PASTA_DRIVE_TEMP_ID = '11M_fFDA9nrOqzIm6zMnaGjYMCQoE4XXs';
 
 // Configuração de cache para leitura dos termos
 const TERMOS_CACHE_KEY = 'termos_registrados_cache_v1';
@@ -1312,8 +1313,16 @@ function handlePost(e) {
         return ContentService.createTextOutput(JSON.stringify(finalizarTermo(e.parameter)))
           .setMimeType(ContentService.MimeType.JSON);
 
+      case 'gerarTermoPDFTemporario':
+        return ContentService.createTextOutput(JSON.stringify(gerarTermoPDFTemporario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
       case 'getTermo':
         return ContentService.createTextOutput(JSON.stringify(getTermo(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
+      case 'excluirArquivoTemporario':
+        return ContentService.createTextOutput(JSON.stringify(excluirArquivoTemporario(e.parameter)))
           .setMimeType(ContentService.MimeType.JSON);
       
       case 'getMovimentacoes':
@@ -4573,45 +4582,48 @@ function finalizarTermo(dados) {
 }
 
 // Função para gerar e salvar PDF
-function gerarESalvarTermoPDF(dadosTermo) {
+function obterPastaSeguraDrive(pastaIdPreferida) {
   try {
-    // Acessar a pasta do Drive
-    var pastaDestino;
-    try {
-      pastaDestino = DriveApp.getFolderById(PASTA_DRIVE_ID);
-    } catch (error) {
-      // Se a pasta não for encontrada, criar na raiz
-      pastaDestino = DriveApp.getRootFolder();
+    if (pastaIdPreferida && pastaIdPreferida.toString().trim()) {
+      return DriveApp.getFolderById(pastaIdPreferida.toString().trim());
     }
-    
-    // Criar HTML do termo
+  } catch (error) {
+    console.warn('Pasta preferida inválida ou inacessível, usando raiz.', error);
+  }
+  try {
+    return DriveApp.getFolderById(PASTA_DRIVE_ID);
+  } catch (erroPadrao) {
+    return DriveApp.getRootFolder();
+  }
+}
+
+function gerarESalvarTermoPDF(dadosTermo, opcoes) {
+  try {
+    var configuracoes = opcoes || {};
+    var pastaDestino = obterPastaSeguraDrive(configuracoes.pastaId);
+
     var htmlContent = criarHTMLTermo(dadosTermo);
-    
-    // Renderizar HTML em um output para conversão confiável
     var htmlOutput = HtmlService
       .createHtmlOutput(htmlContent)
       .setWidth(800)
       .setHeight(1200);
 
-    // Criar arquivo temporário como PDF
     var blob = htmlOutput.getBlob().getAs('application/pdf');
-    
-    // Nome do arquivo
-    var nomeArquivo = 'Termo_Responsabilidade_' + dadosTermo.numeroArmario + '_' + 
+
+    var prefixoArquivo = configuracoes.prefixoArquivo || 'Termo_Responsabilidade_';
+    var nomeArquivo = prefixoArquivo + dadosTermo.numeroArmario + '_' +
                      Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'ddMMyyyy_HHmmss') + '.pdf';
-    
-    // Salvar na pasta
+
     var arquivoPDF = pastaDestino.createFile(blob).setName(nomeArquivo);
-    
-    // Tornar acessível via link
     arquivoPDF.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
+
     return {
       success: true,
       pdfUrl: arquivoPDF.getUrl(),
-      fileId: arquivoPDF.getId()
+      fileId: arquivoPDF.getId(),
+      pastaId: pastaDestino.getId()
     };
-    
+
   } catch (error) {
     console.error('Erro ao gerar PDF:', error);
     return { success: false, error: error.toString() };
@@ -4836,6 +4848,119 @@ function formatarDataParaHTML(data) {
     return Utilities.formatDate(date, 'America/Sao_Paulo', 'dd/MM/yyyy');
   } catch (error) {
     return data;
+  }
+}
+
+function montarDadosTermoParaPDF(termo, movimentacoes) {
+  var assinaturas = termo.assinaturas || {};
+  var statusNormalizado = normalizarTextoBasico(termo.status);
+  var finalizadoEm = assinaturas.finalizadoEm || termo.finalizadoEm ||
+    (statusNormalizado === 'finalizado' ? termo.aplicadoEm : '');
+
+  return {
+    numeroArmario: termo.numeroArmario || termo.armarioId || '',
+    paciente: termo.paciente || '',
+    prontuario: termo.prontuario || '',
+    nascimento: termo.nascimento || '',
+    setor: termo.setor || '',
+    leito: termo.leito || '',
+    consciente: termo.consciente || '',
+    acompanhante: termo.acompanhante || '',
+    telefone: termo.telefone || '',
+    documento: termo.documento || '',
+    parentesco: termo.parentesco || '',
+    orientacoes: termo.orientacoes || [],
+    volumes: termo.volumes || [],
+    descricaoVolumes: termo.descricaoVolumes || '',
+    aplicadoEm: termo.aplicadoEm || '',
+    finalizadoEm: finalizadoEm || '',
+    assinaturaInicial: assinaturas.inicial || '',
+    assinaturaFinal: assinaturas.final || '',
+    assinaturaMimeInicial: assinaturas.mimeInicial || 'image/png',
+    assinaturaMimeFinal: assinaturas.mimeFinal || (assinaturas.final ? 'image/png' : ''),
+    metodoFinal: assinaturas.metodoFinal || '',
+    cpfFinal: assinaturas.cpfFinal || '',
+    responsavelFinalizacao: assinaturas.responsavelFinalizacao || '',
+    movimentacoes: movimentacoes || []
+  };
+}
+
+function gerarTermoPDFTemporario(dados) {
+  try {
+    var parametros = dados || {};
+    var termoResposta = getTermo({
+      armarioId: parametros.armarioId,
+      numeroArmario: parametros.numeroArmario,
+      incluirFinalizados: true
+    });
+
+    if (!termoResposta.success || !termoResposta.data) {
+      return { success: false, error: termoResposta.error || 'Termo não encontrado' };
+    }
+
+    var termo = termoResposta.data;
+    var movResposta = getMovimentacoes({ armarioId: termo.armarioId, numeroArmario: termo.numeroArmario, tipo: 'acompanhante' });
+    var movimentacoes = movResposta && movResposta.success && Array.isArray(movResposta.data) ? movResposta.data : [];
+
+    var dadosPDF = montarDadosTermoParaPDF(termo, movimentacoes);
+    var resultadoPDF = gerarESalvarTermoPDF(dadosPDF, {
+      pastaId: PASTA_DRIVE_TEMP_ID,
+      prefixoArquivo: 'Termo_Temporario_'
+    });
+
+    if (!resultadoPDF.success) {
+      return { success: false, error: resultadoPDF.error || 'Falha ao gerar PDF temporário' };
+    }
+
+    registrarLog('TERMO_PDF_TEMP', 'PDF temporário gerado para armário ' + (termo.numeroArmario || termo.armarioId || ''));
+
+    return { success: true, data: { pdfUrl: resultadoPDF.pdfUrl, fileId: resultadoPDF.fileId } };
+
+  } catch (error) {
+    registrarLog('ERRO_TERMO', 'Erro ao gerar PDF temporário: ' + error.toString());
+    return { success: false, error: error.toString() };
+  }
+}
+
+function excluirArquivoTemporario(dados) {
+  var fileId = dados && dados.fileId ? dados.fileId.toString().trim() : '';
+  if (!fileId) {
+    return { success: false, error: 'ID do arquivo não informado' };
+  }
+
+  try {
+    var arquivo = DriveApp.getFileById(fileId);
+    var pastaTemporaria = obterPastaSeguraDrive(PASTA_DRIVE_TEMP_ID);
+    var pertencePastaTemporaria = false;
+
+    try {
+      var pastas = arquivo.getParents();
+      while (pastas.hasNext()) {
+        var pasta = pastas.next();
+        if (pasta.getId() === pastaTemporaria.getId()) {
+          pertencePastaTemporaria = true;
+          break;
+        }
+      }
+    } catch (erroPastas) {
+      console.warn('Não foi possível verificar pastas do arquivo temporário.', erroPastas);
+    }
+
+    if (pertencePastaTemporaria) {
+      try {
+        pastaTemporaria.removeFile(arquivo);
+      } catch (erroRemocao) {
+        console.warn('Falha ao remover arquivo da pasta temporária, enviando para lixeira.', erroRemocao);
+      }
+    }
+
+    arquivo.setTrashed(true);
+    registrarLog('TERMO_PDF_TEMP_REMOVIDO', 'PDF temporário removido: ' + fileId);
+    return { success: true, removido: true };
+
+  } catch (error) {
+    registrarLog('ERRO_TERMO', 'Erro ao excluir PDF temporário: ' + error.toString());
+    return { success: false, error: error.toString() };
   }
 }
 

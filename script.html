@@ -66,6 +66,7 @@
             }
             return estado.ocupacaoAcompanhantes;
         }
+        let estadoPdfTemporario = { fileId: '', url: '', timeoutId: null };
         const STORAGE_KEYS = {
             sessaoUsuario: 'locknac_sessao_usuario',
             rascunhosOcupacao: 'locknac_rascunhos_ocupacao',
@@ -574,6 +575,12 @@
                 emissao: document.getElementById('print-emissao')
             },
             printArea: document.getElementById('print-area'),
+            pdfViewerModal: document.getElementById('pdf-viewer-modal'),
+            pdfViewerFrame: document.getElementById('pdf-viewer-frame'),
+            pdfViewerClose: document.getElementById('pdf-viewer-close'),
+            pdfViewerCancel: document.getElementById('pdf-viewer-cancel'),
+            pdfViewerPrint: document.getElementById('pdf-viewer-print'),
+            pdfViewerEmpty: document.getElementById('pdf-viewer-empty'),
             logoutButton: document.getElementById('logout-button')
         };
         const mobileNavQuery = window.matchMedia('(max-width: 1024px)');
@@ -2463,6 +2470,22 @@
                 elementos.impressaoReservaModal.addEventListener('click', evento => {
                     if (evento.target === elementos.impressaoReservaModal) {
                         fecharModalImpressaoReserva();
+                    }
+                });
+            }
+            if (elementos.pdfViewerClose) {
+                elementos.pdfViewerClose.addEventListener('click', () => fecharModalPdfViewer());
+            }
+            if (elementos.pdfViewerCancel) {
+                elementos.pdfViewerCancel.addEventListener('click', () => fecharModalPdfViewer());
+            }
+            if (elementos.pdfViewerPrint) {
+                elementos.pdfViewerPrint.addEventListener('click', () => imprimirPdfTemporario());
+            }
+            if (elementos.pdfViewerModal) {
+                elementos.pdfViewerModal.addEventListener('click', evento => {
+                    if (evento.target === elementos.pdfViewerModal) {
+                        fecharModalPdfViewer();
                     }
                 });
             }
@@ -5622,6 +5645,96 @@
         function imprimirReservaArmario() {
             abrirImpressaoReservaEmNovaAba();
         }
+        function limparAgendamentoPdfTemporario() {
+            if (estadoPdfTemporario.timeoutId) {
+                clearTimeout(estadoPdfTemporario.timeoutId);
+                estadoPdfTemporario.timeoutId = null;
+            }
+        }
+        async function descartarPdfTemporario() {
+            limparAgendamentoPdfTemporario();
+            if (estadoPdfTemporario.fileId) {
+                try {
+                    await callGoogleScript('excluirArquivoTemporario', { fileId: estadoPdfTemporario.fileId });
+                } catch (erro) {
+                    console.warn('Falha ao descartar PDF temporário:', erro);
+                }
+            }
+            estadoPdfTemporario = { fileId: '', url: '', timeoutId: null };
+            if (elementos.pdfViewerFrame) {
+                elementos.pdfViewerFrame.src = 'about:blank';
+            }
+            if (elementos.pdfViewerEmpty) {
+                elementos.pdfViewerEmpty.classList.remove('hidden');
+            }
+        }
+        async function fecharModalPdfViewer() {
+            if (elementos.pdfViewerModal && elementos.pdfViewerModal.style.display === 'flex') {
+                elementos.pdfViewerModal.style.display = 'none';
+                elementos.pdfViewerModal.setAttribute('aria-hidden', 'true');
+                travaRolagem.remover();
+            }
+            await descartarPdfTemporario();
+        }
+        async function mostrarModalPdfViewer(url, fileId) {
+            if (!url) {
+                mostrarErro('PDF não disponível no momento.');
+                return;
+            }
+            await descartarPdfTemporario();
+            estadoPdfTemporario = { fileId: fileId || '', url, timeoutId: null };
+            if (elementos.pdfViewerFrame) {
+                elementos.pdfViewerFrame.src = url;
+            }
+            if (elementos.pdfViewerEmpty) {
+                elementos.pdfViewerEmpty.classList.add('hidden');
+            }
+            if (elementos.pdfViewerModal) {
+                elementos.pdfViewerModal.style.display = 'flex';
+                elementos.pdfViewerModal.setAttribute('aria-hidden', 'false');
+                travaRolagem.aplicar();
+            }
+            limparAgendamentoPdfTemporario();
+            estadoPdfTemporario.timeoutId = setTimeout(() => descartarPdfTemporario(), 5 * 60 * 1000);
+        }
+        function imprimirPdfTemporario() {
+            if (elementos.pdfViewerFrame && elementos.pdfViewerFrame.contentWindow) {
+                try {
+                    elementos.pdfViewerFrame.contentWindow.focus();
+                    elementos.pdfViewerFrame.contentWindow.print();
+                    return;
+                } catch (erro) {
+                    console.warn('Não foi possível disparar impressão do PDF integrado.', erro);
+                }
+            }
+            if (estadoPdfTemporario.url) {
+                const novaAba = window.open(estadoPdfTemporario.url, '_blank');
+                if (novaAba) {
+                    try {
+                        novaAba.print();
+                    } catch (erro) {
+                        console.warn('Não foi possível iniciar impressão na nova aba.', erro);
+                    }
+                }
+            }
+        }
+        async function gerarPdfTemporarioParaTermo(armario) {
+            const finalizarOverlay = mostrarOverlayCarregamento('Gerando PDF temporário...');
+            try {
+                const resposta = await callGoogleScript('gerarTermoPDFTemporario', montarPayloadTermo(armario, { incluirFinalizados: true }));
+                const dados = resposta?.data || resposta;
+                if (resposta && resposta.success && dados?.pdfUrl) {
+                    await mostrarModalPdfViewer(dados.pdfUrl, dados.fileId);
+                } else {
+                    notificarErroPadrao(resposta);
+                }
+            } catch (erro) {
+                console.error('Erro ao gerar PDF temporário:', erro);
+                mostrarErro('Não foi possível gerar o PDF temporário. Tente novamente.');
+            } finally {
+                finalizarOverlay();
+            }
+        }
         window.addEventListener('beforeprint', () => {
             if (!document.body.classList.contains('modal-print-open')) return;
             sincronizarAreaImpressaoReserva();
@@ -6534,12 +6647,7 @@
                 mostrarErro('Armário não encontrado');
                 return;
             }
-            const resultado = await callGoogleScript('getTermo', montarPayloadTermo(armario, { incluirFinalizados: true }));
-            if (resultado.success && resultado.data.pdfUrl) {
-                window.open(resultado.data.pdfUrl, '_blank');
-            } else {
-                mostrarErro('PDF não disponível para este termo');
-            }
+            await gerarPdfTemporarioParaTermo(armario);
         }
         async function confirmarLiberacaoVisitante(id) {
             const armario = obterArmarioPorId(id);
