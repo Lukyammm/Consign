@@ -994,6 +994,27 @@
             </div>
         </div>
     </div>
+    <div class="modal modal-full modal-pdf" id="pdf-viewer-modal" aria-hidden="true" role="dialog" aria-labelledby="pdf-viewer-titulo">
+        <div class="modal-content modal-full-content">
+            <div class="modal-header">
+                <div class="modal-title" id="pdf-viewer-titulo">Visualizar PDF do termo</div>
+                <button class="modal-close" id="pdf-viewer-close" type="button" aria-label="Fechar visualização">&times;</button>
+            </div>
+            <div class="modal-body modal-scrollable pdf-viewer-body">
+                <div class="pdf-frame-wrapper">
+                    <iframe id="pdf-viewer-frame" title="Visualização temporária do PDF" loading="lazy"></iframe>
+                </div>
+                <div class="pdf-empty-state hidden" id="pdf-viewer-empty">
+                    <i class="fas fa-file-pdf"></i>
+                    <p>O PDF temporário será exibido aqui.</p>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="pdf-viewer-cancel">Fechar e descartar</button>
+                <button type="button" class="btn btn-primary" id="pdf-viewer-print">Imprimir</button>
+            </div>
+        </div>
+    </div>
     <!-- Painel de Notificações -->
     <div class="notification-panel" id="notification-panel">
         <div class="notification-header">
