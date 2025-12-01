@@ -4919,7 +4919,7 @@ function gerarTermoPDFTemporario(dados) {
 
     registrarLog('TERMO_PDF_TEMP', 'PDF temporário gerado para armário ' + (termo.numeroArmario || termo.armarioId || ''));
 
-    return { success: true, data: { pdfUrl: resultadoPDF.pdfUrl, fileId: resultadoPDF.fileId } };
+    return { success: true, data: { pdfUrl: resultadoPDF.pdfUrl, downloadUrl: resultadoPDF.downloadUrl, fileId: resultadoPDF.fileId } };
 
   } catch (error) {
     registrarLog('ERRO_TERMO', 'Erro ao gerar PDF temporário: ' + error.toString());
