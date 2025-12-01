@@ -949,9 +949,13 @@
                         <div class="print-badge" id="impressao-reserva-titulo">Guarda Volumes - NAC HUC</div>
                     </div>
                     <div class="print-ticket-body">
-                        <div class="print-highlight-block">
-                            <span class="print-highlight-label">Armário</span>
-                            <div class="print-armario-large" id="print-armario">-</div>
+                        <div class="print-highlight-block armario">
+                            <div class="print-armario-row">
+                                <span class="print-highlight-label">Armário</span>
+                                <div class="print-armario-wrapper">
+                                    <div class="print-armario-large" id="print-armario">-</div>
+                                </div>
+                            </div>
                         </div>
                         <div class="print-highlight-block patient">
                             <span class="print-highlight-label">Paciente</span>
@@ -962,9 +966,15 @@
                                 <span>Acompanhante</span>
                                 <strong id="print-acompanhante">-</strong>
                             </div>
-                            <div class="print-row">
-                                <span>Pront/Leito</span>
-                                <strong id="print-prontuario-leito">-</strong>
+                            <div class="print-row print-prontuario-leito">
+                                <div class="print-inline-field">
+                                    <span>Pront</span>
+                                    <strong id="print-prontuario">-</strong>
+                                </div>
+                                <div class="print-inline-field">
+                                    <span>Leito</span>
+                                    <strong id="print-leito">-</strong>
+                                </div>
                             </div>
                             <div class="print-row">
                                 <span>Volumes</span>

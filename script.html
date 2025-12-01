@@ -568,7 +568,8 @@
                 armario: document.getElementById('print-armario'),
                 paciente: document.getElementById('print-paciente'),
                 acompanhante: document.getElementById('print-acompanhante'),
-                prontuarioLeito: document.getElementById('print-prontuario-leito'),
+                prontuario: document.getElementById('print-prontuario'),
+                leito: document.getElementById('print-leito'),
                 volumes: document.getElementById('print-volumes'),
                 emissao: document.getElementById('print-emissao')
             },
@@ -5556,13 +5557,13 @@
             const leito = dadosTermo?.leito ?? armario?.leito ?? '';
             const prontuarioNormalizado = prontuario !== undefined && prontuario !== null ? String(prontuario).trim() : '';
             const leitoNormalizado = leito !== undefined && leito !== null ? String(leito).trim() : '';
-            const prontuarioLeito = [prontuarioNormalizado, leitoNormalizado].filter(valor => valor && valor !== '-').join(' ');
             return {
                 titulo: 'Guarda Volumes - NAC HUC',
                 armario: identificadores?.numeroArmario || armario?.numero || '-',
                 paciente: dadosTermo?.paciente || armario?.nomePaciente || '-',
                 acompanhante: dadosTermo?.acompanhante || armario?.nomeVisitante || '-',
-                prontuarioLeito: prontuarioLeito || '-',
+                prontuario: prontuarioNormalizado || '-',
+                leito: leitoNormalizado || '-',
                 volumes: obterResumoVolumesTicket(dadosTermo?.volumes, armario?.volumes),
                 emissao: formatarDataHora(new Date())
             };
@@ -5573,7 +5574,8 @@
             campos.armario.textContent = dados.armario || '-';
             campos.paciente.textContent = dados.paciente || '-';
             campos.acompanhante.textContent = dados.acompanhante || '-';
-            campos.prontuarioLeito.textContent = dados.prontuarioLeito || '-';
+            campos.prontuario.textContent = dados.prontuario || '-';
+            campos.leito.textContent = dados.leito || '-';
             campos.volumes.textContent = dados.volumes || '-';
             campos.emissao.textContent = dados.emissao || '-';
         }

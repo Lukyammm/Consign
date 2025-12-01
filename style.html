@@ -1972,6 +1972,9 @@
             background: #f8fafc;
             border: 1px solid #e2e8f0;
         }
+        .print-highlight-block.armario {
+            align-items: flex-start;
+        }
         .print-highlight-block.patient {
             background: #eef2ff;
             border-color: #c7d2fe;
@@ -1983,12 +1986,23 @@
             text-transform: uppercase;
             color: #0f172a;
         }
+        .print-armario-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+        .print-armario-wrapper {
+            display: flex;
+            align-items: center;
+        }
         .print-armario-large {
-            font-size: 3.6rem;
+            font-size: 4.1rem;
             font-weight: 900;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.16em;
             color: #0f172a;
             text-align: center;
+            line-height: 1;
         }
         .print-paciente-large {
             font-size: 2rem;
@@ -2022,6 +2036,24 @@
             text-align: right;
             line-height: 1.35;
             flex: 1;
+        }
+        .print-prontuario-leito {
+            justify-content: flex-start;
+            align-items: center;
+            gap: 18px;
+        }
+        .print-inline-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .print-inline-field span {
+            margin: 0;
+        }
+        .print-inline-field strong {
+            flex: initial;
+            min-width: 48px;
+            text-align: left;
         }
         .print-ticket-footer {
             display: grid;
