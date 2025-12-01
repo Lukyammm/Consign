@@ -571,7 +571,6 @@
                 prontuario: document.getElementById('print-prontuario'),
                 leito: document.getElementById('print-leito'),
                 volumes: document.getElementById('print-volumes'),
-                inicio: document.getElementById('print-inicio'),
                 emissao: document.getElementById('print-emissao')
             },
             printArea: document.getElementById('print-area'),
@@ -5544,8 +5543,6 @@
             return 'Não informado';
         }
         function montarDadosImpressaoReserva(armario, dadosTermo, identificadores) {
-            const inicioBruto = (armario?.horaInicio || '').toString().trim();
-            const inicio = inicioBruto || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             return {
                 titulo: 'Guarda Volumes - HUC',
                 armario: identificadores?.numeroArmario || armario?.numero || '-',
@@ -5554,7 +5551,6 @@
                 prontuario: dadosTermo?.prontuario || armario?.prontuario || '-',
                 leito: dadosTermo?.leito || armario?.leito || '-',
                 volumes: obterResumoVolumesTicket(dadosTermo?.volumes, armario?.volumes),
-                inicio,
                 emissao: formatarDataHora(new Date())
             };
         }
@@ -5567,7 +5563,6 @@
             campos.prontuario.textContent = dados.prontuario || '-';
             campos.leito.textContent = dados.leito || '-';
             campos.volumes.textContent = dados.volumes || '-';
-            campos.inicio.textContent = dados.inicio || '-';
             campos.emissao.textContent = dados.emissao || '-';
         }
         function sincronizarAreaImpressaoReserva() {
