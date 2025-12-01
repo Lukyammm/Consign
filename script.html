@@ -609,7 +609,6 @@
         let loginInicializado = false;
         let eventosInicializados = false;
         const estadoImpressaoReserva = { dados: null };
-        let ultimoTicketImpressao = null;
         function aprimorarSeletoresCabecalho() {
             document.querySelectorAll('.selector-control .selector-input').forEach(select => criarSelectorPersonalizado(select));
         }
@@ -2467,19 +2466,6 @@
                     }
                 });
             }
-            window.addEventListener('keydown', (evento) => {
-                const tecla = (evento.key || '').toLowerCase();
-                if (tecla === 'p' && (evento.ctrlKey || evento.metaKey)) {
-                    const dados = obterDadosImpressaoReserva();
-                    if (!dados) {
-                        evento.preventDefault();
-                        mostrarErro('Gere o comprovante pelo botão Imprimir após selecionar um armário.');
-                        return;
-                    }
-                    evento.preventDefault();
-                    imprimirReservaArmario();
-                }
-            });
             // Tabela de termos
             elementos.tabelaTermos.addEventListener('click', tratarAcaoTermo);
             if (elementos.tabelaUnidadesBody) {
@@ -5569,241 +5555,11 @@
             elementos.printArea.innerHTML = '';
             elementos.printArea.appendChild(clone);
             elementos.printArea.setAttribute('aria-hidden', 'false');
-            elementos.printArea.dataset.printReady = 'true';
-        }
-        function gerarHtmlImpressaoReserva(dados) {
-            const valor = (conteudo, fallback = '-') => {
-                if (conteudo === undefined || conteudo === null || conteudo === '') return fallback;
-                return conteudo;
-            };
-            const estilos = `
-                :root {
-                    --text-color: #0f172a;
-                    --muted-color: #64748b;
-                    --border-color: #e2e8f0;
-                    --accent-color: #334155;
-                }
-                * {
-                    box-sizing: border-box;
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-                }
-                body {
-                    margin: 0;
-                    background: #f8fafc;
-                    color: var(--text-color);
-                }
-                .print-container {
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: flex-start;
-                    justify-content: center;
-                    padding: 28px 16px;
-                }
-                .print-ticket {
-                    width: 112mm;
-                    max-width: 112mm;
-                    background: #fff;
-                    border: 1px solid var(--border-color);
-                    border-radius: 14px;
-                    padding: 18px 18px 14px;
-                    position: relative;
-                    overflow: hidden;
-                    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-                }
-                .print-ticket::before {
-                    content: "";
-                    position: absolute;
-                    inset: 10px;
-                    border: 1px dashed color-mix(in srgb, var(--accent-color) 20%, transparent);
-                    border-radius: 12px;
-                    pointer-events: none;
-                }
-                .print-ticket-header {
-                    text-align: center;
-                    margin-bottom: 16px;
-                    position: relative;
-                    z-index: 1;
-                }
-                .print-badge {
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 8px 12px;
-                    border-radius: 999px;
-                    background: color-mix(in srgb, var(--accent-color) 8%, #e2e8f0 92%);
-                    color: var(--accent-color);
-                    font-weight: 700;
-                    font-size: 0.75rem;
-                    letter-spacing: 0.08em;
-                    text-transform: uppercase;
-                }
-                .print-title {
-                    font-size: 1.3rem;
-                    font-weight: 800;
-                    margin-top: 8px;
-                    letter-spacing: 0.02em;
-                }
-                .print-subtitle {
-                    color: var(--muted-color);
-                    font-size: 0.95rem;
-                    margin-top: 4px;
-                }
-                .print-ticket-body {
-                    display: grid;
-                    gap: 10px;
-                    position: relative;
-                    z-index: 1;
-                    padding: 10px 0 6px;
-                }
-                .print-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: baseline;
-                    gap: 8px;
-                    padding-bottom: 8px;
-                    border-bottom: 1px dashed color-mix(in srgb, var(--border-color) 72%, transparent);
-                }
-                .print-row span {
-                    color: var(--muted-color);
-                    font-size: 0.9rem;
-                    letter-spacing: 0.01em;
-                }
-                .print-row strong {
-                    font-size: 1.02rem;
-                    font-weight: 700;
-                }
-                .print-ticket-footer {
-                    display: grid;
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                    gap: 12px;
-                    padding-top: 10px;
-                    border-top: 1px dashed color-mix(in srgb, var(--border-color) 72%, transparent);
-                    z-index: 1;
-                    position: relative;
-                }
-                .print-meta {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 4px;
-                    color: var(--muted-color);
-                    font-size: 0.88rem;
-                }
-                .print-meta strong {
-                    color: var(--text-color);
-                    font-size: 1rem;
-                    font-weight: 800;
-                }
-                @media print {
-                    body, html {
-                        margin: 0;
-                        padding: 0;
-                        background: #fff;
-                    }
-                    .print-container {
-                        padding: 8px 0;
-                    }
-                    .print-ticket {
-                        box-shadow: none;
-                        border-color: #000;
-                    }
-                    .print-ticket::before {
-                        border-color: #000;
-                        opacity: 0.9;
-                    }
-                }
-            `;
-            return `<!DOCTYPE html>
-                <html lang="pt-BR">
-                <head>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <title>Comprovante da reserva</title>
-                    <style>${estilos}</style>
-                </head>
-                <body>
-                    <div class="print-container">
-                        <div class="print-ticket">
-                            <div class="print-ticket-header">
-                                <div class="print-badge">Guarda Volumes - HUC</div>
-                                <div class="print-title">Reserva do armário</div>
-                                <div class="print-subtitle">Entregue ao acompanhante</div>
-                            </div>
-                            <div class="print-ticket-body">
-                                <div class="print-row">
-                                    <span>Armário</span>
-                                    <strong>${valor(dados.armario)}</strong>
-                                </div>
-                                <div class="print-row">
-                                    <span>Paciente</span>
-                                    <strong>${valor(dados.paciente)}</strong>
-                                </div>
-                                <div class="print-row">
-                                    <span>Acompanhante</span>
-                                    <strong>${valor(dados.acompanhante)}</strong>
-                                </div>
-                                <div class="print-row">
-                                    <span>Prontuário</span>
-                                    <strong>${valor(dados.prontuario)}</strong>
-                                </div>
-                                <div class="print-row">
-                                    <span>Leito</span>
-                                    <strong>${valor(dados.leito)}</strong>
-                                </div>
-                                <div class="print-row">
-                                    <span>Volumes</span>
-                                    <strong>${valor(dados.volumes)}</strong>
-                                </div>
-                            </div>
-                            <div class="print-ticket-footer">
-                                <div class="print-meta">
-                                    <span>Início</span>
-                                    <strong>${valor(dados.inicio)}</strong>
-                                </div>
-                                <div class="print-meta">
-                                    <span>Emitido em</span>
-                                    <strong>${valor(dados.emissao)}</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <script>
-                        window.addEventListener('load', () => {
-                            setTimeout(() => window.print(), 120);
-                            window.addEventListener('afterprint', () => setTimeout(() => window.close(), 140));
-                        });
-                    </script>
-                </body>
-                </html>`;
-        }
-        function abrirJanelaImpressaoReserva(dados) {
-            const novaJanela = window.open('', '_blank', 'noopener,noreferrer,width=520,height=740');
-            if (!novaJanela || novaJanela.closed || typeof novaJanela.closed === 'undefined') {
-                mostrarErro('Não foi possível abrir a janela de impressão. Habilite pop-ups e tente novamente.');
-                return null;
-            }
-            novaJanela.document.open('text/html', 'replace');
-            novaJanela.document.write(gerarHtmlImpressaoReserva(dados));
-            novaJanela.document.close();
-            return novaJanela;
-        }
-        function obterDadosImpressaoReserva() {
-            if (estadoImpressaoReserva.dados && typeof estadoImpressaoReserva.dados === 'object') {
-                return estadoImpressaoReserva.dados;
-            }
-            if (ultimoTicketImpressao && typeof ultimoTicketImpressao === 'object') {
-                return ultimoTicketImpressao;
-            }
-            return null;
         }
         function abrirModalImpressaoReserva(dados) {
             if (!elementos.impressaoReservaModal) return;
-            if (!dados || typeof dados !== 'object') {
-                mostrarErro('Não foi possível carregar os dados para impressão. Abra o armário novamente.');
-                return;
-            }
-            estadoImpressaoReserva.dados = { ...dados };
-            ultimoTicketImpressao = { ...dados };
-            preencherModalImpressaoReserva(estadoImpressaoReserva.dados);
+            estadoImpressaoReserva.dados = dados || null;
+            preencherModalImpressaoReserva(dados || {});
             sincronizarAreaImpressaoReserva();
             elementos.impressaoReservaModal.style.display = 'flex';
             elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
@@ -5828,42 +5584,18 @@
         }
         function imprimirReservaArmario() {
             if (!elementos.impressaoReservaModal) return;
-            const dados = obterDadosImpressaoReserva();
-            if (!dados) {
-                mostrarErro('Nenhum comprovante disponível para impressão. Gere a reserva novamente.');
-                return;
-            }
-            estadoImpressaoReserva.dados = { ...dados };
-            ultimoTicketImpressao = { ...dados };
-            preencherModalImpressaoReserva(estadoImpressaoReserva.dados);
             sincronizarAreaImpressaoReserva();
-            const janelaImpressao = abrirJanelaImpressaoReserva(estadoImpressaoReserva.dados);
-            if (janelaImpressao) {
-                setTimeout(() => fecharModalImpressaoReserva(), 300);
-            }
+            document.body.classList.add('modal-print-open');
+            elementos.impressaoReservaModal.style.display = 'flex';
+            elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
+            requestAnimationFrame(() => setTimeout(() => window.print(), 120));
         }
         window.addEventListener('beforeprint', () => {
-            if (!elementos.impressaoReservaModal) return;
-            const dados = obterDadosImpressaoReserva();
-            if (!dados) {
-                document.body.classList.remove('modal-print-open');
-                if (elementos.printArea) {
-                    elementos.printArea.innerHTML = '';
-                    elementos.printArea.setAttribute('aria-hidden', 'true');
-                }
-                return;
-            }
-            estadoImpressaoReserva.dados = { ...dados };
-            document.body.classList.add('modal-print-open');
-            preencherModalImpressaoReserva(estadoImpressaoReserva.dados);
+            if (!document.body.classList.contains('modal-print-open')) return;
             sincronizarAreaImpressaoReserva();
             if (elementos.impressaoReservaModal) {
                 elementos.impressaoReservaModal.style.display = 'flex';
                 elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
-            }
-            if (elementos.printArea) {
-                elementos.printArea.setAttribute('aria-hidden', 'false');
-                elementos.printArea.dataset.printReady = 'true';
             }
         });
         window.addEventListener('afterprint', () => {
