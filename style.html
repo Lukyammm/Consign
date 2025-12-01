@@ -1422,13 +1422,28 @@
             align-items: center;
             margin-bottom: 10px;
         }
+        .armario-identificacao {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .armario-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--muted-color);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
         .armario-number {
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.6rem;
             color: var(--dark-color);
         }
         .armario-card.em-uso .armario-number {
             color: var(--em-uso-text);
+        }
+        .armario-card.em-uso .armario-label {
+            color: color-mix(in srgb, var(--em-uso-text) 85%, transparent);
         }
         .armario-status {
             padding: 4px 8px;
@@ -1467,6 +1482,17 @@
         }
         .armario-card.em-uso .armario-details {
             color: color-mix(in srgb, var(--em-uso-text) 85%, transparent);
+        }
+        .armario-pront-leito {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .armario-pront-leito span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         .armario-details p {
             margin-bottom: 5px;

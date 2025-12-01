@@ -2781,11 +2781,15 @@
                             ${diasContingenciaHtml}
                         `;
                     } else {
+                        const prontuario = armario.prontuario || '-';
+                        const leito = armario.leito || '-';
                         detailsHTML += `
                             <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
                             <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
-                            <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
-                            <p><strong>Leito:</strong> ${armario.leito}</p>
+                            <p class="armario-pront-leito">
+                                <span class="armario-pront"><strong>Prontuário:</strong> ${prontuario}</span>
+                                <span class="armario-leito"><strong>Leito:</strong> ${leito}</span>
+                            </p>
                             <p><strong>Volumes:</strong> ${armario.volumes}</p>
                             ${armario.whatsapp ? `<p><strong>WhatsApp:</strong> ${armario.whatsapp}</p>` : ''}
                             <p><strong>Início:</strong> ${armario.horaInicio}</p>
@@ -2815,9 +2819,15 @@
                 const destaqueVisita = armario.visitaEstendida
                     ? `<div class="armario-highlight"><span class="visita-estendida-tag"><i class="fas fa-infinity" aria-hidden="true"></i> Visita estendida</span></div>`
                     : '';
+                const armarioIdentificacao = `
+                    <div class="armario-identificacao">
+                        <span class="armario-label">Armário</span>
+                        <span class="armario-number">${armario.numero}</span>
+                    </div>
+                `;
                 card.innerHTML = `
                     <div class="armario-header">
-                        <div class="armario-number">${armario.numero}</div>
+                        ${armarioIdentificacao}
                         <div class="armario-header-right">
                             ${destaqueVisita}
                             ${rascunhoAtivo ? '<span class="armario-draft-badge" title="Pré-cadastro incompleto nesta estação">Incompleto</span>' : ''}
