@@ -568,8 +568,7 @@
                 armario: document.getElementById('print-armario'),
                 paciente: document.getElementById('print-paciente'),
                 acompanhante: document.getElementById('print-acompanhante'),
-                prontuario: document.getElementById('print-prontuario'),
-                leito: document.getElementById('print-leito'),
+                prontuarioLeito: document.getElementById('print-prontuario-leito'),
                 volumes: document.getElementById('print-volumes'),
                 emissao: document.getElementById('print-emissao')
             },
@@ -5543,13 +5542,17 @@
             return 'Não informado';
         }
         function montarDadosImpressaoReserva(armario, dadosTermo, identificadores) {
+            const prontuario = dadosTermo?.prontuario ?? armario?.prontuario ?? '';
+            const leito = dadosTermo?.leito ?? armario?.leito ?? '';
+            const prontuarioNormalizado = prontuario !== undefined && prontuario !== null ? String(prontuario).trim() : '';
+            const leitoNormalizado = leito !== undefined && leito !== null ? String(leito).trim() : '';
+            const prontuarioLeito = [prontuarioNormalizado, leitoNormalizado].filter(valor => valor && valor !== '-').join(' ');
             return {
-                titulo: 'Guarda Volumes - HUC',
+                titulo: 'Guarda Volumes - NAC HUC',
                 armario: identificadores?.numeroArmario || armario?.numero || '-',
                 paciente: dadosTermo?.paciente || armario?.nomePaciente || '-',
                 acompanhante: dadosTermo?.acompanhante || armario?.nomeVisitante || '-',
-                prontuario: dadosTermo?.prontuario || armario?.prontuario || '-',
-                leito: dadosTermo?.leito || armario?.leito || '-',
+                prontuarioLeito: prontuarioLeito || '-',
                 volumes: obterResumoVolumesTicket(dadosTermo?.volumes, armario?.volumes),
                 emissao: formatarDataHora(new Date())
             };
@@ -5560,8 +5563,7 @@
             campos.armario.textContent = dados.armario || '-';
             campos.paciente.textContent = dados.paciente || '-';
             campos.acompanhante.textContent = dados.acompanhante || '-';
-            campos.prontuario.textContent = dados.prontuario || '-';
-            campos.leito.textContent = dados.leito || '-';
+            campos.prontuarioLeito.textContent = dados.prontuarioLeito || '-';
             campos.volumes.textContent = dados.volumes || '-';
             campos.emissao.textContent = dados.emissao || '-';
         }
