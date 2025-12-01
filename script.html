@@ -568,7 +568,8 @@
                 armario: document.getElementById('print-armario'),
                 paciente: document.getElementById('print-paciente'),
                 acompanhante: document.getElementById('print-acompanhante'),
-                prontuarioLeito: document.getElementById('print-prontuario-leito'),
+                prontuario: document.getElementById('print-prontuario'),
+                leito: document.getElementById('print-leito'),
                 volumes: document.getElementById('print-volumes'),
                 emissao: document.getElementById('print-emissao')
             },
@@ -2781,11 +2782,15 @@
                             ${diasContingenciaHtml}
                         `;
                     } else {
+                        const prontuario = armario.prontuario || '-';
+                        const leito = armario.leito || '-';
                         detailsHTML += `
                             <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
                             <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
-                            <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
-                            <p><strong>Leito:</strong> ${armario.leito}</p>
+                            <p class="armario-pront-leito">
+                                <span class="armario-pront"><strong>Prontuário:</strong> ${prontuario}</span>
+                                <span class="armario-leito"><strong>Leito:</strong> ${leito}</span>
+                            </p>
                             <p><strong>Volumes:</strong> ${armario.volumes}</p>
                             ${armario.whatsapp ? `<p><strong>WhatsApp:</strong> ${armario.whatsapp}</p>` : ''}
                             <p><strong>Início:</strong> ${armario.horaInicio}</p>
@@ -2815,9 +2820,15 @@
                 const destaqueVisita = armario.visitaEstendida
                     ? `<div class="armario-highlight"><span class="visita-estendida-tag"><i class="fas fa-infinity" aria-hidden="true"></i> Visita estendida</span></div>`
                     : '';
+                const armarioIdentificacao = `
+                    <div class="armario-identificacao">
+                        <span class="armario-label">Armário</span>
+                        <span class="armario-number">${armario.numero}</span>
+                    </div>
+                `;
                 card.innerHTML = `
                     <div class="armario-header">
-                        <div class="armario-number">${armario.numero}</div>
+                        ${armarioIdentificacao}
                         <div class="armario-header-right">
                             ${destaqueVisita}
                             ${rascunhoAtivo ? '<span class="armario-draft-badge" title="Pré-cadastro incompleto nesta estação">Incompleto</span>' : ''}
@@ -5546,13 +5557,13 @@
             const leito = dadosTermo?.leito ?? armario?.leito ?? '';
             const prontuarioNormalizado = prontuario !== undefined && prontuario !== null ? String(prontuario).trim() : '';
             const leitoNormalizado = leito !== undefined && leito !== null ? String(leito).trim() : '';
-            const prontuarioLeito = [prontuarioNormalizado, leitoNormalizado].filter(valor => valor && valor !== '-').join(' ');
             return {
                 titulo: 'Guarda Volumes - NAC HUC',
                 armario: identificadores?.numeroArmario || armario?.numero || '-',
                 paciente: dadosTermo?.paciente || armario?.nomePaciente || '-',
                 acompanhante: dadosTermo?.acompanhante || armario?.nomeVisitante || '-',
-                prontuarioLeito: prontuarioLeito || '-',
+                prontuario: prontuarioNormalizado || '-',
+                leito: leitoNormalizado || '-',
                 volumes: obterResumoVolumesTicket(dadosTermo?.volumes, armario?.volumes),
                 emissao: formatarDataHora(new Date())
             };
@@ -5563,7 +5574,8 @@
             campos.armario.textContent = dados.armario || '-';
             campos.paciente.textContent = dados.paciente || '-';
             campos.acompanhante.textContent = dados.acompanhante || '-';
-            campos.prontuarioLeito.textContent = dados.prontuarioLeito || '-';
+            campos.prontuario.textContent = dados.prontuario || '-';
+            campos.leito.textContent = dados.leito || '-';
             campos.volumes.textContent = dados.volumes || '-';
             campos.emissao.textContent = dados.emissao || '-';
         }

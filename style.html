@@ -1422,13 +1422,28 @@
             align-items: center;
             margin-bottom: 10px;
         }
+        .armario-identificacao {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .armario-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--muted-color);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
         .armario-number {
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.6rem;
             color: var(--dark-color);
         }
         .armario-card.em-uso .armario-number {
             color: var(--em-uso-text);
+        }
+        .armario-card.em-uso .armario-label {
+            color: color-mix(in srgb, var(--em-uso-text) 85%, transparent);
         }
         .armario-status {
             padding: 4px 8px;
@@ -1467,6 +1482,17 @@
         }
         .armario-card.em-uso .armario-details {
             color: color-mix(in srgb, var(--em-uso-text) 85%, transparent);
+        }
+        .armario-pront-leito {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .armario-pront-leito span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         .armario-details p {
             margin-bottom: 5px;
@@ -1946,6 +1972,9 @@
             background: #f8fafc;
             border: 1px solid #e2e8f0;
         }
+        .print-highlight-block.armario {
+            align-items: flex-start;
+        }
         .print-highlight-block.patient {
             background: #eef2ff;
             border-color: #c7d2fe;
@@ -1957,12 +1986,23 @@
             text-transform: uppercase;
             color: #0f172a;
         }
+        .print-armario-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+        .print-armario-wrapper {
+            display: flex;
+            align-items: center;
+        }
         .print-armario-large {
-            font-size: 3.6rem;
+            font-size: 4.1rem;
             font-weight: 900;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.16em;
             color: #0f172a;
             text-align: center;
+            line-height: 1;
         }
         .print-paciente-large {
             font-size: 2rem;
@@ -1996,6 +2036,24 @@
             text-align: right;
             line-height: 1.35;
             flex: 1;
+        }
+        .print-prontuario-leito {
+            justify-content: flex-start;
+            align-items: center;
+            gap: 18px;
+        }
+        .print-inline-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .print-inline-field span {
+            margin: 0;
+        }
+        .print-inline-field strong {
+            flex: initial;
+            min-width: 48px;
+            text-align: left;
         }
         .print-ticket-footer {
             display: grid;
