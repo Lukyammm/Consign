@@ -1849,6 +1849,8 @@
             justify-content: center;
             border-radius: 18px;
             padding: 18px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .modal-print-wrapper {
             display: flex;
@@ -1910,7 +1912,9 @@
             display: none;
         }
         .print-ticket {
-            width: min(100%, 470px);
+            width: 470px;
+            max-width: 470px;
+            min-width: 470px;
             background: #ffffff;
             border-radius: 16px;
             padding: 22px 24px 18px;
@@ -2106,10 +2110,15 @@
                 padding: 12px 6px;
             }
             .modal-print .modal-content {
-                width: 100%;
+                width: auto;
+                max-width: none;
+                min-width: 520px;
+                overflow-x: auto;
             }
             .print-ticket {
-                width: 100%;
+                width: 470px;
+                max-width: 470px;
+                min-width: 470px;
                 border-radius: 14px;
             }
         }
