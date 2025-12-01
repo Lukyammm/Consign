@@ -2532,6 +2532,62 @@
             font-size: 0.85rem;
             color: var(--muted-color);
         }
+        .mov-itens-resumo {
+            border: 1px dashed color-mix(in srgb, var(--primary-color) 32%, transparent);
+            border-radius: 12px;
+            padding: 12px 14px;
+            background: color-mix(in srgb, var(--primary-color) 8%, transparent);
+            margin-bottom: 14px;
+        }
+        .mov-itens-resumo-header {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--primary-color);
+        }
+        .mov-itens-resumo-body {
+            color: var(--muted-color);
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .movimentacao-itens-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .movimentacao-item-row {
+            display: grid;
+            grid-template-columns: 110px 1fr auto;
+            gap: 8px;
+            align-items: center;
+            background: color-mix(in srgb, var(--surface-color) 90%, white 10%);
+            border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .movimentacao-item-row input[type="number"],
+        .movimentacao-item-row input[type="text"] {
+            width: 100%;
+        }
+        .movimentacao-item-row button {
+            margin-left: 6px;
+        }
+        .form-inline-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .movimentacao-itens-detalhe {
+            margin: 8px 0 0 2px;
+            padding-left: 16px;
+            color: var(--dark-color);
+        }
+        .movimentacao-itens-detalhe li {
+            margin: 2px 0;
+        }
         .info-box {
             background: color-mix(in srgb, var(--primary-color) 14%, transparent);
             border: 1px solid color-mix(in srgb, var(--primary-color) 32%, transparent);

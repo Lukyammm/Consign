@@ -532,6 +532,11 @@
             movimentacaoModalTitle: document.getElementById('movimentacao-modal-title'),
             movTipo: document.getElementById('mov-tipo'),
             movDescricao: document.getElementById('mov-descricao'),
+            movItensList: document.getElementById('mov-itens-list'),
+            movItensResumo: document.getElementById('mov-itens-resumo'),
+            movItensResumoBody: document.getElementById('mov-itens-resumo-body'),
+            movAddItem: document.getElementById('mov-add-item'),
+            movPreencherItens: document.getElementById('mov-preencher-itens'),
             movResponsavelInfo: document.getElementById('mov-responsavel-info'),
             movData: document.getElementById('mov-data'),
             movHora: document.getElementById('mov-hora'),
@@ -1253,6 +1258,9 @@
         let termoCadastroArmario = null;
         let movimentacaoArmarioAtual = null;
         let movimentacaoEmProgresso = false;
+        let movimentacaoInventarioAtual = [];
+        let movimentacaoVolumesBase = [];
+        let movimentacoesRegistradas = [];
         let termoAssinaturaDesenhada = false;
         let termoDesenhandoAssinatura = false;
         // Inicialização
@@ -2455,6 +2463,15 @@
                 } finally {
                     finalizarLoading();
                 }
+            });
+            elementos.movTipo.addEventListener('change', () => {
+                preencherItensMovimentacaoAPartirInventario(elementos.movTipo.value);
+            });
+            elementos.movAddItem?.addEventListener('click', () => {
+                adicionarItemMovimentacaoLinha();
+            });
+            elementos.movPreencherItens?.addEventListener('click', () => {
+                preencherItensMovimentacaoAPartirInventario(elementos.movTipo.value || 'saida');
             });
             if (elementos.impressaoReservaClose) {
                 elementos.impressaoReservaClose.addEventListener('click', () => fecharModalImpressaoReserva());
@@ -6473,16 +6490,160 @@
 
             return resultado.isConfirmed ? resultado.value : null;
         }
+        function normalizarListaItensMovimentacao(itens) {
+            if (!Array.isArray(itens)) return [];
+            return itens.map(item => {
+                const quantidadeNumero = Number(item.quantidade);
+                return {
+                    quantidade: Number.isFinite(quantidadeNumero) ? quantidadeNumero : 0,
+                    descricao: item && item.descricao ? item.descricao.toString().trim() : ''
+                };
+            }).filter(item => item.quantidade > 0 && item.descricao);
+        }
+        function consolidarInventarioMovimentacao(volumesBase = [], movimentacoes = []) {
+            const inventario = new Map();
+            const adicionarItem = (item, fator) => {
+                const chave = normalizarTexto(item.descricao);
+                const existente = inventario.get(chave) || { descricao: item.descricao, quantidade: 0 };
+                existente.quantidade += (Number(item.quantidade) || 0) * fator;
+                inventario.set(chave, existente);
+            };
+
+            normalizarListaItensMovimentacao(volumesBase).forEach(item => adicionarItem(item, 1));
+
+            movimentacoes.forEach(mov => {
+                const tipo = normalizarTexto(mov.tipo);
+                const fator = tipo === 'entrada' ? 1 : tipo === 'saida' ? -1 : 0;
+                if (!fator) return;
+                normalizarListaItensMovimentacao(mov.itens).forEach(item => adicionarItem(item, fator));
+            });
+
+            return Array.from(inventario.values()).filter(item => item.quantidade > 0.0001);
+        }
+        function atualizarResumoItensMovimentacao(volumesBase = [], inventario = [], movimentacoes = []) {
+            if (!elementos.movItensResumoBody) return;
+            const partes = [];
+
+            if (Array.isArray(volumesBase) && volumesBase.length) {
+                const baseDescricao = volumesBase
+                    .map(item => {
+                        const quantidade = Number(item.quantidade);
+                        const qtdTexto = Number.isFinite(quantidade) && quantidade > 0 ? `${quantidade}x` : '';
+                        return [qtdTexto, item.descricao].filter(Boolean).join(' ');
+                    })
+                    .filter(Boolean)
+                    .join('; ');
+                if (baseDescricao) {
+                    partes.push(`<div><strong>Cadastro inicial:</strong> ${baseDescricao}</div>`);
+                }
+            }
+
+            const entradasAdicionais = (movimentacoes || []).filter(mov => normalizarTexto(mov.tipo) === 'entrada');
+            const entradasTexto = entradasAdicionais
+                .map(mov => normalizarListaItensMovimentacao(mov.itens)
+                    .map(item => {
+                        const quantidade = Number(item.quantidade);
+                        const qtdTexto = Number.isFinite(quantidade) && quantidade > 0 ? `${quantidade}x` : '';
+                        return [qtdTexto, item.descricao].filter(Boolean).join(' ');
+                    })
+                    .filter(Boolean)
+                    .join('; '))
+                .filter(Boolean);
+            if (entradasTexto.length) {
+                partes.push(`<div><strong>Entradas registradas:</strong> ${entradasTexto.join(' | ')}</div>`);
+            }
+
+            if (inventario && inventario.length) {
+                const inventarioTexto = inventario
+                    .map(item => `${Number(item.quantidade)}x ${item.descricao}`)
+                    .join('; ');
+                partes.push(`<div><strong>Disponível para saída:</strong> ${inventarioTexto}</div>`);
+            } else {
+                partes.push('<div><strong>Disponível para saída:</strong> Nenhum item registrado até o momento.</div>');
+            }
+
+            elementos.movItensResumoBody.innerHTML = partes.join('');
+        }
+        function limparItensMovimentacaoFormulario() {
+            if (elementos.movItensList) {
+                elementos.movItensList.innerHTML = '';
+            }
+        }
+        function adicionarItemMovimentacaoLinha(item = {}) {
+            if (!elementos.movItensList) return;
+            const linha = document.createElement('div');
+            linha.className = 'movimentacao-item-row';
+
+            const campoQuantidade = document.createElement('input');
+            campoQuantidade.type = 'number';
+            campoQuantidade.min = '0';
+            campoQuantidade.step = '1';
+            campoQuantidade.placeholder = 'Qtd.';
+            if (item.quantidade !== undefined && item.quantidade !== null) {
+                campoQuantidade.value = Number(item.quantidade);
+            }
+
+            const campoDescricao = document.createElement('input');
+            campoDescricao.type = 'text';
+            campoDescricao.placeholder = 'Descrição do item';
+            campoDescricao.value = item.descricao || '';
+
+            const botaoRemover = document.createElement('button');
+            botaoRemover.type = 'button';
+            botaoRemover.className = 'btn btn-secondary';
+            botaoRemover.textContent = 'Remover';
+            botaoRemover.addEventListener('click', () => {
+                linha.remove();
+            });
+
+            linha.appendChild(campoQuantidade);
+            linha.appendChild(campoDescricao);
+            linha.appendChild(botaoRemover);
+            elementos.movItensList.appendChild(linha);
+        }
+        function preencherItensMovimentacaoAPartirInventario(tipo) {
+            const tipoNormalizado = normalizarTexto(tipo);
+            limparItensMovimentacaoFormulario();
+
+            if (tipoNormalizado === 'entrada') {
+                adicionarItemMovimentacaoLinha();
+                return;
+            }
+
+            if (movimentacaoInventarioAtual && movimentacaoInventarioAtual.length) {
+                movimentacaoInventarioAtual.forEach(item => {
+                    adicionarItemMovimentacaoLinha({ quantidade: item.quantidade, descricao: item.descricao });
+                });
+            } else {
+                adicionarItemMovimentacaoLinha();
+            }
+        }
+        function obterItensMovimentacaoFormulario() {
+            if (!elementos.movItensList) return [];
+            const linhas = Array.from(elementos.movItensList.querySelectorAll('.movimentacao-item-row'));
+            return linhas.map(linha => {
+                const qtd = Number(linha.querySelector('input[type="number"]')?.value);
+                const descricao = linha.querySelector('input[type="text"]')?.value.trim() || '';
+                return {
+                    quantidade: Number.isFinite(qtd) ? qtd : 0,
+                    descricao
+                };
+            }).filter(item => item.quantidade > 0 && item.descricao);
+        }
         async function abrirMovimentacoes(id) {
             const armario = obterArmarioPorId(id);
             if (!armario) return;
             movimentacaoArmarioAtual = id;
             elementos.movimentacaoModalTitle.textContent = `Movimentações - Armário ${armario.numero}`;
             elementos.movimentacaoForm.reset();
+            limparItensMovimentacaoFormulario();
             atualizarResponsavelMovimentacaoInfo();
             const padraoLocal = obterDataHoraLocalPadrao();
             elementos.movData.value = padraoLocal.data;
             elementos.movHora.value = padraoLocal.hora;
+            movimentacaoInventarioAtual = [];
+            movimentacaoVolumesBase = [];
+            movimentacoesRegistradas = [];
             if (elementos.movimentacaoModal.style.display !== 'flex') {
                 travaRolagem.aplicar();
             }
@@ -6563,8 +6724,15 @@
                 elementos.movimentacoesList.appendChild(erro);
                 return;
             }
-            const parametros = montarPayloadTermo(armario);
-            const resultado = await callGoogleScript('getMovimentacoes', parametros);
+            if (elementos.movItensResumoBody) {
+                elementos.movItensResumoBody.textContent = 'Carregando itens...';
+            }
+
+            const parametros = montarPayloadTermo(armario, { incluirFinalizados: true });
+            const [resultado, termoResposta] = await Promise.all([
+                callGoogleScript('getMovimentacoes', parametros),
+                callGoogleScript('getTermo', parametros)
+            ]);
             if (!resultado.success) {
                 elementos.movimentacoesList.innerHTML = '';
                 const erro = document.createElement('div');
@@ -6572,21 +6740,42 @@
                 erro.textContent = 'Não foi possível carregar as movimentações.';
                 elementos.movimentacoesList.appendChild(erro);
                 notificarErroPadrao(resultado);
+                movimentacaoInventarioAtual = [];
+                movimentacaoVolumesBase = [];
+                atualizarResumoItensMovimentacao();
                 return;
             }
             const lista = resultado.data;
+            movimentacoesRegistradas = Array.isArray(lista) ? lista : [];
+
+            let volumesBase = [];
+            if (termoResposta && termoResposta.success && termoResposta.data && Array.isArray(termoResposta.data.volumes)) {
+                volumesBase = termoResposta.data.volumes;
+            } else if (armario.volumes && Number(armario.volumes) > 0) {
+                volumesBase = [{ quantidade: Number(armario.volumes), descricao: 'Volume registrado na abertura' }];
+            }
+            movimentacaoVolumesBase = volumesBase;
+            movimentacaoInventarioAtual = consolidarInventarioMovimentacao(volumesBase, lista);
+            atualizarResumoItensMovimentacao(volumesBase, movimentacaoInventarioAtual, lista);
             elementos.movimentacoesList.innerHTML = '';
             if (!lista.length) {
                 const vazio = document.createElement('div');
                 vazio.className = 'info-box';
                 vazio.textContent = 'Nenhuma movimentação registrada até o momento.';
                 elementos.movimentacoesList.appendChild(vazio);
+                if (!elementos.movItensList?.children.length) {
+                    preencherItensMovimentacaoAPartirInventario(elementos.movTipo?.value);
+                }
                 return;
             }
             lista.forEach(item => {
                 const bloco = document.createElement('div');
                 bloco.className = 'movimentacao-item';
                 const responsavelTexto = item.responsavel ? item.responsavel : 'Não informado';
+                const itensDetalhe = normalizarListaItensMovimentacao(item.itens);
+                const itensHtml = itensDetalhe.length
+                    ? `<ul class="movimentacao-itens-detalhe">${itensDetalhe.map(it => `<li>${Number(it.quantidade)}x ${it.descricao}</li>`).join('')}</ul>`
+                    : '';
                 bloco.innerHTML = `
                     <div class="movimentacao-header">
                         <span>${formatarTituloMovimento(item.tipo)}</span>
@@ -6596,9 +6785,14 @@
                         <span><strong>Descrição:</strong> ${item.descricao}</span>
                         <span><strong>Responsável:</strong> ${responsavelTexto}</span>
                     </div>
+                    ${itensHtml}
                 `;
                 elementos.movimentacoesList.appendChild(bloco);
             });
+
+            if (!elementos.movItensList?.children.length) {
+                preencherItensMovimentacaoAPartirInventario(elementos.movTipo?.value);
+            }
         }
 
         async function salvarMovimentacao() {
@@ -6618,6 +6812,19 @@
                 }
                 const identificadores = montarIdentificadoresArmario(armario);
                 const tipoSelecionado = normalizarTexto(elementos.movTipo.value);
+                const itensMovimentados = obterItensMovimentacaoFormulario();
+                if (!tipoSelecionado) {
+                    mostrarErro('Selecione o tipo de movimentação.');
+                    return;
+                }
+                if ((tipoSelecionado === 'entrada' || tipoSelecionado === 'saida') && !itensMovimentados.length) {
+                    mostrarErro('Informe os itens movimentados com quantidade e descrição.');
+                    return;
+                }
+                if (tipoSelecionado === 'conferencia' && !itensMovimentados.length) {
+                    mostrarErro('Adicione ao menos um item conferido para registrar.');
+                    return;
+                }
                 const dados = {
                     armarioId: identificadores?.idPlanilha || '',
                     numeroArmario: identificadores?.numeroArmario || '',
@@ -6626,7 +6833,8 @@
                     descricao: elementos.movDescricao.value.trim(),
                     responsavel: responsavelRegistro,
                     data: elementos.movData.value,
-                    hora: elementos.movHora.value
+                    hora: elementos.movHora.value,
+                    itens: itensMovimentados
                 };
                 const resultado = await callGoogleScript('salvarMovimentacao', dados);
                 if (resultado.success) {
@@ -6634,6 +6842,7 @@
                     mostrarSucesso('Movimentação registrada com sucesso');
                     elementos.movimentacaoForm.reset();
                     elementos.movTipo.value = '';
+                    limparItensMovimentacaoFormulario();
                     const padraoLocal = obterDataHoraLocalPadrao();
                     elementos.movData.value = padraoLocal.data;
                     elementos.movHora.value = padraoLocal.hora;

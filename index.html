@@ -904,6 +904,10 @@
                 <div class="info-box">
                     Registre entradas e saídas de objetos do armário sempre que ocorrer qualquer movimentação.
                 </div>
+                <div class="mov-itens-resumo" id="mov-itens-resumo">
+                    <div class="mov-itens-resumo-header">Itens registrados no armário</div>
+                    <div class="mov-itens-resumo-body" id="mov-itens-resumo-body">Carregando itens...</div>
+                </div>
                 <div class="movimentacoes-list" id="movimentacoes-list"></div>
                 <form id="movimentacao-form">
                     <div class="form-group">
@@ -918,6 +922,15 @@
                     <div class="form-group">
                         <label for="mov-descricao">Descrição</label>
                         <textarea id="mov-descricao" class="form-control" rows="3" required placeholder="Descreva brevemente o que ocorreu"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Itens desta movimentação</label>
+                        <div class="helper-text">Use os volumes cadastrados na abertura e nas entradas anteriores como referência para saídas ou conferências.</div>
+                        <div class="movimentacao-itens-list" id="mov-itens-list"></div>
+                        <div class="form-inline-actions">
+                            <button type="button" class="btn btn-secondary" id="mov-add-item">Adicionar item não cadastrado</button>
+                            <button type="button" class="btn btn-ghost" id="mov-preencher-itens">Preencher com itens registrados</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Responsável pelo registro</label>
