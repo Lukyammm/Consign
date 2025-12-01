@@ -4231,18 +4231,75 @@ function normalizarAssinaturas(valor) {
   return info;
 }
 
+function montarChaveIndiceTermo(armarioId, numeroArmario) {
+  var armarioTexto = armarioId !== undefined && armarioId !== null ? armarioId.toString().trim() : '';
+  var numeroTexto = numeroArmario !== undefined && numeroArmario !== null ? numeroArmario.toString().trim() : '';
+  return armarioTexto + '|' + numeroTexto;
+}
+
+function atualizarIndiceTermo(indice, chave, termo) {
+  if (!chave) {
+    return;
+  }
+
+  var atual = indice[chave] || {
+    ultimo: null,
+    ultimoNaoFinalizado: null,
+    ultimoNaoFinalizadoSemPdf: null,
+    ultimoFinalizado: null
+  };
+
+  atual.ultimo = termo;
+
+  if (termo && termo.finalizado) {
+    atual.ultimoFinalizado = termo;
+  } else if (termo) {
+    atual.ultimoNaoFinalizado = termo;
+    if (!termo.pdfUrl) {
+      atual.ultimoNaoFinalizadoSemPdf = termo;
+    }
+  }
+
+  indice[chave] = atual;
+}
+
+function construirIndiceTermosPorArmario(termos) {
+  var indice = {};
+  if (!Array.isArray(termos)) {
+    return indice;
+  }
+
+  termos.forEach(function(termo) {
+    if (!termo || termo.armarioId === undefined || termo.armarioId === null) {
+      return;
+    }
+
+    var armarioIdTexto = termo.armarioId.toString().trim();
+    var numeroNormalizado = normalizarNumeroArmario(termo.numeroArmario);
+    var chaveEspecifica = montarChaveIndiceTermo(armarioIdTexto, numeroNormalizado || '__sem_numero__');
+    var chaveGenerica = montarChaveIndiceTermo(armarioIdTexto, '*');
+
+    atualizarIndiceTermo(indice, chaveEspecifica, termo);
+    atualizarIndiceTermo(indice, chaveGenerica, termo);
+  });
+
+  return indice;
+}
+
 function obterTermosRegistrados() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Termos de Responsabilidade');
 
   if (!sheet || sheet.getLastRow() < 2) {
-    return { sheet: sheet, termos: [] };
+    return { sheet: sheet, termos: [], indiceArmario: {} };
   }
 
   var cache = CacheService.getScriptCache();
   var resultadoCache = carregarTermosDoCache(cache);
+
   if (resultadoCache && resultadoCache.sucesso) {
-    return { sheet: sheet, termos: resultadoCache.termos };
+    var indiceCache = construirIndiceTermosPorArmario(resultadoCache.termos);
+    return { sheet: sheet, termos: resultadoCache.termos, indiceArmario: indiceCache };
   }
 
   var data = sheet.getDataRange().getValues();
@@ -4300,8 +4357,9 @@ function obterTermosRegistrados() {
   }
 
   armazenarTermosNoCache(cache, termos);
+  var indice = construirIndiceTermosPorArmario(termos);
 
-  return { sheet: sheet, termos: termos };
+  return { sheet: sheet, termos: termos, indiceArmario: indice };
 }
 
 function getTermo(dados) {
@@ -4433,58 +4491,63 @@ function finalizarTermo(dados) {
 
     var termoEncontrado = null;
     var termoFinalizadoMaisRecente = null;
-    for (var i = termosInfo.termos.length - 1; i >= 0; i--) {
-      var termoAtual = termosInfo.termos[i];
-      if (!termoAtual) {
-        continue;
-      }
+    var chaveIndice = montarChaveIndiceTermo(armarioId.toString().trim(), numeroInformado ? numeroInformado : '*');
+    var indiceArmario = termosInfo.indiceArmario || {};
+    var indiceSelecionado = indiceArmario[chaveIndice];
 
-      if (termoAtual.armarioId != armarioId) {
-        continue;
-      }
+    if (indiceSelecionado) {
+      termoFinalizadoMaisRecente = indiceSelecionado.ultimoFinalizado || null;
+      termoEncontrado = indiceSelecionado.ultimoNaoFinalizadoSemPdf
+        || indiceSelecionado.ultimoNaoFinalizado
+        || indiceSelecionado.ultimo
+        || null;
+    }
 
-      var numeroTermo = normalizarNumeroArmario(termoAtual.numeroArmario);
-      if (numeroInformado && numeroTermo !== numeroInformado) {
-        continue;
-      }
-
-      var statusNormalizado = normalizarTextoBasico(termoAtual.status || termoAtual.statusNormalizado || '');
-      var finalizado = termoAtual.finalizado;
-      if (finalizado === undefined) {
-        finalizado = Boolean(termoAtual.pdfUrl || (termoAtual.assinaturas && termoAtual.assinaturas.finalizadoEm) || statusNormalizado === 'finalizado');
-      }
-
-      if (finalizado) {
-        if (!termoFinalizadoMaisRecente) {
-          termoFinalizadoMaisRecente = termoAtual;
-        }
-        continue;
-      }
-
-      if (!termoAtual.pdfUrl) {
-        termoEncontrado = termoAtual;
-        break;
+    if (!termoEncontrado) {
+      var chaveGenerica = montarChaveIndiceTermo(armarioId.toString().trim(), '*');
+      var indiceGenerico = indiceArmario[chaveGenerica];
+      if (indiceGenerico) {
+        termoFinalizadoMaisRecente = termoFinalizadoMaisRecente || indiceGenerico.ultimoFinalizado || null;
+        termoEncontrado = indiceGenerico.ultimoNaoFinalizadoSemPdf
+          || indiceGenerico.ultimoNaoFinalizado
+          || indiceGenerico.ultimo
+          || null;
       }
     }
 
     if (!termoEncontrado) {
-      for (var j = termosInfo.termos.length - 1; j >= 0; j--) {
-        var termoAtualBusca = termosInfo.termos[j];
-        if (!termoAtualBusca) {
+      for (var i = termosInfo.termos.length - 1; i >= 0; i--) {
+        var termoAtual = termosInfo.termos[i];
+        if (!termoAtual) {
           continue;
         }
 
-        if (termoAtualBusca.armarioId != armarioId) {
+        if (termoAtual.armarioId != armarioId) {
           continue;
         }
 
-        var numeroTermoBusca = normalizarNumeroArmario(termoAtualBusca.numeroArmario);
-        if (numeroInformado && numeroTermoBusca !== numeroInformado) {
+        var numeroTermo = normalizarNumeroArmario(termoAtual.numeroArmario);
+        if (numeroInformado && numeroTermo !== numeroInformado) {
           continue;
         }
 
-        termoEncontrado = termoAtualBusca;
-        break;
+        var statusNormalizado = normalizarTextoBasico(termoAtual.status || termoAtual.statusNormalizado || '');
+        var finalizado = termoAtual.finalizado;
+        if (finalizado === undefined) {
+          finalizado = Boolean(termoAtual.pdfUrl || (termoAtual.assinaturas && termoAtual.assinaturas.finalizadoEm) || statusNormalizado === 'finalizado');
+        }
+
+        if (finalizado) {
+          if (!termoFinalizadoMaisRecente) {
+            termoFinalizadoMaisRecente = termoAtual;
+          }
+          continue;
+        }
+
+        if (!termoAtual.pdfUrl) {
+          termoEncontrado = termoAtual;
+          break;
+        }
       }
     }
 
@@ -5093,42 +5156,73 @@ function getMovimentacoes(dados) {
         return { success: true, data: [] };
       }
 
-      var data = sheet.getDataRange().getValues();
-      var movimentacoes = [];
-
-      if (!possuiArmario) {
-        return { success: true, data: movimentacoes };
+      var totalLinhas = sheet.getLastRow() - 1;
+      if (totalLinhas <= 0 || !possuiArmario) {
+        return { success: true, data: [] };
       }
 
-      for (var i = 1; i < data.length; i++) {
-        var idLinha = data[i][1];
-        if (armarioIdTexto && String(idLinha) !== armarioIdTexto) {
+      var linhasEncontradas = [];
+      var largura = Math.max(colunaStatus, sheet.getLastColumn());
+      var intervaloIds = sheet.getRange(2, 2, totalLinhas, 1);
+      var textoFinder = intervaloIds.createTextFinder(armarioIdTexto).useRegularExpression(false);
+      var correspondencias = textoFinder.findAll();
+
+      if (correspondencias && correspondencias.length) {
+        linhasEncontradas = correspondencias.map(function(celula) { return celula.getRow(); });
+      }
+
+      if (!linhasEncontradas.length) {
+        var valoresId = intervaloIds.getValues();
+        for (var indiceId = 0; indiceId < valoresId.length; indiceId++) {
+          if (String(valoresId[indiceId][0]).trim() === armarioIdTexto) {
+            linhasEncontradas.push(indiceId + 2);
+          }
+        }
+      }
+
+      if (!linhasEncontradas.length) {
+        return { success: true, data: [] };
+      }
+
+      var linhasFiltradas = [];
+      for (var i = 0; i < linhasEncontradas.length; i++) {
+        var linhaAtual = linhasEncontradas[i];
+        var numeroLinha = sheet.getRange(linhaAtual, 3).getValue();
+        if (numeroInformado && normalizarNumeroArmario(numeroLinha) !== numeroInformado) {
           continue;
         }
 
-        if (numeroInformado) {
-          var numeroLinha = data[i][2] ? data[i][2].toString().trim() : '';
-          if (normalizarNumeroArmario(numeroLinha) !== numeroInformado) {
-            continue;
-          }
+        var tipoLinha = sheet.getRange(linhaAtual, 4).getValue();
+        if (tipoInformado && normalizarTextoBasico(tipoLinha) !== tipoInformado) {
+          continue;
         }
 
-        var statusLinha = colunaStatus ? data[i][colunaStatus - 1] : '';
+        linhasFiltradas.push(linhaAtual);
+      }
+
+      if (!linhasFiltradas.length) {
+        return { success: true, data: [] };
+      }
+
+      var movimentacoes = [];
+      for (var j = 0; j < linhasFiltradas.length; j++) {
+        var linhaDados = sheet.getRange(linhasFiltradas[j], 1, 1, largura).getValues()[0];
+        var statusLinha = colunaStatus ? linhaDados[colunaStatus - 1] : '';
         var statusNormalizado = normalizarTextoBasico(statusLinha);
         if (statusNormalizado === 'finalizado') {
           continue;
         }
 
         movimentacoes.push({
-          id: data[i][0],
-          armarioId: data[i][1],
-          numeroArmario: data[i][2],
-          tipo: data[i][3],
-          descricao: data[i][4],
-          responsavel: data[i][5],
-          data: formatarDataPlanilha(data[i][6]),
-          hora: formatarHorarioPlanilha(data[i][7]),
-          dataHoraRegistro: converterParaDataHoraIso(data[i][8], ''),
+          id: linhaDados[0],
+          armarioId: linhaDados[1],
+          numeroArmario: linhaDados[2],
+          tipo: linhaDados[3],
+          descricao: linhaDados[4],
+          responsavel: linhaDados[5],
+          data: formatarDataPlanilha(linhaDados[6]),
+          hora: formatarHorarioPlanilha(linhaDados[7]),
+          dataHoraRegistro: converterParaDataHoraIso(linhaDados[8], ''),
           status: statusLinha || ''
         });
       }
@@ -5232,36 +5326,49 @@ function finalizarMovimentacoesArmario(armarioId, numeroArmario, tipo) {
 
     var idTexto = armarioId !== undefined && armarioId !== null ? armarioId.toString().trim() : '';
     var numeroNormalizado = normalizarNumeroArmario(numeroArmario);
-    var largura = Math.max(colunaStatus, sheet.getLastColumn());
-    var dados = sheet.getRange(2, 1, totalLinhas, largura).getValues();
-    var statusValores = sheet.getRange(2, colunaStatus, totalLinhas, 1).getValues();
-    var houveAlteracao = false;
+    var intervaloIds = sheet.getRange(2, 2, totalLinhas, 1);
+    var linhasAlvo = [];
+    var finderIds = intervaloIds.createTextFinder(idTexto).useRegularExpression(false);
+    var correspondencias = finderIds.findAll();
 
-    for (var i = 0; i < dados.length; i++) {
-      var linha = dados[i];
-      if (!linha) {
-        continue;
-      }
-      var idLinha = linha[1] !== undefined && linha[1] !== null ? linha[1].toString().trim() : '';
-      if (idTexto && idLinha !== idTexto) {
-        continue;
-      }
-      if (numeroNormalizado) {
-        var numeroLinha = linha[2] ? linha[2].toString().trim() : '';
-        if (normalizarNumeroArmario(numeroLinha) !== numeroNormalizado) {
-          continue;
+    if (correspondencias && correspondencias.length) {
+      linhasAlvo = correspondencias.map(function(celula) { return celula.getRow(); });
+    }
+
+    if (!linhasAlvo.length) {
+      var valoresId = intervaloIds.getValues();
+      for (var indice = 0; indice < valoresId.length; indice++) {
+        if (String(valoresId[indice][0]).trim() === idTexto) {
+          linhasAlvo.push(indice + 2);
         }
       }
-      var statusAtual = normalizarTextoBasico(statusValores[i][0] || linha[colunaStatus - 1]);
+    }
+
+    if (!linhasAlvo.length) {
+      return;
+    }
+
+    var linhasParaAtualizar = [];
+    for (var i = 0; i < linhasAlvo.length; i++) {
+      var linhaNumero = linhasAlvo[i];
+      var numeroLinha = sheet.getRange(linhaNumero, 3).getValue();
+      if (numeroNormalizado && normalizarNumeroArmario(numeroLinha) !== numeroNormalizado) {
+        continue;
+      }
+
+      var statusAtual = normalizarTextoBasico(sheet.getRange(linhaNumero, colunaStatus).getValue());
       if (statusAtual === 'finalizado') {
         continue;
       }
-      statusValores[i][0] = 'finalizado';
-      houveAlteracao = true;
+
+      linhasParaAtualizar.push(linhaNumero);
     }
 
-    if (houveAlteracao) {
-      sheet.getRange(2, colunaStatus, totalLinhas, 1).setValues(statusValores);
+    if (linhasParaAtualizar.length) {
+      var intervalosStatus = linhasParaAtualizar.map(function(linhaNumero) {
+        return sheet.getRange(linhaNumero, colunaStatus).getA1Notation();
+      });
+      sheet.getRangeList(intervalosStatus).setValue('finalizado');
       limparCacheMovimentacoes(armarioId, numeroArmario, tipo);
     }
 
