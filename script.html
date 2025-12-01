@@ -66,7 +66,7 @@
             }
             return estado.ocupacaoAcompanhantes;
         }
-        let estadoPdfTemporario = { fileId: '', url: '', timeoutId: null };
+        let estadoPdfTemporario = { fileId: '', url: '', embedUrl: '', timeoutId: null };
         const STORAGE_KEYS = {
             sessaoUsuario: 'locknac_sessao_usuario',
             rascunhosOcupacao: 'locknac_rascunhos_ocupacao',
@@ -5660,13 +5660,34 @@
                     console.warn('Falha ao descartar PDF temporário:', erro);
                 }
             }
-            estadoPdfTemporario = { fileId: '', url: '', timeoutId: null };
+            estadoPdfTemporario = { fileId: '', url: '', embedUrl: '', timeoutId: null };
             if (elementos.pdfViewerFrame) {
                 elementos.pdfViewerFrame.src = 'about:blank';
             }
             if (elementos.pdfViewerEmpty) {
                 elementos.pdfViewerEmpty.classList.remove('hidden');
             }
+        }
+        function extrairFileIdDeUrl(url) {
+            if (!url) return '';
+            const padrao = /\/d\/([\w-]+)/;
+            const padraoId = /[?&#]id=([\w-]+)/;
+            const match = url.match(padrao) || url.match(padraoId);
+            return match && match[1] ? match[1] : '';
+        }
+        function montarUrlPdfParaVisualizacao(url, fileId) {
+            const id = fileId || extrairFileIdDeUrl(url);
+            if (id) {
+                return `https://drive.google.com/file/d/${id}/preview`;
+            }
+            return url || '';
+        }
+        function montarUrlPdfParaDownload(url, fileId) {
+            const id = fileId || extrairFileIdDeUrl(url);
+            if (id) {
+                return `https://drive.google.com/uc?export=download&id=${id}`;
+            }
+            return url || '';
         }
         async function fecharModalPdfViewer() {
             if (elementos.pdfViewerModal && elementos.pdfViewerModal.style.display === 'flex') {
@@ -5682,9 +5703,11 @@
                 return;
             }
             await descartarPdfTemporario();
-            estadoPdfTemporario = { fileId: fileId || '', url, timeoutId: null };
+            const embedUrl = montarUrlPdfParaVisualizacao(url, fileId);
+            const downloadUrl = montarUrlPdfParaDownload(url, fileId);
+            estadoPdfTemporario = { fileId: fileId || '', url: downloadUrl, embedUrl, timeoutId: null };
             if (elementos.pdfViewerFrame) {
-                elementos.pdfViewerFrame.src = url;
+                elementos.pdfViewerFrame.src = embedUrl;
             }
             if (elementos.pdfViewerEmpty) {
                 elementos.pdfViewerEmpty.classList.add('hidden');
@@ -5707,8 +5730,9 @@
                     console.warn('Não foi possível disparar impressão do PDF integrado.', erro);
                 }
             }
-            if (estadoPdfTemporario.url) {
-                const novaAba = window.open(estadoPdfTemporario.url, '_blank');
+            const urlImpressao = estadoPdfTemporario.url || estadoPdfTemporario.embedUrl;
+            if (urlImpressao) {
+                const novaAba = window.open(urlImpressao, '_blank');
                 if (novaAba) {
                     try {
                         novaAba.print();
