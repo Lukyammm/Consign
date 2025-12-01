@@ -5574,33 +5574,27 @@
                     ${estilos}
                 </head>
                 <body class="modal-print-open">
-                    <div class="modal modal-full modal-print" style="display:flex; align-items:center; justify-content:center;">
-                        <div class="modal-content modal-print-content">
-                            <div class="modal-print-wrapper">
-                                ${conteudo}
+                        <div class="modal modal-full modal-print" style="display:flex; align-items:center; justify-content:center;">
+                            <div class="modal-content modal-print-content">
+                                <div class="modal-print-wrapper">
+                                    ${conteudo}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <script>
-                        window.addEventListener('afterprint', () => window.close());
-                        window.print();
-                    <\/script>
+                        <script>
+                        window.addEventListener('load', () => {
+                            window.print();
+                        });
+                        <\/script>
                 </body>
                 </html>
             `;
         }
         function abrirModalImpressaoReserva(dados) {
-            if (!elementos.impressaoReservaModal) return;
             estadoImpressaoReserva.dados = dados || null;
             preencherModalImpressaoReserva(dados || {});
             sincronizarAreaImpressaoReserva();
-            elementos.impressaoReservaModal.style.display = 'flex';
-            elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
-            document.body.classList.add('modal-print-open');
-            travaRolagem.aplicar();
-            requestAnimationFrame(() => {
-                elementos.impressaoReservaPrint?.focus({ preventScroll: true });
-            });
+            abrirImpressaoReservaEmNovaAba();
         }
         function fecharModalImpressaoReserva() {
             if (!elementos.impressaoReservaModal) return;
@@ -5615,8 +5609,7 @@
                 elementos.printArea.setAttribute('aria-hidden', 'true');
             }
         }
-        function imprimirReservaArmario() {
-            if (!elementos.impressaoReservaModal) return;
+        function abrirImpressaoReservaEmNovaAba() {
             const html = gerarHtmlImpressaoReserva();
             if (!html) return;
             const janelaImpressao = window.open('', '_blank');
@@ -5625,7 +5618,9 @@
             janelaImpressao.document.write(html);
             janelaImpressao.document.close();
             janelaImpressao.focus();
-            fecharModalImpressaoReserva();
+        }
+        function imprimirReservaArmario() {
+            abrirImpressaoReservaEmNovaAba();
         }
         window.addEventListener('beforeprint', () => {
             if (!document.body.classList.contains('modal-print-open')) return;
