@@ -5597,10 +5597,12 @@
                     ${estilos}
                 </head>
                 <body class="modal-print-open">
-                        <div class="modal modal-full modal-print" style="display:flex; align-items:center; justify-content:center;">
-                            <div class="modal-content modal-print-content">
-                                <div class="modal-print-wrapper">
-                                    ${conteudo}
+                        <div id="print-area" aria-hidden="false" style="display:flex; justify-content:center; align-items:center;">
+                            <div class="modal modal-full modal-print" id="impressao-reserva-modal" style="display:flex; align-items:center; justify-content:center;">
+                                <div class="modal-content modal-print-content">
+                                    <div class="modal-print-wrapper">
+                                        ${conteudo}
+                                    </div>
                                 </div>
                             </div>
                         </div>
