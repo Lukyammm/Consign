@@ -1890,9 +1890,16 @@
             padding: 22px 24px 18px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16);
-            color: #0f172a;
+            color: #0a0a0a;
+            font-weight: 850;
             position: relative;
             overflow: hidden;
+        }
+        .print-ticket *,
+        .print-ticket *::before,
+        .print-ticket *::after {
+            color: #0a0a0a;
+            font-weight: 850;
         }
         .print-ticket::before {
             content: '';
@@ -1979,7 +1986,7 @@
             font-size: 0.85rem;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            color: #475569;
+            color: #0a0a0a;
             white-space: nowrap;
         }
         .print-row strong {
@@ -2006,7 +2013,7 @@
             font-size: 0.78rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #64748b;
+            color: #0a0a0a;
             display: block;
         }
         .print-meta strong {
@@ -2097,6 +2104,11 @@
                 width: 110mm;
                 max-width: 110mm;
                 padding: 18px 20px 16px;
+            }
+            body.modal-print-open .print-ticket,
+            body.modal-print-open .print-ticket * {
+                color: #000 !important;
+                font-weight: 900 !important;
             }
             body.modal-print-open .print-ticket::before {
                 inset: 8px;
