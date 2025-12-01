@@ -5578,6 +5578,11 @@
             campos.volumes.textContent = dados.volumes || '-';
             campos.emissao.textContent = dados.emissao || '-';
         }
+        function gerarNomeArquivoReserva(dados = {}) {
+            const armario = dados.armario ? normalizarTexto(dados.armario.toString()) : '';
+            const parteArmario = armario ? armario.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : 'reserva';
+            return `cartao-${parteArmario || 'reserva'}.png`;
+        }
         function sincronizarAreaImpressaoReserva() {
             if (!elementos.printArea || !elementos.impressaoReservaCard) return;
             const clone = elementos.impressaoReservaCard.cloneNode(true);
@@ -5627,7 +5632,12 @@
             estadoImpressaoReserva.dados = dados || null;
             preencherModalImpressaoReserva(dados || {});
             sincronizarAreaImpressaoReserva();
-            abrirImpressaoReservaEmNovaAba();
+            if (elementos.impressaoReservaModal) {
+                elementos.impressaoReservaModal.style.display = 'flex';
+                elementos.impressaoReservaModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('modal-print-open');
+                travaRolagem.aplicar();
+            }
         }
         function fecharModalImpressaoReserva() {
             if (!elementos.impressaoReservaModal) return;
@@ -5642,18 +5652,8 @@
                 elementos.printArea.setAttribute('aria-hidden', 'true');
             }
         }
-        function abrirImpressaoReservaEmNovaAba() {
-            const html = gerarHtmlImpressaoReserva();
-            if (!html) return;
-            const janelaImpressao = window.open('', '_blank');
-            if (!janelaImpressao) return;
-            janelaImpressao.document.open();
-            janelaImpressao.document.write(html);
-            janelaImpressao.document.close();
-            janelaImpressao.focus();
-        }
-        function imprimirReservaArmario() {
-            abrirImpressaoReservaEmNovaAba();
+        async function imprimirReservaArmario() {
+            await baixarPngReservaArmario();
         }
         function limparAgendamentoPdfTemporario() {
             if (estadoPdfTemporario.timeoutId) {
@@ -5798,6 +5798,46 @@
         });
         function deveGerarImpressaoReserva(tipo) {
             return normalizarTexto(tipo) === 'acompanhante';
+        }
+        async function baixarPngReservaArmario() {
+            if (!elementos.impressaoReservaCard) return;
+            if (typeof html2canvas !== 'function') {
+                mostrarErro('Ferramenta de captura indisponível. Recarregue a página e tente novamente.');
+                return;
+            }
+            sincronizarAreaImpressaoReserva();
+            const alvo = elementos.impressaoReservaCard;
+            const finalizarOverlay = mostrarOverlayCarregamento('Gerando imagem do cartão...');
+            try {
+                const canvas = await html2canvas(alvo, {
+                    backgroundColor: '#f5f7fb',
+                    scale: Math.max(window.devicePixelRatio || 1, 2),
+                    useCORS: true
+                });
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob(result => {
+                        if (result) {
+                            resolve(result);
+                        } else {
+                            reject(new Error('Falha ao gerar imagem.'));
+                        }
+                    }, 'image/png');
+                });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = gerarNomeArquivoReserva(estadoImpressaoReserva.dados || {});
+                document.body.appendChild(link);
+                link.click();
+                URL.revokeObjectURL(link.href);
+                link.remove();
+            } catch (erro) {
+                console.error('Erro ao gerar PNG do cartão:', erro);
+                mostrarErro('Não foi possível gerar o PNG do cartão. Tente novamente.');
+            } finally {
+                if (typeof finalizarOverlay === 'function') {
+                    finalizarOverlay();
+                }
+            }
         }
         function obterArmarioPorId(id) {
             const alvo = normalizarIdentificador(id);
