@@ -5173,6 +5173,8 @@ function getMovimentacoes(dados) {
   var armarioIdTexto = possuiArmario && armarioId !== null && armarioId !== undefined ? armarioId.toString().trim() : '';
   var numeroInformado = normalizarNumeroArmario(dados ? dados.numeroArmario : '');
   var tipoInformado = dados && dados.tipo ? normalizarTextoBasico(dados.tipo) : '';
+  var tiposMovimentacaoValidos = ['entrada', 'saida', 'saída', 'conferencia', 'conferência'];
+  var deveFiltrarPorTipoMovimentacao = tiposMovimentacaoValidos.indexOf(tipoInformado) !== -1;
   var chaveIdentificacao = possuiArmario ? [armarioIdTexto, numeroInformado, tipoInformado].join('|') : 'todos';
   var chaveCache = montarChaveCache('movimentacoes', chaveIdentificacao);
 
@@ -5219,7 +5221,7 @@ function getMovimentacoes(dados) {
         }
 
         var tipoLinha = sheet.getRange(linhaAtual, 4).getValue();
-        if (tipoInformado && normalizarTextoBasico(tipoLinha) !== tipoInformado) {
+        if (deveFiltrarPorTipoMovimentacao && normalizarTextoBasico(tipoLinha) !== tipoInformado) {
           continue;
         }
 
