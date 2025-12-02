@@ -6574,11 +6574,15 @@
             const linha = document.createElement('div');
             linha.className = 'movimentacao-item-row';
 
+            const idBase = `mov-item-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
             const campoQuantidade = document.createElement('input');
             campoQuantidade.type = 'number';
             campoQuantidade.min = '0';
             campoQuantidade.step = '1';
             campoQuantidade.placeholder = 'Qtd.';
+            campoQuantidade.className = 'form-control';
+            campoQuantidade.id = `${idBase}-qtd`;
             if (item.quantidade !== undefined && item.quantidade !== null) {
                 campoQuantidade.value = Number(item.quantidade);
             }
@@ -6586,19 +6590,43 @@
             const campoDescricao = document.createElement('input');
             campoDescricao.type = 'text';
             campoDescricao.placeholder = 'Descrição do item';
+            campoDescricao.className = 'form-control';
+            campoDescricao.id = `${idBase}-descricao`;
             campoDescricao.value = item.descricao || '';
+
+            const campoQuantidadeWrapper = document.createElement('div');
+            campoQuantidadeWrapper.className = 'mov-item-field';
+            const quantidadeLabel = document.createElement('label');
+            quantidadeLabel.className = 'mov-item-label';
+            quantidadeLabel.setAttribute('for', campoQuantidade.id);
+            quantidadeLabel.textContent = 'Quantidade';
+            campoQuantidadeWrapper.appendChild(quantidadeLabel);
+            campoQuantidadeWrapper.appendChild(campoQuantidade);
+
+            const campoDescricaoWrapper = document.createElement('div');
+            campoDescricaoWrapper.className = 'mov-item-field';
+            const descricaoLabel = document.createElement('label');
+            descricaoLabel.className = 'mov-item-label';
+            descricaoLabel.setAttribute('for', campoDescricao.id);
+            descricaoLabel.textContent = 'Descrição do item';
+            campoDescricaoWrapper.appendChild(descricaoLabel);
+            campoDescricaoWrapper.appendChild(campoDescricao);
 
             const botaoRemover = document.createElement('button');
             botaoRemover.type = 'button';
-            botaoRemover.className = 'btn btn-secondary';
-            botaoRemover.textContent = 'Remover';
+            botaoRemover.className = 'btn btn-ghost btn-danger-outline mov-remover-item';
+            botaoRemover.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i><span>Remover</span>';
             botaoRemover.addEventListener('click', () => {
                 linha.remove();
             });
 
-            linha.appendChild(campoQuantidade);
-            linha.appendChild(campoDescricao);
-            linha.appendChild(botaoRemover);
+            const acoesWrapper = document.createElement('div');
+            acoesWrapper.className = 'mov-item-actions';
+            acoesWrapper.appendChild(botaoRemover);
+
+            linha.appendChild(campoQuantidadeWrapper);
+            linha.appendChild(campoDescricaoWrapper);
+            linha.appendChild(acoesWrapper);
             elementos.movItensList.appendChild(linha);
         }
         function preencherItensMovimentacaoAPartirInventario(tipo) {
