@@ -5554,14 +5554,14 @@
                     return acc + (Number.isFinite(quantidade) && quantidade > 0 ? quantidade : 0);
                 }, 0);
                 if (total > 0) {
-                    return `${total} volume(s)`;
+                    return `${total}`;
                 }
-                return `${volumes.length} volume(s)`;
+                return `${volumes.length}`;
             }
             if (valorArmario !== undefined && valorArmario !== null && valorArmario !== '') {
                 const numero = Number(valorArmario);
                 if (!Number.isNaN(numero)) {
-                    if (numero > 0) return `${numero} volume(s)`;
+                    if (numero > 0) return `${numero}`;
                     return 'Nenhum volume informado';
                 }
                 return valorArmario.toString();
@@ -7078,7 +7078,7 @@
                 if (valorBruto !== undefined && valorBruto !== null && valorBruto !== '') {
                     const numero = Number(valorBruto);
                     if (!Number.isNaN(numero)) {
-                        return numero > 0 ? `${numero} volume(s)` : 'Nenhum volume informado';
+                        return numero > 0 ? `${numero}` : 'Nenhum volume informado';
                     }
                     return valorBruto;
                 }
