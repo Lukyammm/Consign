@@ -2663,19 +2663,86 @@
         .movimentacao-item-row {
             display: grid;
             grid-template-columns: 110px 1fr auto;
-            gap: 8px;
-            align-items: center;
-            background: color-mix(in srgb, var(--surface-color) 90%, white 10%);
-            border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
-            border-radius: 10px;
-            padding: 10px;
+            gap: 12px;
+            align-items: stretch;
+            background: linear-gradient(180deg, color-mix(in srgb, var(--surface-color) 96%, white 4%), var(--surface-color));
+            border: 1px solid color-mix(in srgb, var(--border-color) 75%, transparent);
+            border-radius: 12px;
+            padding: 12px 14px;
+            box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 45%, transparent);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .movimentacao-item-row::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 32%, transparent);
+            background: linear-gradient(120deg, color-mix(in srgb, var(--primary-color) 10%, transparent), color-mix(in srgb, var(--surface-color) 90%, transparent));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .movimentacao-item-row:hover::before,
+        .movimentacao-item-row:focus-within::before {
+            opacity: 1;
+        }
+        .movimentacao-item-row:hover,
+        .movimentacao-item-row:focus-within {
+            border-color: color-mix(in srgb, var(--primary-color) 28%, var(--border-color));
+            box-shadow: 0 14px 30px color-mix(in srgb, var(--primary-color) 16%, var(--shadow-color));
+            transform: translateY(-1px);
         }
         .movimentacao-item-row input[type="number"],
         .movimentacao-item-row input[type="text"] {
             width: 100%;
         }
-        .movimentacao-item-row button {
-            margin-left: 6px;
+        .mov-item-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .mov-item-label {
+            font-size: 0.78rem;
+            letter-spacing: 0.02em;
+            color: color-mix(in srgb, var(--muted-color) 85%, black 15%);
+            font-weight: 700;
+        }
+        .mov-item-actions {
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            gap: 6px;
+            padding-top: 4px;
+        }
+        .mov-remover-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: var(--danger-dark);
+            border: 1px dashed color-mix(in srgb, var(--danger-color) 45%, transparent);
+        }
+        .mov-remover-item i {
+            font-size: 0.95rem;
+        }
+        .btn-danger-outline {
+            background: color-mix(in srgb, var(--danger-color) 10%, white 90%);
+        }
+        .btn-danger-outline:hover {
+            background: color-mix(in srgb, var(--danger-color) 18%, white 82%);
+            box-shadow: 0 12px 22px color-mix(in srgb, var(--danger-color) 28%, transparent);
+        }
+        @media (max-width: 720px) {
+            .movimentacao-item-row {
+                grid-template-columns: 1fr;
+            }
+            .mov-item-actions {
+                justify-content: flex-start;
+            }
         }
         @media (max-width: 1024px) {
             .mov-modal-grid {
