@@ -1915,9 +1915,9 @@
             display: none;
         }
         .print-ticket {
-            width: clamp(320px, 92vw, 680px);
+            width: min(100%, 680px);
             max-width: 680px;
-            min-width: min(520px, 92vw);
+            min-width: 0;
             background: #ffffff;
             border-radius: 16px;
             padding: 28px 26px 20px;
@@ -2135,14 +2135,46 @@
                 padding: 14px 10px;
                 max-height: 96vh;
             }
-            .print-ticket {
-                width: min(100%, 520px);
-                max-width: 520px;
-                min-width: 0;
-                border-radius: 12px;
-            }
             .modal-print-wrapper {
                 padding: 8px 10px 14px;
+            }
+            .print-ticket {
+                width: 100%;
+                max-width: 520px;
+                border-radius: 12px;
+                padding: 22px 18px 16px;
+            }
+            .print-ticket::before {
+                inset: 6px;
+            }
+            .print-ticket-body {
+                gap: 12px;
+                padding: 10px 6px 10px;
+            }
+            .print-section {
+                padding: 12px;
+            }
+            .print-identificacao-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .print-armario-large {
+                font-size: 4.2rem;
+            }
+            .print-paciente-large {
+                font-size: 2.15rem;
+            }
+            .print-section-rows {
+                font-size: 1.1rem;
+                gap: 8px;
+            }
+            .print-row {
+                grid-template-columns: 1fr;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            .print-row-label {
+                font-size: 0.95rem;
             }
             .print-actions {
                 flex-wrap: wrap;
@@ -2151,6 +2183,7 @@
             .print-actions .btn {
                 flex: 1 1 180px;
                 min-width: 0;
+                padding: 12px 14px;
             }
         }
         @media print {
