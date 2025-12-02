@@ -2210,6 +2210,55 @@
                 padding: 12px 14px;
                 font-size: 1rem;
             }
+            /* Mantém as dimensões reais do cartão para geração/impressão em mobile */
+            body.modal-print-open .modal-print {
+                overflow-x: auto;
+            }
+            body.modal-print-open .modal-print .modal-content,
+            #print-area {
+                align-items: center;
+                justify-content: center;
+            }
+            body.modal-print-open .modal-print .print-ticket,
+            #print-area .print-ticket {
+                width: 880px;
+                max-width: 880px;
+                padding: 28px 26px 20px;
+                border-radius: 16px;
+            }
+            body.modal-print-open .modal-print .print-ticket::before,
+            #print-area .print-ticket::before {
+                inset: 10px;
+            }
+            body.modal-print-open .modal-print .print-armario-large,
+            #print-area .print-armario-large {
+                font-size: 9.5rem;
+            }
+            body.modal-print-open .modal-print .print-paciente-large,
+            #print-area .print-paciente-large {
+                font-size: 3.5rem;
+            }
+            body.modal-print-open .modal-print .print-section-rows,
+            #print-area .print-section-rows {
+                font-size: 1.5rem;
+                gap: 10px;
+            }
+            body.modal-print-open .modal-print .print-row,
+            #print-area .print-row {
+                grid-template-columns: minmax(120px, 160px) 1fr;
+                gap: 10px;
+            }
+            body.modal-print-open .modal-print .print-row-label,
+            #print-area .print-row-label {
+                font-size: 1rem;
+            }
+            body.modal-print-open .modal-print .print-actions .btn,
+            #print-area .print-actions .btn {
+                width: auto;
+                min-width: 140px;
+                padding: 12px 18px;
+                font-size: 1rem;
+            }
         }
         @media print {
             body.modal-print-open * {
