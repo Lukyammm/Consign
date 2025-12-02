@@ -5371,9 +5371,19 @@ function salvarMovimentacao(dados) {
 
     var itensSerializados = '';
     var itensNormalizados = [];
-    if (Array.isArray(dados.itens) && dados.itens.length) {
+    var itensInformados = dados.itens;
+
+    if (typeof itensInformados === 'string' && itensInformados) {
       try {
-        itensNormalizados = dados.itens.map(function(item) {
+        itensInformados = JSON.parse(itensInformados);
+      } catch (erroParseItens) {
+        itensInformados = [];
+      }
+    }
+
+    if (Array.isArray(itensInformados) && itensInformados.length) {
+      try {
+        itensNormalizados = itensInformados.map(function(item) {
           var quantidadeNumero = Number(item.quantidade);
           return {
             quantidade: Number.isFinite(quantidadeNumero) ? quantidadeNumero : 0,
