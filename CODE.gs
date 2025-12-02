@@ -682,9 +682,11 @@ function limparCacheMovimentacoes(armarioId, numeroArmario, tipo) {
   var tipoTexto = tipo ? normalizarTextoBasico(tipo) : '';
   var chaveEspecifica = idTexto ? montarChaveCache('movimentacoes', [idTexto, numeroTexto, tipoTexto].join('|')) : null;
   var chaveLegado = idTexto ? montarChaveCache('movimentacoes', idTexto) : null;
+  var chaveNumero = numeroTexto ? montarChaveCache('movimentacoes', ['numero', numeroTexto, tipoTexto].join('|')) : null;
   limparCaches([
     chaveEspecifica,
     chaveLegado,
+    chaveNumero,
     montarChaveCache('movimentacoes', 'todos')
   ]);
 }
@@ -5175,14 +5177,19 @@ function getMovimentacoes(dados) {
   var colunaStatus = estruturaMov.colunaStatus;
   var colunaItens = estruturaMov.colunaItens;
   var colunaVolume = estruturaMov.colunaVolume;
-  var possuiArmario = dados && dados.armarioId !== undefined && dados.armarioId !== null;
+  var possuiArmario = dados && dados.armarioId !== undefined && dados.armarioId !== null && dados.armarioId !== '';
   var armarioId = possuiArmario ? dados.armarioId : null;
   var armarioIdTexto = possuiArmario && armarioId !== null && armarioId !== undefined ? armarioId.toString().trim() : '';
   var numeroInformado = normalizarNumeroArmario(dados ? dados.numeroArmario : '');
   var tipoInformado = dados && dados.tipo ? normalizarTextoBasico(dados.tipo) : '';
   var tiposMovimentacaoValidos = ['entrada', 'saida', 'saída', 'conferencia', 'conferência'];
   var deveFiltrarPorTipoMovimentacao = tiposMovimentacaoValidos.indexOf(tipoInformado) !== -1;
-  var chaveIdentificacao = possuiArmario ? [armarioIdTexto, numeroInformado, tipoInformado].join('|') : 'todos';
+  var possuiIdentificacao = armarioIdTexto || numeroInformado;
+  var chaveIdentificacao = armarioIdTexto
+    ? [armarioIdTexto, numeroInformado, tipoInformado].join('|')
+    : numeroInformado
+      ? ['numero', numeroInformado, tipoInformado].join('|')
+      : 'todos';
   var chaveCache = montarChaveCache('movimentacoes', chaveIdentificacao);
 
   return executarComCache(chaveCache, CACHE_TTL_MOVIMENTACOES, function() {
@@ -5192,7 +5199,7 @@ function getMovimentacoes(dados) {
       }
 
       var totalLinhas = sheet.getLastRow() - 1;
-      if (totalLinhas <= 0 || !possuiArmario) {
+      if (totalLinhas <= 0 || !possuiIdentificacao) {
         return { success: true, data: [] };
       }
 
@@ -5211,6 +5218,24 @@ function getMovimentacoes(dados) {
         for (var indiceId = 0; indiceId < valoresId.length; indiceId++) {
           if (String(valoresId[indiceId][0]).trim() === armarioIdTexto) {
             linhasEncontradas.push(indiceId + 2);
+          }
+        }
+      }
+
+      if (!linhasEncontradas.length && numeroInformado) {
+        var intervaloNumeros = sheet.getRange(2, 3, totalLinhas, 1);
+        var finderNumero = intervaloNumeros.createTextFinder(numeroInformado).useRegularExpression(false);
+        var correspondenciasNumero = finderNumero.findAll();
+        if (correspondenciasNumero && correspondenciasNumero.length) {
+          linhasEncontradas = correspondenciasNumero.map(function(celula) { return celula.getRow(); });
+        }
+
+        if (!linhasEncontradas.length) {
+          var valoresNumero = intervaloNumeros.getValues();
+          for (var indiceNumero = 0; indiceNumero < valoresNumero.length; indiceNumero++) {
+            if (normalizarNumeroArmario(valoresNumero[indiceNumero][0]) === numeroInformado) {
+              linhasEncontradas.push(indiceNumero + 2);
+            }
           }
         }
       }
