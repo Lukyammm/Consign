@@ -4103,9 +4103,14 @@ function salvarTermoCompleto(dadosTermo) {
       var dadosCadastroAcompanhante = cadastroArmarioValido || {
         nomeVisitante: dadosTermo.acompanhante || '',
         nomePaciente: dadosTermo.paciente || '',
+        prontuario: dadosTermo.prontuario || '',
         leito: dadosTermo.leito || '',
         whatsapp: dadosTermo.telefone || ''
       };
+
+      if (!dadosCadastroAcompanhante.prontuario) {
+        dadosCadastroAcompanhante.prontuario = dadosTermo.prontuario || '';
+      }
 
       var statusAtual = normalizarTextoBasico(obterValorLinha(linhaAtualizada, estruturaAcompanhantes, 'status', ''));
       if (statusAtual && statusAtual !== 'livre') {
@@ -4122,6 +4127,7 @@ function salvarTermoCompleto(dadosTermo) {
       definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'status', 'em-uso');
       definirValorLinha(linhaAtualizada, estruturaAcompanhantes, nomeColunaCadastro, dadosCadastroAcompanhante.nomeVisitante || dadosTermo.acompanhante || '');
       definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'nome paciente', dadosCadastroAcompanhante.nomePaciente || dadosTermo.paciente || '');
+      definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'prontuario', dadosCadastroAcompanhante.prontuario || dadosTermo.prontuario || '');
       definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'leito', dadosCadastroAcompanhante.leito || dadosTermo.leito || '');
       definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'hora inicio', horaInicioCadastro);
       definirValorLinha(linhaAtualizada, estruturaAcompanhantes, 'hora prevista', '');
