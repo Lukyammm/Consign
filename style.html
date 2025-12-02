@@ -1849,7 +1849,8 @@
             justify-content: center;
             border-radius: 18px;
             padding: 18px;
-            overflow-x: auto;
+            overflow-x: hidden;
+            max-height: 94vh;
             -webkit-overflow-scrolling: touch;
         }
         .modal-print-wrapper {
@@ -1861,6 +1862,8 @@
             background: linear-gradient(180deg, #ffffff 0%, #f8fafc 70%);
             border-radius: 14px;
             padding: 6px 8px 12px;
+            max-height: 100%;
+            overflow-y: auto;
         }
         .modal-print .modal-close {
             align-self: flex-end;
@@ -1912,9 +1915,9 @@
             display: none;
         }
         .print-ticket {
-            width: 680px;
+            width: clamp(320px, 92vw, 680px);
             max-width: 680px;
-            min-width: 680px;
+            min-width: min(520px, 92vw);
             background: #ffffff;
             border-radius: 16px;
             padding: 22px 24px 18px;
@@ -2088,7 +2091,11 @@
             justify-content: center;
             gap: 12px;
             padding: 12px 4px 2px;
-            background: transparent;
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.9) 0%, #f8fafc 35%, #f8fafc 100%);
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            border-top: 1px solid #e2e8f0;
         }
         .print-actions .btn {
             min-width: 120px;
@@ -2107,19 +2114,31 @@
         }
         @media (max-width: 640px) {
             .modal.modal-print {
-                padding: 12px 6px;
+                padding: 12px 8px;
             }
             .modal-print .modal-content {
-                width: auto;
-                max-width: none;
-                min-width: 580px;
-                overflow-x: auto;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                padding: 14px 10px;
+                max-height: 96vh;
             }
             .print-ticket {
-                width: 640px;
-                max-width: 640px;
-                min-width: 640px;
-                border-radius: 14px;
+                width: min(100%, 520px);
+                max-width: 520px;
+                min-width: 0;
+                border-radius: 12px;
+            }
+            .modal-print-wrapper {
+                padding: 8px 10px 14px;
+            }
+            .print-actions {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .print-actions .btn {
+                flex: 1 1 180px;
+                min-width: 0;
             }
         }
         @media print {
