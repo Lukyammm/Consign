@@ -5704,6 +5704,22 @@
                 elementos.printArea.setAttribute('aria-hidden', 'true');
             };
         }
+        function aplicarLarguraPadraoCartao(alvo) {
+            if (!alvo) return () => {};
+            const larguraAtual = {
+                width: alvo.style.width,
+                maxWidth: alvo.style.maxWidth,
+                minWidth: alvo.style.minWidth
+            };
+            alvo.style.width = '880px';
+            alvo.style.maxWidth = '880px';
+            alvo.style.minWidth = '880px';
+            return () => {
+                alvo.style.width = larguraAtual.width;
+                alvo.style.maxWidth = larguraAtual.maxWidth;
+                alvo.style.minWidth = larguraAtual.minWidth;
+            };
+        }
         function obterEstilosParaImpressao() {
             const estilos = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
             return estilos.map(no => no.outerHTML).join('\n');
@@ -5926,6 +5942,7 @@
             }
             const finalizarOverlay = mostrarOverlayCarregamento('Gerando imagem do cartão...');
             const restaurarArea = prepararAreaImpressaoParaCaptura();
+            const restaurarLarguraPadrao = aplicarLarguraPadraoCartao(alvo);
             try {
                 const canvas = await html2canvas(alvo, {
                     backgroundColor: '#f5f7fb',
@@ -5952,6 +5969,9 @@
                 console.error('Erro ao gerar PNG do cartão:', erro);
                 mostrarErro('Não foi possível gerar o PNG do cartão. Tente novamente.');
             } finally {
+                if (typeof restaurarLarguraPadrao === 'function') {
+                    restaurarLarguraPadrao();
+                }
                 if (typeof restaurarArea === 'function') {
                     restaurarArea();
                 }
