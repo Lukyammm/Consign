@@ -71,7 +71,8 @@
             sessaoUsuario: 'locknac_sessao_usuario',
             rascunhosOcupacao: 'locknac_rascunhos_ocupacao',
             rascunhoArmario: 'locknac_rascunho_armario',
-            rascunhoTermo: 'locknac_rascunho_termo'
+            rascunhoTermo: 'locknac_rascunho_termo',
+            preferenciasCabecalho: 'locknac_preferencias_cabecalho'
         };
         const travaRolagem = {
             contador: 0,
@@ -210,6 +211,47 @@
                 salvarSessaoUsuario(usuarioAtual);
             } else {
                 limparSessaoUsuario();
+            }
+        }
+        function salvarPreferenciasCabecalho() {
+            const storage = obterArmazenamentoLocal();
+            if (!storage) return;
+            try {
+                const perfil = (estado.perfilAtual || 'geral').toString().trim();
+                const unidade = (estado.unidadeAtual || 'todas').toString().trim();
+                storage.setItem(STORAGE_KEYS.preferenciasCabecalho, JSON.stringify({
+                    perfil,
+                    unidade,
+                    atualizadoEm: Date.now()
+                }));
+            } catch (erro) {
+                console.warn('Não foi possível salvar as preferências de seleção:', erro);
+            }
+        }
+        function restaurarPreferenciasCabecalho() {
+            const storage = obterArmazenamentoLocal();
+            if (!storage) return null;
+            try {
+                const bruto = storage.getItem(STORAGE_KEYS.preferenciasCabecalho);
+                if (!bruto) return null;
+                const dados = JSON.parse(bruto);
+                const perfilNormalizado = normalizarTexto(dados?.perfil) || 'geral';
+                const perfilPermitido = ['geral', 'visitante', 'acompanhante'].includes(perfilNormalizado)
+                    ? perfilNormalizado
+                    : 'geral';
+                const unidade = (dados?.unidade || '').toString().trim();
+                return {
+                    perfil: perfilPermitido,
+                    unidade: unidade || 'todas'
+                };
+            } catch (erro) {
+                console.warn('Falha ao restaurar preferências de seleção:', erro);
+                try {
+                    storage.removeItem(STORAGE_KEYS.preferenciasCabecalho);
+                } catch (erroRemocao) {
+                    console.warn('Não foi possível limpar preferências inválidas:', erroRemocao);
+                }
+                return null;
             }
         }
         function coletarCamposArmario() {
@@ -891,6 +933,33 @@
             }
             return texto;
         };
+        function aplicarPreferenciasCabecalhoRestauradas() {
+            const preferencias = restaurarPreferenciasCabecalho();
+            if (!preferencias) return;
+
+            const perfilRestaurado = preferencias.perfil || 'geral';
+            estado.perfilAtual = perfilRestaurado;
+            if (elementos.profileSelect) {
+                const opcaoPerfil = Array.from(elementos.profileSelect.options)
+                    .find(option => normalizarTexto(option.value) === normalizarTexto(perfilRestaurado));
+                if (opcaoPerfil) {
+                    elementos.profileSelect.value = opcaoPerfil.value;
+                    atualizarSelectorPersonalizado(elementos.profileSelect);
+                }
+            }
+
+            const unidadeRestaurada = (preferencias.unidade || 'todas').toString().trim();
+            estado.unidadeAtual = unidadeRestaurada || 'todas';
+            if (elementos.unitSelect) {
+                const opcaoUnidade = Array.from(elementos.unitSelect.options)
+                    .find(option => normalizarTexto(option.value) === normalizarTexto(unidadeRestaurada));
+                if (opcaoUnidade) {
+                    elementos.unitSelect.value = opcaoUnidade.value;
+                    atualizarSelectorPersonalizado(elementos.unitSelect);
+                }
+            }
+            salvarPreferenciasCabecalho();
+        }
         function montarIdentificadoresArmario(armario) {
             if (!armario) {
                 return null;
@@ -1385,6 +1454,7 @@
                 return;
             }
             aplicacaoInicializada = true;
+            aplicarPreferenciasCabecalhoRestauradas();
             aprimorarSeletoresCabecalho();
             inicializarCanvasAssinatura();
             inicializarEventos();
@@ -1729,7 +1799,12 @@
                 atualizarSeletoresUnidade();
                 if (estado.unidadeAtual !== 'todas' && !usuarioPodeVerUnidade(estado.unidadeAtual)) {
                     estado.unidadeAtual = 'todas';
+                    if (elementos.unitSelect) {
+                        elementos.unitSelect.value = 'todas';
+                        atualizarSelectorPersonalizado(elementos.unitSelect);
+                    }
                 }
+                salvarPreferenciasCabecalho();
                 return true;
             }
             return false;
@@ -2128,6 +2203,7 @@
             if (elementos.profileSelect) {
                 elementos.profileSelect.addEventListener('change', async function() {
                     estado.perfilAtual = this.value;
+                    salvarPreferenciasCabecalho();
                     await carregarArmarios();
                     atualizarResumoDashboardLocal();
                     atualizarInterface();
@@ -2137,6 +2213,7 @@
             if (elementos.unitSelect) {
                 elementos.unitSelect.addEventListener('change', async function() {
                     estado.unidadeAtual = this.value;
+                    salvarPreferenciasCabecalho();
                     await carregarArmarios();
                     atualizarResumoDashboardLocal();
                     atualizarInterface();
@@ -4107,6 +4184,7 @@
                 }
             }
             atualizarSelectorPersonalizado(elementos.unitSelect);
+            salvarPreferenciasCabecalho();
         }
         function renderizarTabelaUnidades() {
             if (!elementos.tabelaUnidadesBody) return;
@@ -4158,6 +4236,7 @@
                 }
                 atualizarSelectorPersonalizado(elementos.unitSelect);
             }
+            salvarPreferenciasCabecalho();
             atualizarInterface();
             carregarDadosTabelas();
         }
@@ -5616,6 +5695,15 @@
             elementos.printArea.appendChild(clone);
             elementos.printArea.setAttribute('aria-hidden', 'false');
         }
+        function prepararAreaImpressaoParaCaptura() {
+            if (!elementos.printArea) return () => {};
+            elementos.printArea.classList.add('print-area-visible');
+            elementos.printArea.setAttribute('aria-hidden', 'false');
+            return () => {
+                elementos.printArea.classList.remove('print-area-visible');
+                elementos.printArea.setAttribute('aria-hidden', 'true');
+            };
+        }
         function obterEstilosParaImpressao() {
             const estilos = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
             return estilos.map(no => no.outerHTML).join('\n');
@@ -5674,6 +5762,7 @@
             estadoImpressaoReserva.dados = null;
             if (elementos.printArea) {
                 elementos.printArea.setAttribute('aria-hidden', 'true');
+                elementos.printArea.classList.remove('print-area-visible');
             }
         }
         async function imprimirReservaArmario() {
@@ -5830,8 +5919,13 @@
                 return;
             }
             sincronizarAreaImpressaoReserva();
-            const alvo = elementos.impressaoReservaCard;
+            const alvo = document.getElementById('impressao-reserva-card-print') || elementos.impressaoReservaCard;
+            if (!alvo) {
+                mostrarErro('Não foi possível preparar o cartão para download.');
+                return;
+            }
             const finalizarOverlay = mostrarOverlayCarregamento('Gerando imagem do cartão...');
+            const restaurarArea = prepararAreaImpressaoParaCaptura();
             try {
                 const canvas = await html2canvas(alvo, {
                     backgroundColor: '#f5f7fb',
@@ -5858,6 +5952,9 @@
                 console.error('Erro ao gerar PNG do cartão:', erro);
                 mostrarErro('Não foi possível gerar o PNG do cartão. Tente novamente.');
             } finally {
+                if (typeof restaurarArea === 'function') {
+                    restaurarArea();
+                }
                 if (typeof finalizarOverlay === 'function') {
                     finalizarOverlay();
                 }
