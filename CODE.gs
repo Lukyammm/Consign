@@ -5042,16 +5042,18 @@ function excluirArquivoTemporario(dados) {
 function garantirEstruturaMovimentacoes(sheet) {
   var colunaStatus = 10;
   var colunaItens = 11;
+  var colunaVolume = 12;
 
   if (!sheet) {
     return {
       colunaStatus: colunaStatus,
       colunaItens: colunaItens,
-      ultimaColuna: colunaItens
+      colunaVolume: colunaVolume,
+      ultimaColuna: colunaVolume
     };
   }
 
-  var minimoColunas = Math.max(colunaItens, colunaStatus);
+  var minimoColunas = Math.max(colunaItens, colunaStatus, colunaVolume);
   var totalColunas = sheet.getLastColumn();
   if (totalColunas < minimoColunas) {
     sheet.insertColumnsAfter(totalColunas, minimoColunas - totalColunas);
@@ -5065,10 +5067,14 @@ function garantirEstruturaMovimentacoes(sheet) {
   if (!cabecalhos[colunaItens - 1]) {
     sheet.getRange(1, colunaItens).setValue('Itens');
   }
+  if (!cabecalhos[colunaVolume - 1]) {
+    sheet.getRange(1, colunaVolume).setValue('Volume');
+  }
 
   return {
     colunaStatus: colunaStatus,
     colunaItens: colunaItens,
+    colunaVolume: colunaVolume,
     ultimaColuna: Math.max(totalColunas, minimoColunas)
   };
 }
@@ -5168,6 +5174,7 @@ function getMovimentacoes(dados) {
   var estruturaMov = garantirEstruturaMovimentacoes(sheet);
   var colunaStatus = estruturaMov.colunaStatus;
   var colunaItens = estruturaMov.colunaItens;
+  var colunaVolume = estruturaMov.colunaVolume;
   var possuiArmario = dados && dados.armarioId !== undefined && dados.armarioId !== null;
   var armarioId = possuiArmario ? dados.armarioId : null;
   var armarioIdTexto = possuiArmario && armarioId !== null && armarioId !== undefined ? armarioId.toString().trim() : '';
@@ -5190,7 +5197,7 @@ function getMovimentacoes(dados) {
       }
 
       var linhasEncontradas = [];
-      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens);
+      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens, colunaVolume);
       var intervaloIds = sheet.getRange(2, 2, totalLinhas, 1);
       var textoFinder = intervaloIds.createTextFinder(armarioIdTexto).useRegularExpression(false);
       var correspondencias = textoFinder.findAll();
@@ -5242,6 +5249,7 @@ function getMovimentacoes(dados) {
         }
 
         var itensValor = colunaItens && colunaItens <= linhaDados.length ? linhaDados[colunaItens - 1] : '';
+        var volumeValor = colunaVolume && colunaVolume <= linhaDados.length ? linhaDados[colunaVolume - 1] : '';
         var itens = [];
         if (Array.isArray(itensValor)) {
           itens = itensValor;
@@ -5254,6 +5262,12 @@ function getMovimentacoes(dados) {
           } catch (erroItens) {
             itens = [];
           }
+        }
+
+        if ((!itens || !itens.length) && linhaDados[4]) {
+          var volumeNormalizado = Number(volumeValor);
+          var volumeItens = Number.isFinite(volumeNormalizado) && volumeNormalizado > 0 ? volumeNormalizado : 1;
+          itens = [{ quantidade: volumeItens, descricao: linhaDados[4].toString() }];
         }
 
         movimentacoes.push({
@@ -5292,7 +5306,8 @@ function salvarMovimentacao(dados) {
     var estruturaMov = garantirEstruturaMovimentacoes(sheet);
     var colunaStatus = estruturaMov.colunaStatus;
     var colunaItens = estruturaMov.colunaItens;
-    var larguraMovimentacao = Math.max(colunaItens, estruturaMov.ultimaColuna, sheet.getLastColumn());
+    var colunaVolume = estruturaMov.colunaVolume;
+    var larguraMovimentacao = Math.max(colunaItens, estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaVolume);
 
     // Buscar número do armário
     var tipoArmarioNormalizado = normalizarTextoBasico(dados.tipoArmario);
@@ -5330,9 +5345,10 @@ function salvarMovimentacao(dados) {
     var registroMovimento = registroAtual.dataHoraIso;
 
     var itensSerializados = '';
+    var itensNormalizados = [];
     if (Array.isArray(dados.itens) && dados.itens.length) {
       try {
-        var itensNormalizados = dados.itens.map(function(item) {
+        itensNormalizados = dados.itens.map(function(item) {
           var quantidadeNumero = Number(item.quantidade);
           return {
             quantidade: Number.isFinite(quantidadeNumero) ? quantidadeNumero : 0,
@@ -5341,12 +5357,28 @@ function salvarMovimentacao(dados) {
         }).filter(function(item) {
           return item.quantidade > 0 && item.descricao;
         });
-        if (itensNormalizados.length) {
-          itensSerializados = JSON.stringify(itensNormalizados);
-        }
       } catch (erroItens) {
-        itensSerializados = '';
+        itensNormalizados = [];
       }
+    }
+
+    var volumeTotal = 0;
+    if (itensNormalizados.length) {
+      itensSerializados = JSON.stringify(itensNormalizados);
+      volumeTotal = itensNormalizados.reduce(function(soma, item) { return soma + (Number(item.quantidade) || 0); }, 0);
+    }
+
+    if (!itensSerializados && dados.descricao) {
+      var volumeFallback = Number(dados.volume);
+      var volumeConsiderado = Number.isFinite(volumeFallback) && volumeFallback > 0 ? volumeFallback : 1;
+      itensNormalizados = [{ quantidade: volumeConsiderado, descricao: dados.descricao.toString() }];
+      itensSerializados = JSON.stringify(itensNormalizados);
+      volumeTotal = volumeConsiderado;
+    }
+
+    if (!volumeTotal) {
+      var volumeInformado = Number(dados.volume);
+      volumeTotal = Number.isFinite(volumeInformado) && volumeInformado > 0 ? volumeInformado : 1;
     }
 
     var novaLinha = new Array(larguraMovimentacao).fill('');
@@ -5362,6 +5394,9 @@ function salvarMovimentacao(dados) {
     novaLinha[colunaStatus - 1] = 'ativo';
     if (colunaItens) {
       novaLinha[colunaItens - 1] = itensSerializados;
+    }
+    if (colunaVolume) {
+      novaLinha[colunaVolume - 1] = volumeTotal || '';
     }
 
     sheet.getRange(lastRow + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
