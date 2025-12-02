@@ -1025,42 +1025,48 @@
                         <div class="print-badge" id="impressao-reserva-titulo">Guarda Volumes - NAC HUC</div>
                     </div>
                     <div class="print-ticket-body">
-                        <div class="print-highlight-block armario">
-                            <div class="print-armario-row">
-                                <span class="print-highlight-label">Armário</span>
-                                <div class="print-armario-wrapper">
+                        <div class="print-section">
+                            <div class="print-section-header">
+                                <span class="print-section-title">Identificação</span>
+                            </div>
+                            <div class="print-identificacao-grid">
+                                <div class="print-field print-field-armario">
+                                    <span class="print-field-label">Armário</span>
                                     <div class="print-armario-large" id="print-armario">-</div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="print-highlight-block patient">
-                            <span class="print-highlight-label">Paciente</span>
-                            <div class="print-paciente-large" id="print-paciente">-</div>
-                        </div>
-                        <div class="print-details">
-                            <div class="print-row">
-                                <span>Acompanhante</span>
-                                <strong id="print-acompanhante">-</strong>
-                            </div>
-                            <div class="print-row print-prontuario-leito">
-                                <div class="print-inline-field">
-                                    <span>Pront</span>
-                                    <strong id="print-prontuario">-</strong>
+                                <div class="print-field print-field-paciente">
+                                    <span class="print-field-label">Paciente</span>
+                                    <div class="print-paciente-large" id="print-paciente">-</div>
                                 </div>
-                                <div class="print-inline-field">
-                                    <span>Leito</span>
+                            </div>
+                        </div>
+                        <div class="print-section">
+                            <div class="print-section-header">
+                                <span class="print-section-title">Dados de internação</span>
+                            </div>
+                            <div class="print-section-rows">
+                                <div class="print-row">
+                                    <span class="print-row-label">Leito</span>
                                     <strong id="print-leito">-</strong>
                                 </div>
-                            </div>
-                            <div class="print-row">
-                                <span>Volumes</span>
-                                <strong id="print-volumes">-</strong>
+                                <div class="print-row">
+                                    <span class="print-row-label">Prontuário</span>
+                                    <strong id="print-prontuario">-</strong>
+                                </div>
+                                <div class="print-row">
+                                    <span class="print-row-label">Acompanhante</span>
+                                    <strong id="print-acompanhante">-</strong>
+                                </div>
+                                <div class="print-row">
+                                    <span class="print-row-label">Volume(s)</span>
+                                    <strong id="print-volumes">-</strong>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="print-ticket-footer single">
                         <div class="print-meta">
-                            <span>Emitido em</span>
+                            <span>Emissão</span>
                             <strong id="print-emissao">-</strong>
                         </div>
                     </div>
