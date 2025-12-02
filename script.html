@@ -2808,7 +2808,7 @@
                                 <span class="armario-pront"><strong>Prontuário:</strong> ${prontuario}</span>
                                 <span class="armario-leito"><strong>Leito:</strong> ${leito}</span>
                             </p>
-                            <p><strong>Volumes:</strong> ${armario.volumes}</p>
+                            <p><strong>Volumes:</strong> ${formatarVolumeParaExibicao(armario.volumes)}</p>
                             ${armario.whatsapp ? `<p><strong>WhatsApp:</strong> ${armario.whatsapp}</p>` : ''}
                             <p><strong>Início:</strong> ${armario.horaInicio}</p>
                             ${armario.visitaEstendida
@@ -3357,7 +3357,7 @@
                     <td>${armario.nomeVisitante || '-'}</td>
                     <td>${armario.nomePaciente || '-'}</td>
                     <td>${armario.leito || '-'}</td>
-                    <td>${armario.volumes || '-'}</td>
+                    <td>${formatarVolumeParaExibicao(armario.volumes)}</td>
                     <td>${armario.horaInicio || '-'}</td>
                     <td>${horaPrevistaColuna}</td>
                     <td>${armario.whatsapp || '-'}</td>
@@ -3404,7 +3404,7 @@
                     <td>${armario.nomeVisitante || '-'}</td>
                     <td>${armario.nomePaciente || '-'}</td>
                     <td>${armario.leito || '-'}</td>
-                    <td>${armario.volumes || '-'}</td>
+                    <td>${formatarVolumeParaExibicao(armario.volumes)}</td>
                     <td>${armario.horaInicio || '-'}</td>
                     <td>${armario.whatsapp || '-'}</td>
                     <td>
@@ -4440,7 +4440,7 @@
                         <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
                         <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
                         <p><strong>Leito:</strong> ${armario.leito}</p>
-                        <p><strong>Volumes:</strong> ${armario.volumes}</p>
+                        <p><strong>Volumes:</strong> ${formatarVolumeParaExibicao(armario.volumes)}</p>
                         ${armario.whatsapp ? `<p><strong>WhatsApp:</strong> ${armario.whatsapp}</p>` : ''}
                         <p><strong>Início:</strong> ${armario.horaInicio}</p>
                         ${armario.visitaEstendida
@@ -4789,7 +4789,7 @@
                         </div>
                         <div class="swal-form-group">
                             <label for="editar-volumes">Volumes</label>
-                            <input type="number" id="editar-volumes" class="swal2-input" min="0" value="${armario.volumes || 0}" required>
+                            <input type="number" id="editar-volumes" class="swal2-input" min="1" value="${aplicarMinimoVolumes(armario.volumes)}" required>
                         </div>
                         <div class="swal-form-group">
                             <label for="editar-whatsapp">WhatsApp</label>
@@ -5547,26 +5547,33 @@
                 return valor;
             }
         }
-        function obterResumoVolumesTicket(volumes, valorArmario) {
+        function aplicarMinimoVolumes(valor, minimo = 1) {
+            if (valor === null || valor === undefined) return minimo;
+            const valorNormalizado = typeof valor === 'string' ? valor.trim() : valor;
+            if (valorNormalizado === '' || valorNormalizado === '-' || valorNormalizado === '—') return minimo;
+            const numero = Number(valorNormalizado);
+            if (!Number.isNaN(numero)) {
+                return numero > 0 ? numero : minimo;
+            }
+            return valorNormalizado || minimo;
+        }
+        function formatarVolumeParaExibicao(valor, minimo = 1) {
+            const volumeNormalizado = aplicarMinimoVolumes(valor, minimo);
+            return `${volumeNormalizado}`;
+        }
+        function obterResumoVolumesTicket(volumes, valorArmario, minimo = 1) {
             if (Array.isArray(volumes) && volumes.length) {
                 const total = volumes.reduce((acc, volume) => {
                     const quantidade = Number(volume.quantidade);
                     return acc + (Number.isFinite(quantidade) && quantidade > 0 ? quantidade : 0);
                 }, 0);
-                if (total > 0) {
-                    return `${total}`;
-                }
-                return `${volumes.length}`;
+                const totalNormalizado = total > 0 ? total : Math.max(volumes.length, minimo);
+                return formatarVolumeParaExibicao(totalNormalizado, minimo);
             }
             if (valorArmario !== undefined && valorArmario !== null && valorArmario !== '') {
-                const numero = Number(valorArmario);
-                if (!Number.isNaN(numero)) {
-                    if (numero > 0) return `${numero}`;
-                    return 'Nenhum volume informado';
-                }
-                return valorArmario.toString();
+                return formatarVolumeParaExibicao(valorArmario, minimo);
             }
-            return 'Não informado';
+            return formatarVolumeParaExibicao(minimo, minimo);
         }
         function montarDadosImpressaoReserva(armario, dadosTermo, identificadores) {
             const prontuario = dadosTermo?.prontuario ?? armario?.prontuario ?? '';
@@ -6988,7 +6995,7 @@
                     <p><strong>Visitante:</strong> ${armario.nomeVisitante || '-'}</p>
                     <p><strong>Paciente:</strong> ${armario.nomePaciente || '-'}</p>
                     <p><strong>Leito:</strong> ${armario.leito || '-'}</p>
-                    <p><strong>Volumes:</strong> ${armario.volumes || '-'}</p>
+                    <p><strong>Volumes:</strong> ${formatarVolumeParaExibicao(armario.volumes)}</p>
                     <p><strong>Início:</strong> ${armario.horaInicio || '-'}</p>
                     ${armario.visitaEstendida
                         ? '<p><strong>Visita:</strong> Estendida</p>'
@@ -7075,14 +7082,7 @@
                         .join('; ');
                 }
                 const valorBruto = armario.volumes;
-                if (valorBruto !== undefined && valorBruto !== null && valorBruto !== '') {
-                    const numero = Number(valorBruto);
-                    if (!Number.isNaN(numero)) {
-                        return numero > 0 ? `${numero}` : 'Nenhum volume informado';
-                    }
-                    return valorBruto;
-                }
-                return 'Não informado';
+                return formatarVolumeParaExibicao(valorBruto);
             })();
 
             const resumoHtml = `
