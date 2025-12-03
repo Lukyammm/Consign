@@ -2617,34 +2617,36 @@
                 return card;
             };
 
+            renderizarArmarios.renderToken = (renderizarArmarios.renderToken || 0) + 1;
+            const renderTokenAtual = renderizarArmarios.renderToken;
+            let indiceAtual = 0;
+            const agendar = typeof requestIdleCallback === 'function'
+                ? requestIdleCallback
+                : (cb) => setTimeout(cb, 0);
+
             const processarLote = (deadline) => {
+                if (renderTokenAtual !== renderizarArmarios.renderToken) return;
                 const tamanhoLote = 50;
                 let itensProcessados = 0;
                 while (
                     itensProcessados < tamanhoLote &&
-                    armariosParaExibir[renderizarArmarios.indiceAtual]
+                    armariosParaExibir[indiceAtual]
                 ) {
+                    if (renderTokenAtual !== renderizarArmarios.renderToken) return;
                     elementos.armariosContainer.appendChild(
-                        criarCardArmario(armariosParaExibir[renderizarArmarios.indiceAtual])
+                        criarCardArmario(armariosParaExibir[indiceAtual])
                     );
-                    renderizarArmarios.indiceAtual += 1;
+                    indiceAtual += 1;
                     itensProcessados += 1;
                     if (deadline && deadline.timeRemaining && deadline.timeRemaining() <= 0) {
                         break;
                     }
                 }
-                if (renderizarArmarios.indiceAtual < armariosParaExibir.length) {
-                    const agendar = typeof requestIdleCallback === 'function'
-                        ? requestIdleCallback
-                        : (cb) => setTimeout(cb, 0);
+                if (indiceAtual < armariosParaExibir.length && renderTokenAtual === renderizarArmarios.renderToken) {
                     agendar(processarLote);
                 }
             };
 
-            renderizarArmarios.indiceAtual = 0;
-            const agendar = typeof requestIdleCallback === 'function'
-                ? requestIdleCallback
-                : (cb) => setTimeout(cb, 0);
             agendar(processarLote);
         }
         function atualizarResumoDashboardLocal() {
