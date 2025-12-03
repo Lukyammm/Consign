@@ -1314,7 +1314,12 @@
             position: relative;
             overflow: hidden;
             border-left-color: #ffffff;
-            background: var(--em-uso-card-bg);
+            background: repeating-linear-gradient(135deg,
+                color-mix(in srgb, var(--em-uso-base) 94%, white 6%) 0,
+                color-mix(in srgb, var(--em-uso-base) 94%, white 6%) 12px,
+                color-mix(in srgb, var(--em-uso-base) 84%, white 16%) 12px,
+                color-mix(in srgb, var(--em-uso-base) 84%, white 16%) 24px);
+            background-blend-mode: multiply;
             color: var(--em-uso-text);
             box-shadow: 0 14px 32px color-mix(in srgb, var(--em-uso-border-color) 30%, transparent);
         }
@@ -1322,23 +1327,10 @@
             content: "";
             position: absolute;
             inset: 0;
-            background-image:
-                linear-gradient(135deg, rgba(255, 255, 255, 0.05) 16%, transparent 16%),
-                linear-gradient(45deg, rgba(255, 255, 255, 0.04) 14%, transparent 14%),
-                radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.10) 1px, transparent 0),
-                radial-gradient(circle at 78% 58%, rgba(255, 255, 255, 0.07) 1.2px, transparent 0);
-            background-size: 48px 48px, 44px 44px, 32px 32px, 26px 26px;
-            background-position: 0 0, 12px 12px, 0 0, 0 0;
-            opacity: 0.24;
-            pointer-events: none;
-        }
-        .armario-card.em-uso::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0, rgba(255, 255, 255, 0.06) 1px, transparent 1px, transparent 12px);
-            opacity: 0.16;
-            mix-blend-mode: screen;
+            background-image: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--em-uso-base) 10%, transparent) 1px, transparent 0),
+                radial-gradient(circle at 80% 60%, color-mix(in srgb, var(--em-uso-base) 8%, transparent) 1px, transparent 0);
+            background-size: 18px 18px, 22px 22px;
+            opacity: 0.35;
             pointer-events: none;
         }
         .armario-card.contingencia {
