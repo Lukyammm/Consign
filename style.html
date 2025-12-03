@@ -70,6 +70,9 @@
             overflow: hidden;
             touch-action: none;
         }
+        .fa-user-clock, .fas.fa-user-clock {
+            color: #dfe3eb;
+        }
         /* Textura de cédula */
         body::before {
             content: "";
@@ -1123,6 +1126,11 @@
         .card.em-uso .card-value {
             color: var(--em-uso-text);
         }
+        .card.em-uso .card-icon .fa-user-clock,
+        .armario-card.em-uso .fa-user-clock,
+        .sidebar-menu .fa-user-clock {
+            color: #dfe3eb;
+        }
         .card.em-uso .card-description {
             color: color-mix(in srgb, var(--em-uso-text) 75%, transparent);
         }
@@ -1305,7 +1313,7 @@
         .armario-card.em-uso {
             position: relative;
             overflow: hidden;
-            border-left-color: var(--em-uso-border-color);
+            border-left-color: #ffffff;
             background: var(--em-uso-card-bg);
             color: var(--em-uso-text);
             box-shadow: 0 14px 32px color-mix(in srgb, var(--em-uso-border-color) 30%, transparent);
@@ -1315,10 +1323,22 @@
             position: absolute;
             inset: 0;
             background-image:
-                radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.08) 1px, transparent 0),
-                radial-gradient(circle at 78% 58%, rgba(255, 255, 255, 0.06) 1.2px, transparent 0);
-            background-size: 32px 32px, 26px 26px;
+                linear-gradient(135deg, rgba(255, 255, 255, 0.05) 16%, transparent 16%),
+                linear-gradient(45deg, rgba(255, 255, 255, 0.04) 14%, transparent 14%),
+                radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.10) 1px, transparent 0),
+                radial-gradient(circle at 78% 58%, rgba(255, 255, 255, 0.07) 1.2px, transparent 0);
+            background-size: 48px 48px, 44px 44px, 32px 32px, 26px 26px;
+            background-position: 0 0, 12px 12px, 0 0, 0 0;
+            opacity: 0.24;
+            pointer-events: none;
+        }
+        .armario-card.em-uso::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0, rgba(255, 255, 255, 0.06) 1px, transparent 1px, transparent 12px);
             opacity: 0.16;
+            mix-blend-mode: screen;
             pointer-events: none;
         }
         .armario-card.contingencia {
@@ -1394,10 +1414,11 @@
         }
         .armario-alerta-info i { font-size: 0.9rem; }
         .armario-card.visita-estendida {
-            border-left-color: var(--extended-border-color);
+            border-left-color: #ffffff;
             box-shadow: 0 14px 32px color-mix(in srgb, var(--primary-color) 22%, transparent);
         }
         .armario-card.em-uso.visita-estendida {
+            border-left-color: #ffffff;
             box-shadow: 0 18px 40px color-mix(in srgb, var(--em-uso-border-color) 36%, transparent);
         }
         .armario-header-right {
