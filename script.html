@@ -2501,6 +2501,10 @@
             configurarBotaoAcao(document.getElementById('btn-novo-armario'), () => abrirModalNovoArmarioFisico());
             configurarBotaoAcao(document.getElementById('btn-novo-usuario'), () => abrirModalNovoUsuario());
             configurarBotaoAcao(elementos.btnNovaUnidade, () => abrirModalNovaUnidade());
+            const tabelaCadastroArmarios = document.getElementById('tabela-cadastro-armarios');
+            if (tabelaCadastroArmarios) {
+                tabelaCadastroArmarios.addEventListener('click', tratarAcaoCadastroArmario);
+            }
             if (elementos.ocupacaoRapidaForm) {
                 elementos.ocupacaoRapidaForm.addEventListener('submit', async (evento) => {
                     evento.preventDefault();
@@ -4046,12 +4050,28 @@
                     <td>${armario.localizacao || '-'}</td>
                     <td>${armario.status}</td>
                     <td>
-                        <button class="btn-small btn-edit">Editar</button>
-                        <button class="btn-small btn-danger">Excluir</button>
+                        <button class="btn-small btn-edit" data-acao-armario="editar" data-id="${armario.id}">Editar</button>
+                        <button class="btn-small btn-danger" data-acao-armario="excluir" data-id="${armario.id}">Excluir</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+        function tratarAcaoCadastroArmario(evento) {
+            const botao = evento.target.closest('button[data-acao-armario]');
+            if (!botao) return;
+            const acao = botao.dataset.acaoArmario;
+            const id = botao.dataset.id;
+            const armario = (estado.cadastroArmarios || []).find(item => String(item.id) === String(id));
+            if (!armario) {
+                mostrarErro('Armário não encontrado. Atualize a página e tente novamente.');
+                return;
+            }
+            if (acao === 'editar') {
+                abrirModalEditarArmario(armario);
+            } else if (acao === 'excluir') {
+                confirmarExclusaoArmario(armario);
+            }
         }
         async function carregarTabelaUsuarios() {
             const tbody = elementos.tabelaUsuariosBody;
@@ -5227,6 +5247,108 @@
             } else {
                 notificarErroPadrao(cadastroResultado);
             }
+        }
+        async function abrirModalEditarArmario(armario) {
+            const opcoesUnidades = estado.unidades.map(unidade => {
+                const nomeLimpo = (unidade.nome || '').trim();
+                const selecionada = normalizarTexto(armario.unidade) === normalizarTexto(nomeLimpo) ? 'selected' : '';
+                return `<option value="${nomeLimpo}" ${selecionada}>${nomeLimpo}</option>`;
+            }).join('');
+            const resultado = await Swal.fire({
+                title: `Editar armário ${armario.numero}`,
+                html: `
+                    <div class="swal-form-grid">
+                        <div class="swal-form-section">
+                            <div class="swal-form-fields">
+                                <div class="swal-form-group">
+                                    <label for="editar-numero-armario">Número</label>
+                                    <input type="text" id="editar-numero-armario" class="swal2-input" value="${armario.numero}" placeholder="Ex.: 101 ou CONTINGENCIA-01">
+                                </div>
+                                <div class="swal-form-group">
+                                    <label for="editar-tipo-armario">Tipo de armário</label>
+                                    <select id="editar-tipo-armario" class="swal2-input">
+                                        <option value="visitante" ${armario.tipo === 'visitante' ? 'selected' : ''}>Visitante</option>
+                                        <option value="acompanhante" ${armario.tipo === 'acompanhante' ? 'selected' : ''}>Acompanhante</option>
+                                    </select>
+                                </div>
+                                <div class="swal-form-group">
+                                    <label for="editar-unidade-armario">Unidade responsável</label>
+                                    <select id="editar-unidade-armario" class="swal2-input">${opcoesUnidades}</select>
+                                </div>
+                                <div class="swal-form-group">
+                                    <label for="editar-localizacao-armario">Localização física</label>
+                                    <input type="text" id="editar-localizacao-armario" class="swal2-input" value="${armario.localizacao || ''}" placeholder="Ex.: Bloco A - Térreo ou Sala 102">
+                                </div>
+                                <div class="swal-form-group">
+                                    <label for="editar-status-armario">Status</label>
+                                    <select id="editar-status-armario" class="swal2-input">
+                                        <option value="ativo" ${normalizarTexto(armario.status) === 'ativo' ? 'selected' : ''}>Ativo</option>
+                                        <option value="inativo" ${normalizarTexto(armario.status) === 'inativo' ? 'selected' : ''}>Inativo</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Salvar alterações',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const numero = (document.getElementById('editar-numero-armario')?.value || '').trim();
+                    const tipo = document.getElementById('editar-tipo-armario')?.value || '';
+                    const unidade = document.getElementById('editar-unidade-armario')?.value || '';
+                    const localizacao = (document.getElementById('editar-localizacao-armario')?.value || '').trim();
+                    const status = document.getElementById('editar-status-armario')?.value || 'ativo';
+                    if (!numero) {
+                        Swal.showValidationMessage('Informe o número do armário.');
+                        return false;
+                    }
+                    if (!unidade) {
+                        Swal.showValidationMessage('Selecione a unidade responsável.');
+                        return false;
+                    }
+                    return { numero, tipo, unidade, localizacao, status };
+                }
+            });
+            if (!resultado.isConfirmed || !resultado.value) return;
+            const dados = { id: armario.id, ...resultado.value };
+            const resposta = await callGoogleScript('atualizarArmarioFisico', dados);
+            if (!resposta.success) {
+                mostrarErro(resposta.error || 'Não foi possível atualizar o armário.');
+                return;
+            }
+            await carregarCadastroArmarios(estado.unidadeAtual || 'todas');
+            await carregarDadosIniciais({ forcarAtualizacao: true });
+            await Swal.fire({
+                icon: 'success',
+                title: 'Armário atualizado',
+                text: 'Os dados do armário foram atualizados com sucesso.'
+            });
+        }
+        async function confirmarExclusaoArmario(armario) {
+            const confirmacao = await Swal.fire({
+                title: `Excluir armário ${armario.numero}?`,
+                text: 'Esta ação removerá o armário do cadastro e das abas de uso.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#c0392b',
+                confirmButtonText: 'Sim, excluir',
+                cancelButtonText: 'Cancelar'
+            });
+            if (!confirmacao.isConfirmed) return;
+            const resposta = await callGoogleScript('excluirArmarioFisico', { id: armario.id });
+            if (!resposta.success) {
+                mostrarErro(resposta.error || 'Não foi possível excluir o armário.');
+                return;
+            }
+            await carregarCadastroArmarios(estado.unidadeAtual || 'todas');
+            await carregarDadosIniciais({ forcarAtualizacao: true });
+            await Swal.fire({
+                icon: 'success',
+                title: 'Armário excluído',
+                text: 'O armário foi removido com sucesso.'
+            });
         }
         // Abrir modal para novo usuário
         function abrirModalNovoUsuario() {

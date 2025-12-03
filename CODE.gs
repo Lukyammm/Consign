@@ -120,6 +120,14 @@ function definirValorLinha(linha, estrutura, chave, valor) {
   linha[indice] = valor;
 }
 
+function definirValorLinhaPlanilha(sheet, estrutura, linha, chave, valor) {
+  var indice = obterIndiceColuna(estrutura, chave, null);
+  if (indice === null || indice === undefined) {
+    return;
+  }
+  sheet.getRange(linha, indice + 1).setValue(valor);
+}
+
 function obterValorLinhaFlexivel(linha, estrutura, chaves, padrao) {
   if (!Array.isArray(chaves)) {
     chaves = [chaves];
@@ -3498,6 +3506,136 @@ function getCadastroArmarios() {
       return { success: false, error: error.toString() };
     }
   });
+}
+
+function atualizarArmarioFisico(armarioData) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Cadastro Armários');
+
+    if (!sheet) {
+      return { success: false, error: 'Aba de cadastro não encontrada' };
+    }
+
+    var id = parseInt(armarioData.id, 10);
+    if (!id) {
+      return { success: false, error: 'ID do armário é obrigatório' };
+    }
+
+    var totalLinhas = Math.max(sheet.getLastRow() - 1, 0);
+    if (totalLinhas === 0) {
+      return { success: false, error: 'Nenhum armário cadastrado' };
+    }
+
+    var ids = sheet.getRange(2, 1, totalLinhas, 1).getValues().flat();
+    var linhaIndex = ids.findIndex(function(valor) { return Number(valor) === id; });
+    if (linhaIndex === -1) {
+      return { success: false, error: 'Armário não encontrado' };
+    }
+
+    var numeros = sheet.getRange(2, 2, totalLinhas, 1).getValues().flat();
+    var numeroNovo = (armarioData.numero || '').toString().trim();
+    if (!numeroNovo) {
+      return { success: false, error: 'Número do armário é obrigatório' };
+    }
+    var numeroDuplicado = numeros.some(function(numero, idx) {
+      return idx !== linhaIndex && normalizarNumeroArmario(numero) === normalizarNumeroArmario(numeroNovo);
+    });
+    if (numeroDuplicado) {
+      return { success: false, error: 'Número de armário já cadastrado' };
+    }
+
+    var linhaPlanilha = linhaIndex + 2;
+    var tipo = (armarioData.tipo || 'visitante').toString().trim();
+    var unidade = (armarioData.unidade || '').toString().trim();
+    var localizacao = (armarioData.localizacao || '').toString().trim();
+    var status = (armarioData.status || 'ativo').toString().trim();
+
+    sheet.getRange(linhaPlanilha, 2, 1, 4).setValues([[numeroNovo, tipo, unidade, localizacao]]);
+    sheet.getRange(linhaPlanilha, 6, 1, 1).setValue(status);
+
+    var estruturaVisitante = obterEstruturaPlanilha(ss.getSheetByName('Visitantes'));
+    var estruturaAcompanhante = obterEstruturaPlanilha(ss.getSheetByName('Acompanhantes'));
+    [
+      { sheet: ss.getSheetByName('Visitantes'), estrutura: estruturaVisitante },
+      { sheet: ss.getSheetByName('Acompanhantes'), estrutura: estruturaAcompanhante }
+    ].forEach(function(contexto) {
+      if (!contexto.sheet || !contexto.estrutura) return;
+      var idsUso = contexto.sheet.getRange(2, 1, Math.max(contexto.sheet.getLastRow() - 1, 0), 1).getValues().flat();
+      var numerosUso = contexto.sheet.getRange(2, 2, Math.max(contexto.sheet.getLastRow() - 1, 0), 1).getValues().flat();
+      numerosUso.forEach(function(numero, idx) {
+        if (normalizarNumeroArmario(numero) === normalizarNumeroArmario(numeroNovo)) {
+          var linhaUso = idx + 2;
+          definirValorLinhaPlanilha(contexto.sheet, contexto.estrutura, linhaUso, 'numero', numeroNovo);
+          definirValorLinhaPlanilha(contexto.sheet, contexto.estrutura, linhaUso, 'unidade', unidade);
+        }
+      });
+    });
+
+    limparCacheCadastroArmarios();
+    limparCacheArmarios();
+
+    registrarLog('ATUALIZACAO', 'Armário atualizado: ' + numeroNovo + ' (' + tipo + ')');
+    return { success: true };
+  } catch (error) {
+    registrarLog('ERRO', 'Erro ao atualizar armário físico: ' + error.toString());
+    return { success: false, error: error.toString() };
+  }
+}
+
+function excluirArmarioFisico(armarioData) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Cadastro Armários');
+    if (!sheet) {
+      return { success: false, error: 'Aba de cadastro não encontrada' };
+    }
+
+    var id = parseInt(armarioData.id, 10);
+    if (!id) {
+      return { success: false, error: 'ID do armário é obrigatório' };
+    }
+
+    var totalLinhas = Math.max(sheet.getLastRow() - 1, 0);
+    if (totalLinhas === 0) {
+      return { success: false, error: 'Nenhum armário cadastrado' };
+    }
+
+    var dados = sheet.getRange(2, 1, totalLinhas, 6).getValues();
+    var linhaIndex = dados.findIndex(function(linha) { return Number(linha[0]) === id; });
+    if (linhaIndex === -1) {
+      return { success: false, error: 'Armário não encontrado' };
+    }
+
+    var numero = dados[linhaIndex][1];
+    var tipo = dados[linhaIndex][2];
+
+    sheet.deleteRow(linhaIndex + 2);
+
+    var planilhaUso = tipo === 'acompanhante' ? ss.getSheetByName('Acompanhantes') : ss.getSheetByName('Visitantes');
+    if (planilhaUso) {
+      var estrutura = obterEstruturaPlanilha(planilhaUso);
+      var totalUso = Math.max(planilhaUso.getLastRow() - 1, 0);
+      if (totalUso > 0) {
+        var numerosUso = planilhaUso.getRange(2, 2, totalUso, 1).getValues().flat();
+        var linhaUsoIndex = numerosUso.findIndex(function(valor) {
+          return normalizarNumeroArmario(valor) === normalizarNumeroArmario(numero);
+        });
+        if (linhaUsoIndex !== -1) {
+          planilhaUso.deleteRow(linhaUsoIndex + 2);
+        }
+      }
+    }
+
+    limparCacheCadastroArmarios();
+    limparCacheArmarios();
+
+    registrarLog('EXCLUSAO', 'Armário removido: ' + numero + ' (' + tipo + ')');
+    return { success: true };
+  } catch (error) {
+    registrarLog('ERRO', 'Erro ao excluir armário físico: ' + error.toString());
+    return { success: false, error: error.toString() };
+  }
 }
 
 function cadastrarArmarioFisico(armarioData) {
