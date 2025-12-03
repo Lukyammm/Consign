@@ -25,7 +25,7 @@
             /* Misc */
             --focus-ring: rgba(59, 130, 246, 0.25);
             --sidebar-width: 250px;
-            --em-uso-base: #2f3a4a;
+            --em-uso-base: #3B4554;
             --em-uso-border-color: color-mix(in srgb, var(--em-uso-base) 70%, black 30%);
             --em-uso-card-bg: linear-gradient(145deg,
                 color-mix(in srgb, var(--em-uso-base) 96%, black 4%),
@@ -1314,12 +1314,12 @@
             position: relative;
             overflow: hidden;
             border-left-color: #ffffff;
-            background: repeating-linear-gradient(135deg,
-                color-mix(in srgb, var(--em-uso-base) 70%, transparent 30%) 0,
-                color-mix(in srgb, var(--em-uso-base) 70%, transparent 30%) 12px,
-                color-mix(in srgb, var(--em-uso-base) 55%, transparent 45%) 12px,
-                color-mix(in srgb, var(--em-uso-base) 55%, transparent 45%) 24px);
-            background-blend-mode: screen;
+            background-color: var(--em-uso-base);
+            background-image: repeating-linear-gradient(135deg,
+                rgba(255, 255, 255, 0.1) 0,
+                rgba(255, 255, 255, 0.1) 12px,
+                transparent 12px,
+                transparent 24px);
             color: var(--em-uso-text);
             box-shadow: 0 14px 32px color-mix(in srgb, var(--em-uso-border-color) 30%, transparent);
         }
