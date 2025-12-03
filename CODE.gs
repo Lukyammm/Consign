@@ -565,9 +565,6 @@ const CACHE_TTL_PADRAO = 60; // segundos
 const CACHE_TTL_ARMARIOS = 45;
 const CACHE_TTL_HISTORICO = 90;
 const CACHE_TTL_MOVIMENTACOES = 45;
-const SYNC_VERSION_PROPERTY = 'locknac_sync_last_updated_v1';
-const SYNC_VERSION_ORIGEM_PROPERTY = 'locknac_sync_last_origem_v1';
-const METRICAS_SINCRONIZACAO_SHEET = 'Métricas Sincronização';
 
 // Configuração da planilha de liberações externas
 const PLANILHA_LIBERACAO_ID = '1UR6ynp6nxbpVMephgKkT8_YDc_ih5bYK565IebfojPI';
@@ -594,63 +591,6 @@ function montarChaveCache() {
   }
 
   return CACHE_PREFIXO + ':' + partes.join(':');
-}
-
-function obterTimestampIsoAtual() {
-  return new Date().toISOString();
-}
-
-function obterVersaoSincronizacao() {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var versao = props.getProperty(SYNC_VERSION_PROPERTY);
-    if (!versao) {
-      versao = obterTimestampIsoAtual();
-      props.setProperty(SYNC_VERSION_PROPERTY, versao);
-    }
-    return versao;
-  } catch (erroVersao) {
-    console.error('Falha ao obter versão de sincronização:', erroVersao);
-    return obterTimestampIsoAtual();
-  }
-}
-
-function registrarAtualizacaoGlobal(origem) {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var agoraIso = obterTimestampIsoAtual();
-    props.setProperty(SYNC_VERSION_PROPERTY, agoraIso);
-    if (origem) {
-      props.setProperty(SYNC_VERSION_ORIGEM_PROPERTY, origem.toString());
-    }
-  } catch (erroAtualizacao) {
-    console.error('Falha ao registrar atualização global:', erroAtualizacao);
-  }
-}
-
-function montarRespostaComMeta(payload) {
-  var corpo = (payload && typeof payload === 'object') ? Object.assign({}, payload) : { data: payload };
-  try {
-    corpo._serverTimestamp = obterTimestampIsoAtual();
-    corpo._syncVersion = obterVersaoSincronizacao();
-  } catch (erroMeta) {
-    console.error('Falha ao anexar metadados de sincronização:', erroMeta);
-  }
-  return corpo;
-}
-
-function responderJson(payload) {
-  var corpo = montarRespostaComMeta(payload);
-  var resposta = ContentService.createTextOutput(JSON.stringify(corpo))
-    .setMimeType(ContentService.MimeType.JSON);
-  try {
-    resposta.setHeader('Cache-Control', 'no-store, max-age=0');
-    resposta.setHeader('Pragma', 'no-cache');
-    resposta.setHeader('Expires', '0');
-  } catch (erroHeader) {
-    console.error('Falha ao definir cabeçalhos de cache:', erroHeader);
-  }
-  return resposta;
 }
 
 function executarComCache(chave, ttl, fornecedor) {
@@ -1265,165 +1205,152 @@ function handlePost(e) {
   definirContextoUsuario(e && e.parameter);
 
   try {
-    var resultado;
     switch(action) {
       case 'getArmarios':
-        resultado = getArmarios(e.parameter.tipo);
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(getArmarios(e.parameter.tipo)))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'cadastrarArmario':
-        resultado = cadastrarArmario(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(cadastrarArmario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'atualizarHorarioVisitante':
-        resultado = atualizarHorarioVisitante(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(atualizarHorarioVisitante(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'atualizarDadosArmario':
-        resultado = atualizarDadosArmario(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(atualizarDadosArmario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'liberarArmario':
-        resultado = liberarArmario(
+        return ContentService.createTextOutput(JSON.stringify(liberarArmario(
           e.parameter.id,
           e.parameter.tipo,
           e.parameter.numero,
-          e.parameter.usuarioResponsavel,
-          e.parameter.versao
-        );
-        break;
-
+          e.parameter.usuarioResponsavel
+        )))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'getUsuarios':
-        resultado = getUsuarios();
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(getUsuarios()))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'cadastrarUsuario':
-        resultado = cadastrarUsuario(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(cadastrarUsuario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'atualizarUsuario':
-        resultado = atualizarUsuario(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(atualizarUsuario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'excluirUsuario':
-        resultado = excluirUsuario(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(excluirUsuario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'autenticarUsuario':
-        resultado = autenticarUsuario(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(autenticarUsuario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'registrarContingencia':
-        resultado = registrarContingencia(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(registrarContingencia(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'getLogs':
-        resultado = getLogs();
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(getLogs()))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'getNotificacoes':
-        resultado = getNotificacoes();
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(getNotificacoes()))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'getEstatisticasDashboard':
-        resultado = getEstatisticasDashboard(e.parameter.tipoUsuario);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(getEstatisticasDashboard(e.parameter.tipoUsuario)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'getDescarte':
-        resultado = getItensDescarte();
-        break;
+        return ContentService.createTextOutput(JSON.stringify(getItensDescarte()))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'getHistorico':
-        resultado = getHistorico(e.parameter.tipo);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(getHistorico(e.parameter.tipo)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'getPlanilhaLiberacao':
-        resultado = getPlanilhaLiberacao(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(getPlanilhaLiberacao(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'getCadastroArmarios':
-        resultado = getCadastroArmarios();
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(getCadastroArmarios()))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'cadastrarArmarioFisico':
-        resultado = cadastrarArmarioFisico(e.parameter);
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(cadastrarArmarioFisico(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'getUnidades':
-        resultado = getUnidades();
-        break;
+        return ContentService.createTextOutput(JSON.stringify(getUnidades()))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'getSetores':
-        resultado = getSetores();
-        break;
+        return ContentService.createTextOutput(JSON.stringify(getSetores()))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'buscarPacienteBaseVitae':
-        resultado = buscarPacienteBaseVitae(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(buscarPacienteBaseVitae(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'cadastrarUnidade':
-        resultado = cadastrarUnidade(e.parameter);
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(cadastrarUnidade(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'alternarStatusUnidade':
-        resultado = alternarStatusUnidade(e.parameter);
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(alternarStatusUnidade(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'salvarTermoCompleto':
-        resultado = salvarTermoCompleto(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(salvarTermoCompleto(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'finalizarTermo':
-        resultado = finalizarTermo(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(finalizarTermo(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'gerarTermoPDFTemporario':
-        resultado = gerarTermoPDFTemporario(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(gerarTermoPDFTemporario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'getTermo':
-        resultado = getTermo(e.parameter);
-        break;
+        return ContentService.createTextOutput(JSON.stringify(getTermo(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       case 'excluirArquivoTemporario':
-        resultado = excluirArquivoTemporario(e.parameter);
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(excluirArquivoTemporario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'getMovimentacoes':
-        resultado = getMovimentacoes(e.parameter);
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(getMovimentacoes(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'salvarMovimentacao':
-        resultado = salvarMovimentacao(e.parameter);
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(salvarMovimentacao(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'verificarInicializacao':
-        resultado = verificarInicializacao();
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(verificarInicializacao()))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       case 'inicializarPlanilha':
-        resultado = inicializarPlanilha();
-        break;
-
-      case 'getSyncStatus':
-        resultado = getSyncStatus();
-        break;
-
-      case 'getArmariosSnapshot':
-        resultado = getArmariosSnapshot(e.parameter.tipo);
-        break;
-
-      case 'registrarLatenciaSincronizacao':
-        resultado = registrarLatenciaSincronizacao(e.parameter);
-        break;
-
+        return ContentService.createTextOutput(JSON.stringify(inicializarPlanilha()))
+          .setMimeType(ContentService.MimeType.JSON);
+      
       default:
-        resultado = { success: false, error: 'Ação não reconhecida: ' + action };
+        return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Ação não reconhecida: ' + action }))
+          .setMimeType(ContentService.MimeType.JSON);
     }
-    return responderJson(resultado);
   } catch (error) {
     registrarLog('ERRO', `Erro em handlePost: ${error.toString()}`);
-    return responderJson({ success: false, error: error.toString() });
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
   } finally {
     limparContextoUsuario();
   }
@@ -1722,40 +1649,6 @@ function getArmarios(tipo) {
   });
 }
 
-function getArmariosSnapshot(tipo) {
-  var resultado = getArmarios(tipo);
-  if (!resultado || !resultado.success) {
-    return resultado;
-  }
-  var compactados = (resultado.data || []).map(function(armario) {
-    return {
-      id: armario.id,
-      idPlanilha: armario.idPlanilha,
-      numero: armario.numero,
-      status: armario.status,
-      tipo: armario.tipo,
-      unidade: armario.unidade,
-      horaInicio: armario.horaInicio,
-      horaPrevista: armario.horaPrevista,
-      dataRegistro: armario.dataRegistro,
-      visitaEstendida: armario.visitaEstendida,
-      versao: armario.versao,
-      termoStatus: armario.termoStatus,
-      termoFinalizado: armario.termoFinalizado,
-      ehContingencia: armario.ehContingencia
-    };
-  });
-  return { success: true, data: compactados, lastUpdated: obterVersaoSincronizacao() };
-}
-
-function getSyncStatus() {
-  return {
-    success: true,
-    lastUpdated: obterVersaoSincronizacao(),
-    serverTime: obterTimestampIsoAtual()
-  };
-}
-
 function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(sheetName);
@@ -1773,7 +1666,6 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
   if (!isVisitante) {
     estrutura = garantirColunaObservacoesAcompanhantes(sheet, estrutura);
   }
-  estrutura = garantirColunaVersao(sheet, estrutura);
   var totalLinhas = sheet.getLastRow() - 1;
   var totalColunas = estrutura.ultimaColuna || (isVisitante ? 14 : 12);
   var dados = sheet.getRange(2, 1, totalLinhas, totalColunas).getValues();
@@ -1806,10 +1698,8 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
   var visitaEstendidaIndex = isVisitante
     ? obterIndiceColuna(estrutura, CABECALHOS_VISITA_ESTENDIDA, null)
     : -1;
-  var versaoIndex = obterIndiceColuna(estrutura, ['versao', 'versão', 'atualizado em', 'updated'], null);
 
   var houveAtualizacaoStatus = false;
-  var houveAtualizacaoVersao = false;
   var agoraReferencia = new Date();
 
   for (var i = 0; i < dados.length; i++) {
@@ -1858,16 +1748,6 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
     var ehContingencia = ehNumeroContingencia(numeroNormalizado) || status === 'contingencia';
     var prontuarioNormalizado = normalizarIdentificador(obterValorLinha(row, estrutura, 'prontuario', ''));
     var infoInternacao = prontuarioNormalizado && mapaInternacoes ? mapaInternacoes[prontuarioNormalizado] : null;
-    var versaoAtual = versaoIndex !== null && versaoIndex !== undefined && versaoIndex < row.length
-      ? Number(row[versaoIndex])
-      : 0;
-    if (!Number.isFinite(versaoAtual) || versaoAtual <= 0) {
-      versaoAtual = 1;
-      if (versaoIndex !== null && versaoIndex !== undefined) {
-        row[versaoIndex] = versaoAtual;
-        houveAtualizacaoVersao = true;
-      }
-    }
 
     var armario = {
       id: idInterface,
@@ -1885,7 +1765,6 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
       termoAplicado: termoIndex !== null && termoIndex !== undefined ? converterParaBoolean(row[termoIndex]) : false,
       whatsapp: whatsappIndex !== null && whatsappIndex !== undefined ? (row[whatsappIndex] || '') : '',
       observacoes: observacoesIndex !== null && observacoesIndex !== undefined ? (row[observacoesIndex] || '') : '',
-      versao: versaoAtual,
       ehContingencia: ehContingencia,
       pacienteDeAlta: infoInternacao ? !infoInternacao.internadoAtual : false,
       destinoAtual: infoInternacao ? (infoInternacao.destinoAtual || '') : '',
@@ -1981,13 +1860,6 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
     limparCacheArmarios();
   }
 
-  if (houveAtualizacaoVersao && versaoIndex !== null && versaoIndex !== undefined) {
-    var versoesAtualizadas = dados.map(function(linha) {
-      return [linha[versaoIndex] || 1];
-    });
-    sheet.getRange(2, versaoIndex + 1, totalLinhas, 1).setValues(versoesAtualizadas);
-  }
-
   return armarios;
 }
 
@@ -2019,7 +1891,6 @@ function cadastrarArmario(armarioData) {
   if (sheetName === 'Acompanhantes') {
     estrutura = garantirColunaObservacoesAcompanhantes(sheet, estrutura);
   }
-  estrutura = garantirColunaVersao(sheet, estrutura);
   var totalColunas = estrutura.ultimaColuna || (sheetName === 'Visitantes' ? 14 : 12);
   var linhaPlanilha = -1;
   var linhaAtual = null;
@@ -2113,8 +1984,6 @@ function cadastrarArmario(armarioData) {
     definirValorLinha(novaLinha, estrutura, 'termo aplicado', false);
     definirValorLinha(novaLinha, estrutura, CABECALHOS_OBSERVACOES, observacoes);
 
-    incrementarVersaoRegistro(novaLinha, estrutura);
-
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([novaLinha]);
 
     var historicoLastRow = historicoSheet.getLastRow();
@@ -2150,13 +2019,11 @@ function cadastrarArmario(armarioData) {
 
     limparCacheArmarios();
     limparCacheHistorico();
-    registrarAtualizacaoGlobal('cadastrarArmario');
 
     return {
       success: true,
       message: 'Armário cadastrado com sucesso',
-      id: linhaAtual[idIndex],
-      versao: obterVersaoRegistro(novaLinha, estrutura)
+      id: linhaAtual[idIndex]
     };
 
   } catch (error) {
@@ -2200,7 +2067,6 @@ function registrarContingencia(dados) {
 
     var estrutura = garantirColunaProntuario(sheet, obterEstruturaPlanilha(sheet));
     estrutura = garantirColunaObservacoesAcompanhantes(sheet, estrutura);
-    estrutura = garantirColunaVersao(sheet, estrutura);
     var totalColunas = estrutura.ultimaColuna || 12;
     var totalLinhas = sheet.getLastRow();
     var numeroIndex = obterIndiceColuna(estrutura, 'numero', 1);
@@ -2259,7 +2125,6 @@ function registrarContingencia(dados) {
     definirValorLinha(linhaBase, estrutura, CABECALHOS_WHATSAPP, dados.whatsapp || '');
     definirValorLinha(linhaBase, estrutura, 'termo aplicado', false);
     definirValorLinha(linhaBase, estrutura, CABECALHOS_OBSERVACOES, observacoes);
-    incrementarVersaoRegistro(linhaBase, estrutura);
 
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([linhaBase]);
 
@@ -2292,7 +2157,6 @@ function registrarContingencia(dados) {
 
     limparCacheArmarios();
     limparCacheHistorico();
-    registrarAtualizacaoGlobal('registrarContingencia');
 
     return {
       success: true,
@@ -2316,8 +2180,7 @@ function registrarContingencia(dados) {
         termoAplicado: false,
         termoFinalizado: false,
         termoStatus: 'pendente',
-        ehContingencia: true,
-        versao: obterVersaoRegistro(linhaBase, estrutura)
+        ehContingencia: true
       }
     };
 
@@ -2347,7 +2210,6 @@ function atualizarHorarioVisitante(parametros) {
     }
 
     var estrutura = garantirColunaVisitaEstendida(sheet, obterEstruturaPlanilha(sheet));
-    estrutura = garantirColunaVersao(sheet, estrutura);
     var totalLinhas = sheet.getLastRow();
 
     if (totalLinhas <= 1) {
@@ -2393,10 +2255,6 @@ function atualizarHorarioVisitante(parametros) {
     }
 
     var statusAtual = normalizarTextoBasico(armarioData[statusIndex]);
-    var validacaoVersao = validarVersaoRegistro(armarioData, estrutura, parametros.versao);
-    if (!validacaoVersao.valida) {
-      return { success: false, error: 'Dados desatualizados. Recarregue a página.', versaoAtual: validacaoVersao.atual };
-    }
     var statusPermitidos = ['em-uso', 'proximo', 'vencido'];
     if (statusPermitidos.indexOf(statusAtual) === -1) {
       return { success: false, error: 'Armário não está em uso para atualização de horário' };
@@ -2415,13 +2273,10 @@ function atualizarHorarioVisitante(parametros) {
       armarioData[statusIndex] = novoStatus;
     }
 
-    incrementarVersaoRegistro(armarioData, estrutura);
-
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([armarioData]);
 
     limparCacheArmarios();
     limparCacheHistorico();
-    registrarAtualizacaoGlobal('atualizarHorarioVisitante');
 
     var numeroArmario = armarioData[numeroIndex] || numeroInformado || '';
     var detalheHorario = visitaEstendida ? 'visita estendida' : (novaHoraPrevista || '-');
@@ -2430,8 +2285,7 @@ function atualizarHorarioVisitante(parametros) {
     return {
       success: true,
       horaPrevista: novaHoraPrevista,
-      visitaEstendida: visitaEstendida,
-      versao: obterVersaoRegistro(armarioData, estrutura)
+      visitaEstendida: visitaEstendida
     };
   } catch (error) {
     registrarLog('ERRO', `Erro ao atualizar horário do armário: ${error.toString()}`);
@@ -2462,7 +2316,6 @@ function atualizarDadosArmario(parametros) {
     if (sheetName === 'Acompanhantes') {
       estrutura = garantirColunaObservacoesAcompanhantes(sheet, estrutura);
     }
-    estrutura = garantirColunaVersao(sheet, estrutura);
 
     var totalLinhas = sheet.getLastRow();
     if (totalLinhas <= 1) {
@@ -2521,10 +2374,6 @@ function atualizarDadosArmario(parametros) {
     }
 
     var statusAtual = normalizarTextoBasico(armarioData[statusIndex]);
-    var validacaoVersao = validarVersaoRegistro(armarioData, estrutura, parametros.versao);
-    if (!validacaoVersao.valida) {
-      return { success: false, error: 'Dados desatualizados. Recarregue a página.', versaoAtual: validacaoVersao.atual };
-    }
     if (statusAtual === 'livre') {
       return { success: false, error: 'Armário está livre. Cadastre um uso antes de editar.' };
     }
@@ -2567,8 +2416,6 @@ function atualizarDadosArmario(parametros) {
       }
     }
 
-    var novaVersao = incrementarVersaoRegistro(armarioData, estrutura);
-
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([armarioData]);
 
     var numeroArmario = obterValorLinha(armarioData, estrutura, 'numero', armarioData[numeroIndex] || '');
@@ -2579,7 +2426,6 @@ function atualizarDadosArmario(parametros) {
 
     registrarLog('ATUALIZACAO', 'Dados do armário ' + numeroArmario + ' (' + sheetName + ') atualizados');
     limparCacheArmarios();
-    registrarAtualizacaoGlobal('atualizarDadosArmario');
 
     return {
       success: true,
@@ -2600,8 +2446,7 @@ function atualizarDadosArmario(parametros) {
         visitaEstendida: visitaEstendida,
         dataRegistro: dataRegistroValorFormatado,
         unidade: unidadeAtual,
-        termoAplicado: termoIndex !== null && termoIndex !== undefined ? converterParaBoolean(armarioData[termoIndex]) : false,
-        versao: novaVersao
+        termoAplicado: termoIndex !== null && termoIndex !== undefined ? converterParaBoolean(armarioData[termoIndex]) : false
       }
     };
 
@@ -2611,7 +2456,7 @@ function atualizarDadosArmario(parametros) {
   }
 }
 
-function liberarArmario(id, tipo, numero, usuarioResponsavel, versaoEsperada) {
+function liberarArmario(id, tipo, numero, usuarioResponsavel) {
   try {
     var tipoNormalizado = normalizarTextoBasico(tipo);
     var ehAcompanhante = tipoNormalizado === 'acompanhante';
@@ -2642,7 +2487,6 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel, versaoEsperada) {
     if (ehAcompanhante) {
       estrutura = garantirColunaObservacoesAcompanhantes(sheet, estrutura);
     }
-    estrutura = garantirColunaVersao(sheet, estrutura);
     var totalColunas = estrutura.ultimaColuna || (sheetName === 'Visitantes' ? 14 : 12);
     var totalLinhas = sheet.getLastRow();
     if (totalLinhas <= 1) {
@@ -2688,10 +2532,6 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel, versaoEsperada) {
     var statusAtual = normalizarTextoBasico(
       obterValorLinha(armarioData, estrutura, 'status', statusPadrao)
     );
-    var validacaoVersao = validarVersaoRegistro(armarioData, estrutura, versaoEsperada);
-    if (!validacaoVersao.valida) {
-      return { success: false, error: 'Dados desatualizados. Recarregue a página.', versaoAtual: validacaoVersao.atual };
-    }
     if (statusAtual === 'livre') {
       return { success: false, error: 'Armário já está livre' };
     }
@@ -2720,7 +2560,6 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel, versaoEsperada) {
     definirValorLinha(novaLinha, estrutura, 'unidade', unidadeAtual);
     definirValorLinha(novaLinha, estrutura, 'termo aplicado', false);
     definirValorLinha(novaLinha, estrutura, CABECALHOS_OBSERVACOES, '');
-    incrementarVersaoRegistro(novaLinha, estrutura);
 
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([novaLinha]);
 
@@ -2755,9 +2594,8 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel, versaoEsperada) {
 
     limparCacheArmarios();
     limparCacheHistorico();
-    registrarAtualizacaoGlobal('liberarArmario');
 
-    return { success: true, message: 'Armário liberado com sucesso', versao: obterVersaoRegistro(novaLinha, estrutura) };
+    return { success: true, message: 'Armário liberado com sucesso' };
 
   } catch (error) {
     registrarLog('ERRO', `Erro ao liberar armário: ${error.toString()}`);
@@ -5332,60 +5170,6 @@ function garantirColunaObservacoesAcompanhantes(sheet, estrutura) {
   return obterEstruturaPlanilha(sheet);
 }
 
-function garantirColunaVersao(sheet, estrutura) {
-  if (!sheet) {
-    return estrutura;
-  }
-
-  var estruturaAtual = estrutura || obterEstruturaPlanilha(sheet);
-  var indiceVersao = obterIndiceColuna(estruturaAtual, ['versao', 'versão', 'atualizado em', 'updated'], null);
-
-  if (indiceVersao !== null && indiceVersao !== undefined) {
-    return estruturaAtual;
-  }
-
-  var ultimaColuna = estruturaAtual.ultimaColuna || sheet.getLastColumn();
-  sheet.insertColumnAfter(ultimaColuna);
-  sheet.getRange(1, ultimaColuna + 1).setValue('Versao');
-
-  return obterEstruturaPlanilha(sheet);
-}
-
-function obterVersaoRegistro(linha, estrutura) {
-  var indiceVersao = obterIndiceColuna(estrutura, ['versao', 'versão', 'atualizado em', 'updated'], null);
-  if (indiceVersao === null || indiceVersao === undefined || indiceVersao >= linha.length) {
-    return 0;
-  }
-  var valor = Number(linha[indiceVersao]);
-  return Number.isFinite(valor) ? valor : 0;
-}
-
-function incrementarVersaoRegistro(linha, estrutura) {
-  var indiceVersao = obterIndiceColuna(estrutura, ['versao', 'versão', 'atualizado em', 'updated'], null);
-  if (indiceVersao === null || indiceVersao === undefined) {
-    return 1;
-  }
-  var versaoAtual = obterVersaoRegistro(linha, estrutura);
-  var novaVersao = versaoAtual + 1;
-  while (linha.length < estrutura.ultimaColuna) {
-    linha.push('');
-  }
-  linha[indiceVersao] = novaVersao;
-  return novaVersao;
-}
-
-function validarVersaoRegistro(linha, estrutura, versaoInformada) {
-  var versaoAtual = obterVersaoRegistro(linha, estrutura);
-  if (versaoInformada === undefined || versaoInformada === null || versaoInformada === '') {
-    return { valida: true, atual: versaoAtual };
-  }
-  var versaoNumero = Number(versaoInformada);
-  if (!Number.isFinite(versaoNumero)) {
-    return { valida: true, atual: versaoAtual };
-  }
-  return { valida: versaoNumero === versaoAtual, atual: versaoAtual };
-}
-
 function getMovimentacoes(dados) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Movimentações');
@@ -5655,7 +5439,6 @@ function salvarMovimentacao(dados) {
     registrarLog('MOVIMENTAÇÃO', "Movimentação registrada para armário " + numeroArmario);
 
     limparCacheMovimentacoes(dados.armarioId, numeroArmario, tipoArmarioNormalizado || tipoNormalizado);
-    registrarAtualizacaoGlobal('salvarMovimentacao');
 
     return { success: true, message: 'Movimentação registrada com sucesso', id: novoId };
 
@@ -5787,59 +5570,6 @@ function registrarLog(acao, detalhes) {
 
   } catch (error) {
     console.error('Falha ao registrar log:', error);
-  }
-}
-
-function registrarLatenciaSincronizacao(parametros) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    if (!ss) {
-      return { success: false, error: 'Planilha indisponível' };
-    }
-
-    var sheet = ss.getSheetByName(METRICAS_SINCRONIZACAO_SHEET);
-    if (!sheet) {
-      sheet = ss.insertSheet(METRICAS_SINCRONIZACAO_SHEET);
-      sheet.getRange(1, 1, 1, 9).setValues([[
-        'Data Servidor',
-        'Ação',
-        'Início Cliente (ms)',
-        'Fim Cliente (ms)',
-        'Duração Cliente (ms)',
-        'Usuário',
-        'Versão Cliente',
-        'Versão Servidor',
-        'Erro'
-      ]]);
-      sheet.setFrozenRows(1);
-    }
-
-    var acao = parametros && parametros.acao ? parametros.acao.toString() : 'desconhecida';
-    var inicioCliente = parametros && parametros.inicioClienteMs ? Number(parametros.inicioClienteMs) : 0;
-    var fimCliente = parametros && parametros.fimClienteMs ? Number(parametros.fimClienteMs) : 0;
-    var duracaoCliente = (inicioCliente && fimCliente) ? (fimCliente - inicioCliente) : '';
-    var usuario = determinarResponsavelRegistro(usuarioContextoRequisicao) || '';
-    var versaoCliente = parametros && parametros.versaoCliente ? parametros.versaoCliente.toString() : '';
-    var versaoServidor = obterVersaoSincronizacao();
-    var erroInformado = parametros && parametros.erro ? parametros.erro.toString() : '';
-
-    var novaLinha = [
-      obterTimestampIsoAtual(),
-      acao,
-      inicioCliente || '',
-      fimCliente || '',
-      duracaoCliente,
-      usuario,
-      versaoCliente,
-      versaoServidor,
-      erroInformado
-    ];
-
-    sheet.getRange(sheet.getLastRow() + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
-    return { success: true };
-  } catch (erro) {
-    console.error('Falha ao registrar latência de sincronização:', erro);
-    return { success: false, error: erro.toString() };
   }
 }
 
