@@ -1971,6 +1971,18 @@
             line-height: 1.45;
             font-size: 15px;
         }
+        .print-sheet {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            width: 100%;
+            align-items: flex-start;
+        }
+        .print-sheet .print-ticket {
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+        }
         .print-ticket *,
         .print-ticket *::before,
         .print-ticket *::after {
@@ -2301,6 +2313,10 @@
                 font-size: 1rem;
             }
         }
+        @page {
+            size: A4;
+            margin: 12mm;
+        }
         @media print {
             body.modal-print-open * {
                 visibility: hidden;
@@ -2350,6 +2366,17 @@
                 width: 180mm;
                 max-width: 180mm;
                 padding: 18px 20px 16px;
+            }
+            body.modal-print-open .print-sheet {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10mm;
+                width: 100%;
+            }
+            body.modal-print-open .print-sheet .print-ticket {
+                width: 100%;
+                max-width: none;
+                page-break-inside: avoid;
             }
             body.modal-print-open .print-ticket,
             body.modal-print-open .print-ticket * {

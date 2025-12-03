@@ -609,6 +609,7 @@
             impressaoReservaModal: document.getElementById('impressao-reserva-modal'),
             impressaoReservaClose: document.getElementById('impressao-reserva-close'),
             impressaoReservaFechar: document.getElementById('impressao-reserva-fechar'),
+            impressaoReservaPdf: document.getElementById('impressao-reserva-pdf'),
             impressaoReservaPrint: document.getElementById('impressao-reserva-print'),
             impressaoReservaCard: document.getElementById('impressao-reserva-card'),
             impressaoReservaCampos: {
@@ -2555,6 +2556,9 @@
             }
             if (elementos.impressaoReservaFechar) {
                 elementos.impressaoReservaFechar.addEventListener('click', () => fecharModalImpressaoReserva());
+            }
+            if (elementos.impressaoReservaPdf) {
+                elementos.impressaoReservaPdf.addEventListener('click', () => imprimirReservaArmarioPdf());
             }
             if (elementos.impressaoReservaPrint) {
                 elementos.impressaoReservaPrint.addEventListener('click', () => imprimirReservaArmario());
@@ -5724,11 +5728,21 @@
             const estilos = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
             return estilos.map(no => no.outerHTML).join('\n');
         }
-        function gerarHtmlImpressaoReserva() {
-            if (!elementos.printArea) return '';
+        function clonarCartaoReservaParaHtml(alvo) {
+            if (!alvo) return '';
+            const clone = alvo.cloneNode(true);
+            clone.removeAttribute('id');
+            return clone.outerHTML;
+        }
+        function gerarHtmlImpressaoReserva(duplo = false) {
+            if (!elementos.printArea || !elementos.impressaoReservaCard) return '';
             sincronizarAreaImpressaoReserva();
-            const conteudo = elementos.printArea.innerHTML;
             const estilos = obterEstilosParaImpressao();
+            const alvo = document.getElementById('impressao-reserva-card-print') || elementos.impressaoReservaCard;
+            const cartaoHtml = clonarCartaoReservaParaHtml(alvo);
+            const conteudo = duplo
+                ? `<div class="print-sheet">${cartaoHtml}${cartaoHtml}</div>`
+                : elementos.printArea.innerHTML;
             return `
                 <!DOCTYPE html>
                 <html lang="pt-BR">
@@ -5738,20 +5752,22 @@
                     ${estilos}
                 </head>
                 <body class="modal-print-open">
-                        <div id="print-area" aria-hidden="false" style="display:flex; justify-content:center; align-items:center;">
-                            <div class="modal modal-full modal-print" id="impressao-reserva-modal" style="display:flex; align-items:center; justify-content:center;">
+                    <div id="print-area" aria-hidden="false" class="${duplo ? 'print-area-sheet' : ''}" style="display:flex; justify-content:center; align-items:center;">
+                        ${duplo
+                ? conteudo
+                : `<div class="modal modal-full modal-print" id="impressao-reserva-modal" style="display:flex; align-items:center; justify-content:center;">
                                 <div class="modal-content modal-print-content">
                                     <div class="modal-print-wrapper">
                                         ${conteudo}
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <script>
+                            </div>`}
+                    </div>
+                    <script>
                         window.addEventListener('load', () => {
                             window.print();
                         });
-                        <\/script>
+                    <\/script>
                 </body>
                 </html>
             `;
@@ -5783,6 +5799,30 @@
         }
         async function imprimirReservaArmario() {
             await baixarPngReservaArmario();
+        }
+        async function imprimirReservaArmarioPdf() {
+            let finalizarOverlay = null;
+            try {
+                finalizarOverlay = mostrarOverlayCarregamento('Preparando PDF com 2 cartões...');
+                const html = gerarHtmlImpressaoReserva(true);
+                if (!html) {
+                    mostrarErro('Não foi possível preparar o conteúdo para impressão.');
+                    return;
+                }
+                const novaJanela = window.open('', '_blank', 'noopener,width=900,height=700');
+                if (!novaJanela) {
+                    mostrarErro('Não foi possível abrir a janela de impressão. Verifique o bloqueio de pop-ups.');
+                    return;
+                }
+                novaJanela.document.open();
+                novaJanela.document.write(html);
+                novaJanela.document.close();
+            } catch (erro) {
+                console.error('Erro ao gerar PDF do cartão:', erro);
+                mostrarErro('Não foi possível gerar o PDF. Tente novamente.');
+            } finally {
+                if (typeof finalizarOverlay === 'function') finalizarOverlay();
+            }
         }
         function limparAgendamentoPdfTemporario() {
             if (estadoPdfTemporario.timeoutId) {
