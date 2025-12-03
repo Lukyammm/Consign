@@ -25,12 +25,14 @@
             /* Misc */
             --focus-ring: rgba(59, 130, 246, 0.25);
             --sidebar-width: 250px;
-            --em-uso-base: #b9c6da;
+            --em-uso-base: #2f3a4a;
             --em-uso-border-color: color-mix(in srgb, var(--em-uso-base) 70%, black 30%);
-            --em-uso-card-bg: var(--em-uso-base);
-            --em-uso-badge-bg: color-mix(in srgb, var(--em-uso-base) 55%, white 45%);
-            --em-uso-badge-text: color-mix(in srgb, var(--em-uso-base) 10%, black 90%);
-            --em-uso-text: color-mix(in srgb, var(--em-uso-base) 8%, black 92%);
+            --em-uso-card-bg: linear-gradient(145deg,
+                color-mix(in srgb, var(--em-uso-base) 96%, black 4%),
+                color-mix(in srgb, var(--em-uso-base) 92%, white 8%));
+            --em-uso-badge-bg: color-mix(in srgb, var(--em-uso-base) 65%, white 35%);
+            --em-uso-badge-text: #ffffff;
+            --em-uso-text: #ffffff;
             --extended-badge-bg: color-mix(in srgb, var(--primary-color) 14%, white 86%);
             --extended-badge-text: color-mix(in srgb, var(--primary-color) 80%, black 20%);
             --extended-row-bg: color-mix(in srgb, var(--primary-color) 10%, white 90%);
@@ -1062,9 +1064,22 @@
             border-top: 4px solid var(--success-color);
         }
         .card.em-uso {
+            position: relative;
             border-top: 4px solid var(--em-uso-border-color);
             background: var(--em-uso-card-bg);
             color: var(--em-uso-text);
+            overflow: hidden;
+        }
+        .card.em-uso::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08) 1px, transparent 0),
+                radial-gradient(circle at 80% 60%, rgba(255, 255, 255, 0.06) 1.2px, transparent 0);
+            background-size: 32px 32px, 26px 26px;
+            opacity: 0.16;
+            pointer-events: none;
         }
         .card.proximo {
             border-top: 4px solid var(--warning-color);
@@ -1288,10 +1303,23 @@
             100% { transform: translateX(100%); }
         }
         .armario-card.em-uso {
+            position: relative;
+            overflow: hidden;
             border-left-color: var(--em-uso-border-color);
             background: var(--em-uso-card-bg);
             color: var(--em-uso-text);
             box-shadow: 0 14px 32px color-mix(in srgb, var(--em-uso-border-color) 30%, transparent);
+        }
+        .armario-card.em-uso::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.08) 1px, transparent 0),
+                radial-gradient(circle at 78% 58%, rgba(255, 255, 255, 0.06) 1.2px, transparent 0);
+            background-size: 32px 32px, 26px 26px;
+            opacity: 0.16;
+            pointer-events: none;
         }
         .armario-card.contingencia {
             border-left-color: color-mix(in srgb, var(--dark-color) 25%, var(--primary-color) 75%);
@@ -1413,8 +1441,8 @@
             font-size: 0.7rem;
         }
         .armario-card.em-uso .visita-estendida-tag {
-            background-color: color-mix(in srgb, var(--surface-color) 62%, white 38%);
-            color: var(--em-uso-text);
+            background-color: color-mix(in srgb, white 86%, var(--surface-color) 14%);
+            color: var(--dark-color);
         }
         .armario-header {
             display: flex;
@@ -1460,8 +1488,8 @@
             color: var(--em-uso-badge-text);
         }
         .armario-card.em-uso .status-em-uso {
-            background-color: color-mix(in srgb, var(--surface-color) 62%, white 38%);
-            color: var(--em-uso-text);
+            background-color: color-mix(in srgb, var(--em-uso-base) 70%, white 30%);
+            color: #ffffff;
         }
         .status-proximo {
             background-color: color-mix(in srgb, var(--warning-color) 20%, transparent);
