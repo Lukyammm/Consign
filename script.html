@@ -46,12 +46,6 @@
                 movimentacoes: {},
                 usuarios: [],
                 logs: [],
-                metricasSincronizacao: [],
-                sincronizacaoArmarios: {
-                    versaoLocal: null,
-                    ultimaAtualizacao: null,
-                    ultimaVerificacao: null
-                },
                 carregamentoTermosId: 0,
                 autenticado: false,
                 usuarioAutenticado: null,
@@ -132,9 +126,6 @@
         ];
         let armazenamentoLocalDisponivel;
         let rascunhosOcupacaoRestaurados = false;
-        const SINCRONIZACAO_ARMARIOS_INTERVALO_MS = 15000;
-        const METRICAS_SINCRONIZACAO_MAX = 30;
-        let intervaloSincronizacaoArmarios = null;
         function removerRascunhoChave(chave) {
             const storage = obterArmazenamentoLocal();
             if (!storage) return;
@@ -1368,20 +1359,6 @@
             erro.mensagemUsuario = mensagemUsuario;
             return erro;
         }
-        function registrarMetricaSincronizacao(acao, duracaoMs, status) {
-            if (!estado.metricasSincronizacao) {
-                estado.metricasSincronizacao = [];
-            }
-            estado.metricasSincronizacao.unshift({
-                acao,
-                duracaoMs,
-                status,
-                horario: new Date().toISOString()
-            });
-            if (estado.metricasSincronizacao.length > METRICAS_SINCRONIZACAO_MAX) {
-                estado.metricasSincronizacao.length = METRICAS_SINCRONIZACAO_MAX;
-            }
-        }
         // Função para chamar o Google Apps Script
         async function callGoogleScript(action, data = {}, opcoes = {}) {
             const tentativasConfiguradas = Number.isFinite(opcoes.tentativas) && opcoes.tentativas > 0
@@ -1420,29 +1397,15 @@
             const maxTentativas = Math.max(1, tentativasConfiguradas);
 
             for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
-                let inicioTentativa = null;
                 try {
-                    inicioTentativa = (typeof performance !== 'undefined' && performance.now)
-                        ? performance.now()
-                        : Date.now();
                     const formData = new FormData();
                     formData.append('action', action);
                     entradas.forEach(([chave, valor]) => formData.append(chave, valor));
 
                     const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
-                        body: formData,
-                        cache: 'no-store',
-                        headers: {
-                            'Cache-Control': 'no-store',
-                            'Pragma': 'no-cache'
-                        }
+                        body: formData
                     });
-
-                    const duracao = Math.round(((typeof performance !== 'undefined' && performance.now)
-                        ? performance.now()
-                        : Date.now()) - inicioTentativa);
-                    registrarMetricaSincronizacao(action, duracao, response.status);
 
                     if (!response.ok) {
                         const mensagem = `Erro ${response.status} ao comunicar com o servidor (ação: ${action})`;
@@ -1465,10 +1428,6 @@
                         throw criarErroChamadaGoogle(mensagem, parseError && parseError.message ? parseError.message : mensagem);
                     }
                 } catch (erro) {
-                    const duracaoErro = Math.round(((typeof performance !== 'undefined' && performance.now)
-                        ? performance.now()
-                        : Date.now()) - (inicioTentativa || Date.now()));
-                    registrarMetricaSincronizacao(action, duracaoErro, 'erro');
                     const ultimaTentativa = tentativa === maxTentativas;
                     console.error(`Erro ao chamar Google Script (ação: ${action}, tentativa ${tentativa}/${maxTentativas}):`, erro);
                     if (ultimaTentativa) {
@@ -1591,7 +1550,6 @@
         function realizarLogout() {
             estado = criarEstadoInicial();
             aplicacaoInicializada = false;
-            pararMonitoramentoSincronizacaoArmarios();
             limparSessaoUsuario();
             atualizarFeedbackLogin();
             atualizarCabecalhoUsuario();
@@ -1684,12 +1642,11 @@
                 setTimeout(atualizar, 0);
             }
         }
-        function salvarArmariosNoCache(armarios, versao) {
+        function salvarArmariosNoCache(armarios) {
             try {
                 sessionStorage.setItem(ARMARIOS_CACHE_KEY, JSON.stringify({
                     armarios,
-                    atualizadoEm: Date.now(),
-                    versao: versao || null
+                    atualizadoEm: Date.now()
                 }));
             } catch (error) {
                 console.warn('Não foi possível salvar armários no cache', error);
@@ -1701,17 +1658,12 @@
                 if (!dados) {
                     return false;
                 }
-                const { armarios, versao } = JSON.parse(dados);
+                const { armarios } = JSON.parse(dados);
                 if (!Array.isArray(armarios) || !armarios.length) {
                     return false;
                 }
                 estado.armarios = armarios;
                 estado.armariosCarregados = true;
-                estado.sincronizacaoArmarios = {
-                    versaoLocal: versao || null,
-                    ultimaAtualizacao: Date.now(),
-                    ultimaVerificacao: Date.now()
-                };
                 renderizarArmarios();
                 agendarAtualizacaoResumoDashboard();
                 return true;
@@ -1794,7 +1746,6 @@
                 }
 
                 atualizarInterface();
-                iniciarMonitoramentoSincronizacaoArmarios();
             } catch (error) {
                 console.error('Erro ao carregar dados iniciais:', error);
                 mostrarErro('Erro ao carregar dados do sistema');
@@ -1804,36 +1755,15 @@
             if (!estado.autenticado) {
                 return false;
             }
-
-            const controleSincronizacao = estado.sincronizacaoArmarios || {};
             if (!forcarAtualizacao && estado.armariosCarregados) {
                 return true;
             }
 
             const resultado = await callGoogleScript('getArmarios', {
-                tipo: 'todos',
-                versaoCliente: controleSincronizacao.versaoLocal || ''
+                tipo: 'todos'
             });
 
             if (resultado.success) {
-                const agora = Date.now();
-                const versaoServidor = Number(resultado.lastUpdated) || controleSincronizacao.versaoLocal || agora;
-                estado.sincronizacaoArmarios = {
-                    versaoLocal: versaoServidor,
-                    ultimaAtualizacao: resultado.unchanged
-                        ? (controleSincronizacao.ultimaAtualizacao || agora)
-                        : agora,
-                    ultimaVerificacao: agora
-                };
-
-                if (resultado.unchanged) {
-                    if (!estado.armariosCarregados) {
-                        restaurarArmariosDoCache();
-                    }
-                    return true;
-                }
-
-                const versaoArmarioAtual = estado.sincronizacaoArmarios.versaoLocal;
                 const armariosProcessados = (resultado.data || []).map(armario => ({
                     ...armario,
                     id: normalizarIdentificador(armario.id),
@@ -1844,13 +1774,12 @@
                     unidade: armario.unidade ? armario.unidade.trim() : '',
                     prontuario: armario.prontuario ? armario.prontuario.toString().trim() : '',
                     visitaEstendida: Boolean(armario.visitaEstendida),
-                    ehContingencia: Boolean(armario.ehContingencia) || normalizarTexto(armario.numero || '').startsWith('contingencia'),
-                    versao: armario.versao || versaoArmarioAtual
+                    ehContingencia: Boolean(armario.ehContingencia) || normalizarTexto(armario.numero || '').startsWith('contingencia')
                 }));
                 estado.armarios = filtrarListaPorPermissao(armariosProcessados, item => item.unidade);
                 estado.armariosCarregados = true;
                 agendarAtualizacaoResumoDashboard();
-                salvarArmariosNoCache(estado.armarios, versaoArmarioAtual);
+                salvarArmariosNoCache(estado.armarios);
                 return true;
             }
 
@@ -1957,24 +1886,6 @@
                     atualizarResumoDashboardLocal();
                     atualizarInterface();
                 });
-        }
-        function iniciarMonitoramentoSincronizacaoArmarios() {
-            if (intervaloSincronizacaoArmarios) {
-                return;
-            }
-            intervaloSincronizacaoArmarios = setInterval(() => {
-                if (!estado.autenticado) {
-                    return;
-                }
-                carregarArmarios({ forcarAtualizacao: true }).catch(console.error);
-            }, SINCRONIZACAO_ARMARIOS_INTERVALO_MS);
-        }
-        function pararMonitoramentoSincronizacaoArmarios() {
-            if (!intervaloSincronizacaoArmarios) {
-                return;
-            }
-            clearInterval(intervaloSincronizacaoArmarios);
-            intervaloSincronizacaoArmarios = null;
         }
         function aguardarProximoFrame() {
             return new Promise(resolve => {
