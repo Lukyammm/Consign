@@ -565,6 +565,8 @@ const CACHE_TTL_PADRAO = 60; // segundos
 const CACHE_TTL_ARMARIOS = 45;
 const CACHE_TTL_HISTORICO = 90;
 const CACHE_TTL_MOVIMENTACOES = 45;
+const ARMARIOS_ATUALIZACAO_KEY = 'armarios_last_updated_v1';
+const ARMARIOS_VERSOES_KEY = 'armarios_versoes_registros_v1';
 
 // Configuração da planilha de liberações externas
 const PLANILHA_LIBERACAO_ID = '1UR6ynp6nxbpVMephgKkT8_YDc_ih5bYK565IebfojPI';
@@ -626,6 +628,64 @@ function executarComCache(chave, ttl, fornecedor) {
   return resultado;
 }
 
+function obterControleAtualizacaoArmarios() {
+  var props = PropertiesService.getScriptProperties();
+  var ultimoRaw = props.getProperty(ARMARIOS_ATUALIZACAO_KEY);
+  var versoesRaw = props.getProperty(ARMARIOS_VERSOES_KEY);
+  var versoes = {};
+
+  try {
+    if (versoesRaw) {
+      versoes = JSON.parse(versoesRaw) || {};
+    }
+  } catch (erroVersoes) {
+    versoes = {};
+  }
+
+  var ultimoNumero = Number(ultimoRaw);
+  var lastUpdated = isNaN(ultimoNumero) ? Date.now() : ultimoNumero;
+
+  return {
+    lastUpdated: lastUpdated,
+    versoes: versoes
+  };
+}
+
+function persistirControleAtualizacaoArmarios(controle) {
+  var props = PropertiesService.getScriptProperties();
+  var lastUpdated = controle && controle.lastUpdated ? Number(controle.lastUpdated) : Date.now();
+  var versoes = controle && controle.versoes ? controle.versoes : {};
+
+  props.setProperty(ARMARIOS_ATUALIZACAO_KEY, String(lastUpdated));
+  try {
+    props.setProperty(ARMARIOS_VERSOES_KEY, JSON.stringify(versoes));
+  } catch (erro) {
+    props.deleteProperty(ARMARIOS_VERSOES_KEY);
+  }
+}
+
+function registrarAtualizacaoArmarios(idsAtualizados) {
+  var controle = obterControleAtualizacaoArmarios();
+  var agora = Date.now();
+  controle.lastUpdated = agora;
+
+  if (idsAtualizados && idsAtualizados.length) {
+    var versoes = controle.versoes || {};
+    idsAtualizados.forEach(function(id) {
+      if (id === null || id === undefined) {
+        return;
+      }
+      var chave = id.toString().trim();
+      if (chave) {
+        versoes[chave] = agora;
+      }
+    });
+    controle.versoes = versoes;
+  }
+
+  persistirControleAtualizacaoArmarios(controle);
+}
+
 function limparCaches(chaves) {
   if (!chaves) {
     return;
@@ -649,12 +709,13 @@ function limparCaches(chaves) {
   });
 }
 
-function limparCacheArmarios() {
+function limparCacheArmarios(idsAtualizados) {
   limparCaches([
     montarChaveCache('armarios', 'visitante'),
     montarChaveCache('armarios', 'acompanhante'),
     montarChaveCache('armarios', 'geral')
   ]);
+  registrarAtualizacaoArmarios(idsAtualizados || []);
 }
 
 function limparCacheUsuarios() {
@@ -760,7 +821,7 @@ function inicializarPlanilha() {
     
     registrarLog('SISTEMA', 'Planilha inicializada com sucesso');
 
-    limparCacheArmarios();
+    limparCacheArmarios([armarioData[idIndex]]);
     limparCacheUsuarios();
     limparCacheHistorico();
     limparCacheCadastroArmarios();
@@ -1207,7 +1268,7 @@ function handlePost(e) {
   try {
     switch(action) {
       case 'getArmarios':
-        return ContentService.createTextOutput(JSON.stringify(getArmarios(e.parameter.tipo)))
+        return ContentService.createTextOutput(JSON.stringify(getArmarios(e.parameter.tipo, e.parameter.versaoCliente)))
           .setMimeType(ContentService.MimeType.JSON);
       
       case 'cadastrarArmario':
@@ -1561,7 +1622,7 @@ function buscarPacienteBaseVitae(dados) {
   }
 }
 
-function getArmarios(tipo) {
+function getArmarios(tipo, versaoCliente) {
   var tipoNormalizadoOriginal = normalizarTextoBasico(tipo);
   if (!tipoNormalizadoOriginal) {
     tipoNormalizadoOriginal = 'geral';
@@ -1573,6 +1634,13 @@ function getArmarios(tipo) {
   }
 
   var chaveCache = montarChaveCache('armarios', chaveCacheTipo);
+
+  var controle = obterControleAtualizacaoArmarios();
+  var versaoClienteNumero = versaoCliente ? Number(versaoCliente) : null;
+
+  if (versaoClienteNumero && controle.lastUpdated && versaoClienteNumero === controle.lastUpdated) {
+    return { success: true, data: [], unchanged: true, lastUpdated: controle.lastUpdated };
+  }
 
   return executarComCache(chaveCache, CACHE_TTL_ARMARIOS, function() {
     try {
@@ -1634,14 +1702,14 @@ function getArmarios(tipo) {
       }
 
       if (tipoNormalizado === 'admin' || tipoNormalizado === 'ambos' || tipoNormalizado === 'todos' || tipoNormalizado === 'geral') {
-        var visitantes = getArmariosFromSheet('Visitantes', 'visitante', null, mapaInternacoes);
-        var acompanhantes = getArmariosFromSheet('Acompanhantes', 'acompanhante', termosMap, mapaInternacoes);
-        return { success: true, data: visitantes.concat(acompanhantes) };
+        var visitantes = getArmariosFromSheet('Visitantes', 'visitante', null, mapaInternacoes, controle.versoes, controle.lastUpdated);
+        var acompanhantes = getArmariosFromSheet('Acompanhantes', 'acompanhante', termosMap, mapaInternacoes, controle.versoes, controle.lastUpdated);
+        return { success: true, data: visitantes.concat(acompanhantes), lastUpdated: controle.lastUpdated };
       }
 
       var sheetName = tipoNormalizado === 'acompanhante' ? 'Acompanhantes' : 'Visitantes';
       var mapa = tipoNormalizado === 'acompanhante' ? termosMap : null;
-      return { success: true, data: getArmariosFromSheet(sheetName, tipoNormalizado, mapa, mapaInternacoes) };
+      return { success: true, data: getArmariosFromSheet(sheetName, tipoNormalizado, mapa, mapaInternacoes, controle.versoes, controle.lastUpdated), lastUpdated: controle.lastUpdated };
     } catch (error) {
       registrarLog('ERRO', `Erro ao buscar armários: ${error.toString()}`);
       return { success: false, error: error.toString() };
@@ -1649,7 +1717,7 @@ function getArmarios(tipo) {
   });
 }
 
-function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
+function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes, versoesRegistradas, versaoPadrao) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(sheetName);
 
@@ -1849,7 +1917,9 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
       armario.termoInfo = null;
     }
 
-    armarios.push(armario);
+    var idChave = armario.idPlanilha || armario.id || '';
+    var versaoArmario = versoesRegistradas && versoesRegistradas[idChave] ? versoesRegistradas[idChave] : versaoPadrao;
+    armarios.push(Object.assign({ versao: versaoArmario || versaoPadrao }, armario));
   }
 
   if (houveAtualizacaoStatus && statusIndex > -1) {
@@ -1857,7 +1927,7 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
       return [linha[statusIndex] || ''];
     });
     sheet.getRange(2, statusIndex + 1, totalLinhas, 1).setValues(statusAtualizados);
-    limparCacheArmarios();
+    limparCacheArmarios([armarioData[idIndex]]);
   }
 
   return armarios;
@@ -2017,7 +2087,7 @@ function cadastrarArmario(armarioData) {
 
     registrarLog('CADASTRO', `Armário ${numeroArmario} cadastrado para ${armarioData.nomeVisitante}`);
 
-    limparCacheArmarios();
+    limparCacheArmarios([linhaAtual[idIndex]]);
     limparCacheHistorico();
 
     return {
@@ -2155,7 +2225,7 @@ function registrarContingencia(dados) {
 
     historicoSheet.getRange(proximaLinhaHistorico, 1, 1, historicoLinha.length).setValues([historicoLinha]);
 
-    limparCacheArmarios();
+    limparCacheArmarios([idGerado]);
     limparCacheHistorico();
 
     return {
@@ -2275,7 +2345,7 @@ function atualizarHorarioVisitante(parametros) {
 
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([armarioData]);
 
-    limparCacheArmarios();
+    limparCacheArmarios([armarioData[idIndex]]);
     limparCacheHistorico();
 
     var numeroArmario = armarioData[numeroIndex] || numeroInformado || '';
@@ -2425,7 +2495,7 @@ function atualizarDadosArmario(parametros) {
     var dataRegistroValorFormatado = dataRegistroIndex !== null && dataRegistroIndex !== undefined ? armarioData[dataRegistroIndex] : '';
 
     registrarLog('ATUALIZACAO', 'Dados do armário ' + numeroArmario + ' (' + sheetName + ') atualizados');
-    limparCacheArmarios();
+    limparCacheArmarios([armarioData[idIndex]]);
 
     return {
       success: true,
@@ -2592,7 +2662,7 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
 
     registrarLog('LIBERAÇÃO', `Armário ${numeroArmario} liberado`);
 
-    limparCacheArmarios();
+    limparCacheArmarios([armarioData[idIndex]]);
     limparCacheHistorico();
 
     return { success: true, message: 'Armário liberado com sucesso' };
@@ -3404,7 +3474,7 @@ function cadastrarArmarioFisico(armarioData) {
     registrarLog('CADASTRO', `Armários físicos cadastrados: ${novosArmarios.join(', ')}`);
 
     limparCacheCadastroArmarios();
-    limparCacheArmarios();
+    limparCacheArmarios(linhas.map(function(linha) { return linha[0]; }));
 
     return {
       success: true,
@@ -4167,7 +4237,7 @@ function salvarTermoCompleto(dadosTermo) {
     }
 
     limparCacheTermos();
-    limparCacheArmarios();
+    limparCacheArmarios([dadosTermo.armarioId]);
 
     registrarLog('TERMO_APLICADO', `Termo inicial registrado para armário ${dadosTermo.numeroArmario}`);
 
@@ -4636,7 +4706,7 @@ function finalizarTermo(dados) {
     finalizarMovimentacoesArmario(armarioId, numeroInformado, tipoTermo);
 
     limparCacheTermos();
-    limparCacheArmarios();
+    limparCacheArmarios([armarioId]);
 
     registrarLog('TERMO_FINALIZADO', 'Termo finalizado para armário ' + termoEncontrado.numeroArmario);
 
