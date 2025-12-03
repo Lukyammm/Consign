@@ -47,7 +47,6 @@
                 usuarios: [],
                 logs: [],
                 carregamentoTermosId: 0,
-                sincronizacaoVersao: '',
                 autenticado: false,
                 usuarioAutenticado: null,
                 liberacao: criarEstadoLiberacaoInicial(),
@@ -1368,7 +1367,6 @@
             const intervaloBaseConfigurado = Number.isFinite(opcoes.intervaloInicial) && opcoes.intervaloInicial > 0
                 ? opcoes.intervaloInicial
                 : 400;
-            const registrarLatencia = opcoes.registrarLatencia !== false;
             const payload = { ...(data || {}) };
             if (!Object.prototype.hasOwnProperty.call(payload, 'usuarioResponsavel')) {
                 const responsavelAtual = obterDescricaoResponsavelAtual();
@@ -1399,20 +1397,14 @@
             const maxTentativas = Math.max(1, tentativasConfiguradas);
 
             for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
-                const inicioCliente = Date.now();
                 try {
                     const formData = new FormData();
                     formData.append('action', action);
-                    formData.append('_ts', Date.now().toString());
                     entradas.forEach(([chave, valor]) => formData.append(chave, valor));
 
                     const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
-                        body: formData,
-                        cache: 'no-store',
-                        headers: {
-                            'Cache-Control': 'no-store'
-                        }
+                        body: formData
                     });
 
                     if (!response.ok) {
@@ -1429,20 +1421,13 @@
                     }
 
                     try {
-                        const respostaJson = JSON.parse(textoResposta);
-                        if (registrarLatencia) {
-                            enviarMetricaLatencia(action, inicioCliente, Date.now(), respostaJson._syncVersion, respostaJson.success ? '' : respostaJson.error);
-                        }
-                        return respostaJson;
+                        return JSON.parse(textoResposta);
                     } catch (parseError) {
                         console.error(`Falha ao interpretar a resposta da ação ${action}:`, parseError, textoResposta);
                         const mensagem = `Resposta inválida do servidor (ação: ${action})`;
                         throw criarErroChamadaGoogle(mensagem, parseError && parseError.message ? parseError.message : mensagem);
                     }
                 } catch (erro) {
-                    if (registrarLatencia) {
-                        enviarMetricaLatencia(action, inicioCliente, Date.now(), '', erro && erro.message ? erro.message : 'erro desconhecido');
-                    }
                     const ultimaTentativa = tentativa === maxTentativas;
                     console.error(`Erro ao chamar Google Script (ação: ${action}, tentativa ${tentativa}/${maxTentativas}):`, erro);
                     if (ultimaTentativa) {
@@ -1458,33 +1443,6 @@
 
             mostrarErro('Erro de conexão com o servidor');
             return { success: false, error: 'Erro de conexão com o servidor', _erroNotificado: true };
-        }
-        function enviarMetricaLatencia(acao, inicioMs, fimMs, versaoServidor, erro) {
-            try {
-                const formData = new FormData();
-                formData.append('action', 'registrarLatenciaSincronizacao');
-                formData.append('acao', acao);
-                formData.append('inicioClienteMs', inicioMs);
-                formData.append('fimClienteMs', fimMs);
-                if (estado?.sincronizacaoVersao) {
-                    formData.append('versaoCliente', estado.sincronizacaoVersao);
-                }
-                if (versaoServidor) {
-                    formData.append('versaoServidor', versaoServidor);
-                }
-                if (erro) {
-                    formData.append('erro', erro.toString());
-                }
-                fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData,
-                    cache: 'no-store',
-                    headers: { 'Cache-Control': 'no-store' },
-                    keepalive: true
-                }).catch(() => {});
-            } catch (latenciaErro) {
-                console.warn('Falha ao registrar métrica de latência:', latenciaErro);
-            }
         }
         async function inicializarAplicacao() {
             if (aplicacaoInicializada) {
@@ -1581,7 +1539,6 @@
                     atualizarCabecalhoUsuario();
                     aplicarPermissoesMenu();
                     await inicializarAplicacao();
-                    iniciarMonitoramentoSincronizacao();
                 } catch (error) {
                     console.error('Erro ao autenticar usuário:', error);
                     atualizarFeedbackLogin('error', 'Não foi possível realizar o login. Tente novamente.');
@@ -1591,7 +1548,6 @@
             });
         }
         function realizarLogout() {
-            pararMonitoramentoSincronizacao();
             estado = criarEstadoInicial();
             aplicacaoInicializada = false;
             limparSessaoUsuario();
@@ -1716,39 +1672,6 @@
                 return false;
             }
         }
-        let monitoramentoVersaoId = null;
-        let verificandoVersao = false;
-        async function verificarVersaoSincronizacao() {
-            if (!estado.autenticado || verificandoVersao) {
-                return;
-            }
-            verificandoVersao = true;
-            try {
-                const resposta = await callGoogleScript('getSyncStatus', {}, { tentativas: 1, registrarLatencia: false });
-                if (resposta.success && resposta.lastUpdated) {
-                    if (estado.sincronizacaoVersao && estado.sincronizacaoVersao !== resposta.lastUpdated) {
-                        estado.sincronizacaoVersao = resposta.lastUpdated;
-                        await carregarArmarios({ forcarAtualizacao: true });
-                        atualizarInterface();
-                    } else if (!estado.sincronizacaoVersao) {
-                        estado.sincronizacaoVersao = resposta.lastUpdated;
-                    }
-                }
-            } catch (erro) {
-                console.warn('Falha ao verificar versão de sincronização:', erro);
-            } finally {
-                verificandoVersao = false;
-            }
-        }
-        function iniciarMonitoramentoSincronizacao() {
-            if (monitoramentoVersaoId) return;
-            monitoramentoVersaoId = setInterval(verificarVersaoSincronizacao, 8000);
-        }
-        function pararMonitoramentoSincronizacao() {
-            if (!monitoramentoVersaoId) return;
-            clearInterval(monitoramentoVersaoId);
-            monitoramentoVersaoId = null;
-        }
         function exibirSkeletonArmarios(quantidade = 6) {
             if (!elementos.armariosContainer) return;
             elementos.armariosContainer.innerHTML = '';
@@ -1851,14 +1774,10 @@
                     unidade: armario.unidade ? armario.unidade.trim() : '',
                     prontuario: armario.prontuario ? armario.prontuario.toString().trim() : '',
                     visitaEstendida: Boolean(armario.visitaEstendida),
-                    versao: Number(armario.versao) || 0,
                     ehContingencia: Boolean(armario.ehContingencia) || normalizarTexto(armario.numero || '').startsWith('contingencia')
                 }));
                 estado.armarios = filtrarListaPorPermissao(armariosProcessados, item => item.unidade);
                 estado.armariosCarregados = true;
-                if (resultado._syncVersion || resultado.lastUpdated) {
-                    estado.sincronizacaoVersao = resultado._syncVersion || resultado.lastUpdated;
-                }
                 agendarAtualizacaoResumoDashboard();
                 salvarArmariosNoCache(estado.armarios);
                 return true;
@@ -4870,7 +4789,6 @@
                 numero: armario.numero,
                 horaPrevista: visitaEstendida ? '' : horaPrevista,
                 visitaEstendida,
-                versao: armario.versao,
                 usuarioResponsavel: obterDescricaoResponsavelAtual()
             };
 
@@ -4880,8 +4798,7 @@
                 if (resposta.success) {
                     const atualizacoes = {
                         horaPrevista: visitaEstendida ? '' : horaPrevista,
-                        visitaEstendida,
-                        versao: resposta.versao ?? armario.versao
+                        visitaEstendida
                     };
                     const atualizado = atualizarArmarioLocal(armario.id, atualizacoes);
                     if (!atualizado) {
@@ -5037,7 +4954,6 @@
                 visitaEstendida: dadosForm.visitaEstendida,
                 horaPrevista: dadosForm.visitaEstendida ? '' : dadosForm.horaPrevista,
                 observacoes: dadosForm.observacoes,
-                versao: armario.versao,
                 usuarioResponsavel: obterDescricaoResponsavelAtual()
             };
 
@@ -5054,8 +4970,7 @@
                         volumes: dadosForm.volumes,
                         whatsapp: dadosForm.whatsapp,
                         observacoes: dadosForm.observacoes,
-                        status: dadosResposta.status || armario.status,
-                        versao: dadosResposta.versao ?? armario.versao
+                        status: dadosResposta.status || armario.status
                     };
                     if (tipoNormalizado === 'visitante') {
                         atualizacoesLocais.horaPrevista = dadosForm.visitaEstendida ? '' : dadosForm.horaPrevista;
@@ -5438,12 +5353,10 @@
                 tipo: tipoPreferencial || identificadores.tipo
             });
             payload.numero = identificadores.numeroArmario;
-            payload.versao = armario.versao;
 
             const resultado = await callGoogleScript('liberarArmario', payload);
             if (resultado.success) {
                 garantirArmarioLiberadoLocal(id);
-                atualizarArmarioLocal(id, { versao: resultado.versao ?? armario.versao });
                 atualizarResumoDashboardLocal();
                 atualizarInterface();
                 carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
