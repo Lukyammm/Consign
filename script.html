@@ -5724,6 +5724,46 @@
                 alvo.style.minWidth = larguraAtual.minWidth;
             };
         }
+        function criarAreaCapturaPdfDuplo(alvo) {
+            if (!alvo) return { area: null, limpar: () => {} };
+
+            const wrapper = document.createElement('div');
+            wrapper.id = 'pdf-capture-area';
+            wrapper.style.position = 'fixed';
+            wrapper.style.top = '-10000px';
+            wrapper.style.left = '-10000px';
+            wrapper.style.width = '2000px';
+            wrapper.style.padding = '24px';
+            wrapper.style.background = '#f5f7fb';
+            wrapper.style.zIndex = '-1';
+
+            const sheet = document.createElement('div');
+            sheet.className = 'print-sheet';
+            sheet.style.display = 'grid';
+            sheet.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+            sheet.style.gap = '16px';
+            sheet.style.alignItems = 'stretch';
+
+            const clones = [alvo.cloneNode(true), alvo.cloneNode(true)];
+            clones.forEach(clone => {
+                clone.removeAttribute('id');
+                clone.style.width = '100%';
+                clone.style.maxWidth = '100%';
+                clone.style.minWidth = '0';
+            });
+
+            sheet.appendChild(clones[0]);
+            sheet.appendChild(clones[1]);
+            wrapper.appendChild(sheet);
+            document.body.appendChild(wrapper);
+
+            return {
+                area: sheet,
+                limpar: () => {
+                    wrapper.remove();
+                }
+            };
+        }
         function obterEstilosParaImpressao() {
             const estilos = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
             return estilos.map(no => no.outerHTML).join('\n');
@@ -5801,26 +5841,56 @@
             await baixarPngReservaArmario();
         }
         async function imprimirReservaArmarioPdf() {
-            let finalizarOverlay = null;
+            if (!elementos.impressaoReservaCard) return;
+            if (typeof html2canvas !== 'function') {
+                mostrarErro('Ferramenta de captura indisponível. Recarregue a página e tente novamente.');
+                return;
+            }
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                mostrarErro('Biblioteca de PDF indisponível. Recarregue a página e tente novamente.');
+                return;
+            }
+
+            sincronizarAreaImpressaoReserva();
+            const alvo = document.getElementById('impressao-reserva-card-print') || elementos.impressaoReservaCard;
+            if (!alvo) {
+                mostrarErro('Não foi possível preparar o cartão para download.');
+                return;
+            }
+
+            const finalizarOverlay = mostrarOverlayCarregamento('Gerando PDF com 2 cartões...');
+            const restaurarLarguraPadrao = aplicarLarguraPadraoCartao(alvo);
+            const { area, limpar } = criarAreaCapturaPdfDuplo(alvo);
             try {
-                finalizarOverlay = mostrarOverlayCarregamento('Preparando PDF com 2 cartões...');
-                const html = gerarHtmlImpressaoReserva(true);
-                if (!html) {
-                    mostrarErro('Não foi possível preparar o conteúdo para impressão.');
-                    return;
+                const canvas = await html2canvas(area || alvo, {
+                    backgroundColor: '#f5f7fb',
+                    scale: Math.max(window.devicePixelRatio || 1, 2),
+                    useCORS: true
+                });
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const proporcao = canvas.width / canvas.height;
+                let largura = pageWidth;
+                let altura = largura / proporcao;
+                if (altura > pageHeight) {
+                    altura = pageHeight;
+                    largura = altura * proporcao;
                 }
-                const novaJanela = window.open('', '_blank', 'noopener,width=900,height=700');
-                if (!novaJanela) {
-                    mostrarErro('Não foi possível abrir a janela de impressão. Verifique o bloqueio de pop-ups.');
-                    return;
-                }
-                novaJanela.document.open();
-                novaJanela.document.write(html);
-                novaJanela.document.close();
+                const posX = (pageWidth - largura) / 2;
+                const posY = (pageHeight - altura) / 2;
+                pdf.addImage(imgData, 'JPEG', posX, posY, largura, altura, undefined, 'FAST');
+                const nomeBase = gerarNomeArquivoReserva(estadoImpressaoReserva.dados || {});
+                const nomeArquivo = nomeBase.replace(/\.png$/i, '') + '.pdf';
+                pdf.save(nomeArquivo);
             } catch (erro) {
                 console.error('Erro ao gerar PDF do cartão:', erro);
                 mostrarErro('Não foi possível gerar o PDF. Tente novamente.');
             } finally {
+                if (typeof restaurarLarguraPadrao === 'function') restaurarLarguraPadrao();
+                if (typeof limpar === 'function') limpar();
                 if (typeof finalizarOverlay === 'function') finalizarOverlay();
             }
         }
