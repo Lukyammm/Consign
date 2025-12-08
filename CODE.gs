@@ -5638,20 +5638,17 @@ function registrarLog(acao, detalhes, contextoExtra) {
       }
     }
 
-    if (sheet.getLastColumn() < 7) {
-      sheet.insertColumns(sheet.getLastColumn() + 1, 7 - sheet.getLastColumn());
+    if (sheet.getLastColumn() < 4) {
+      sheet.insertColumns(sheet.getLastColumn() + 1, 4 - sheet.getLastColumn());
     }
 
-    var cabecalhos = sheet.getRange(1, 1, 1, 7).getValues()[0];
+    var cabecalhos = sheet.getRange(1, 1, 1, 4).getValues()[0];
     if (!cabecalhos[0]) {
-      sheet.getRange(1, 1, 1, 7).setValues([[
+      sheet.getRange(1, 1, 1, 4).setValues([[
         'Data/Hora',
         'Usuário',
         'Ação',
-        'Detalhes',
-        'IP',
-        'Origem',
-        'Contexto'
+        'Detalhes'
       ]]);
     }
 
@@ -5676,29 +5673,14 @@ function registrarLog(acao, detalhes, contextoExtra) {
       contextoFinal[chave] = contextoLog[chave];
     });
 
-    var origemLog = contextoFinal.origem || contextoFinal.acaoRequisicao || '';
-    if (origemLog) {
-      delete contextoFinal.origem;
-    }
-
-    var contextoTexto = '';
-    try {
-      contextoTexto = Object.keys(contextoFinal).length ? JSON.stringify(contextoFinal) : '';
-    } catch (erroString) {
-      contextoTexto = '';
-    }
-
     var novaLinha = [
       dataLog,
       usuarioLog,
       acao || '',
-      detalhes || '',
-      '',
-      origemLog,
-      contextoTexto
+      detalhes || ''
     ];
 
-    sheet.getRange(lastRow + 1, 1, 1, 7).setValues([novaLinha]);
+    sheet.getRange(lastRow + 1, 1, 1, 4).setValues([novaLinha]);
 
   } catch (error) {
     console.error('Falha ao registrar log:', error);
@@ -5714,34 +5696,34 @@ function getLogs() {
       return { success: true, data: [] };
     }
 
-    if (sheet.getLastColumn() < 7) {
-      sheet.insertColumns(sheet.getLastColumn() + 1, 7 - sheet.getLastColumn());
-    }
-
+    var estrutura = obterEstruturaPlanilha(sheet);
     var totalLinhas = sheet.getLastRow() - 1;
-    var totalColunas = Math.max(7, sheet.getLastColumn());
+    var totalColunas = Math.max(estrutura.ultimaColuna, 4);
     var data = sheet.getRange(2, 1, totalLinhas, totalColunas).getValues();
     var logs = [];
 
     data.forEach(function(row) {
-      if (row[0]) {
+      var dataHora = obterValorLinhaFlexivel(row, estrutura, ['data/hora', 'data hora', 'data'], '');
+      var usuario = obterValorLinhaFlexivel(row, estrutura, ['usuário', 'usuario'], '');
+      var acao = obterValorLinhaFlexivel(row, estrutura, ['ação', 'acao'], '');
+      var detalhes = obterValorLinha(row, estrutura, 'detalhes', '');
+      if (dataHora || usuario || acao || detalhes) {
         var contextoProcessado = {};
-        if (row[6]) {
+        var contextoBruto = obterValorLinhaFlexivel(row, estrutura, ['contexto', 'dados contexto'], '');
+        if (contextoBruto) {
           try {
-            var bruto = row[6];
-            contextoProcessado = typeof bruto === 'string' ? JSON.parse(bruto) : bruto;
+            contextoProcessado = typeof contextoBruto === 'string' ? JSON.parse(contextoBruto) : contextoBruto;
           } catch (erroContexto) {
-            contextoProcessado = { valor: row[6] };
+            contextoProcessado = { valor: contextoBruto };
           }
         }
 
         logs.push({
-          dataHora: row[0],
-          usuario: row[1],
-          acao: row[2],
-          detalhes: row[3],
-          ip: row[4],
-          origem: row[5] || '',
+          dataHora: dataHora,
+          usuario: usuario,
+          acao: acao,
+          detalhes: detalhes,
+          origem: obterValorLinhaFlexivel(row, estrutura, ['origem'], ''),
           contexto: contextoProcessado
         });
       }

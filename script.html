@@ -50,7 +50,6 @@
                     busca: '',
                     acao: '',
                     usuario: '',
-                    origem: '',
                     dataInicio: '',
                     dataFim: ''
                 },
@@ -522,7 +521,6 @@
             logBusca: document.getElementById('log-busca'),
             logUsuarioSelect: document.getElementById('log-usuario'),
             logAcaoSelect: document.getElementById('log-acao'),
-            logOrigemSelect: document.getElementById('log-origem'),
             logDataInicio: document.getElementById('log-data-inicio'),
             logDataFim: document.getElementById('log-data-fim'),
             modalClose: document.getElementById('modal-close'),
@@ -2352,12 +2350,6 @@
             if (elementos.logAcaoSelect) {
                 elementos.logAcaoSelect.addEventListener('change', () => {
                     estado.filtrosLogs.acao = elementos.logAcaoSelect.value || '';
-                    renderizarTabelaLogs();
-                });
-            }
-            if (elementos.logOrigemSelect) {
-                elementos.logOrigemSelect.addEventListener('change', () => {
-                    estado.filtrosLogs.origem = elementos.logOrigemSelect.value || '';
                     renderizarTabelaLogs();
                 });
             }
@@ -4219,7 +4211,6 @@
             const busca = normalizarTexto(filtrosLogs.busca || '');
             const acaoFiltro = normalizarTexto(filtrosLogs.acao || '');
             const usuarioFiltro = normalizarTexto(filtrosLogs.usuario || '');
-            const origemFiltro = normalizarTexto(filtrosLogs.origem || '');
             const dataInicio = filtrosLogs.dataInicio ? new Date(filtrosLogs.dataInicio) : null;
             const dataFim = filtrosLogs.dataFim ? new Date(filtrosLogs.dataFim + 'T23:59:59') : null;
 
@@ -4234,18 +4225,11 @@
                 const usuarioNormalizado = normalizarTexto(log.usuario || '');
                 if (usuarioFiltro && usuarioNormalizado !== usuarioFiltro) return false;
 
-                const origemNormalizada = normalizarTexto(log.origem || '');
-                if (origemFiltro && origemNormalizada !== origemFiltro) return false;
-
                 if (!busca) return true;
-
-                const contextoDescricao = montarDescricaoContextoLog(log.contexto || {});
                 const camposPesquisa = [
                     log.usuario,
                     log.acao,
-                    log.detalhes,
-                    log.origem,
-                    contextoDescricao
+                    log.detalhes
                 ].map(valor => normalizarTexto(valor || ''));
 
                 return camposPesquisa.some(texto => texto.includes(busca));
@@ -4254,12 +4238,10 @@
         function popularFiltrosLogs() {
             const usuarios = new Set();
             const acoes = new Set();
-            const origens = new Set();
 
             (estado.logs || []).forEach(log => {
                 if (log.usuario) usuarios.add(log.usuario);
                 if (log.acao) acoes.add(log.acao);
-                if (log.origem) origens.add(log.origem);
             });
 
             const preencherSelect = (select, valores) => {
@@ -4277,7 +4259,6 @@
 
             preencherSelect(elementos.logUsuarioSelect, usuarios);
             preencherSelect(elementos.logAcaoSelect, acoes);
-            preencherSelect(elementos.logOrigemSelect, origens);
         }
         function renderizarTabelaLogs() {
             const tbody = document.querySelector('#tabela-logs tbody');
@@ -4287,21 +4268,18 @@
 
             if (!logsFiltrados.length) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="6" class="table-empty">Nenhum log encontrado com os filtros selecionados.</td>';
+                tr.innerHTML = '<td colspan="4" class="table-empty">Nenhum log encontrado com os filtros selecionados.</td>';
                 tbody.appendChild(tr);
                 return;
             }
 
             logsFiltrados.forEach(log => {
                 const tr = document.createElement('tr');
-                const contextoDescricao = montarDescricaoContextoLog(log.contexto || {});
                 tr.innerHTML = `
                     <td>${formatarDataHora(log.dataHora)}</td>
                     <td>${log.usuario}</td>
                     <td>${log.acao}</td>
                     <td>${log.detalhes}</td>
-                    <td>${log.origem || ''}</td>
-                    <td>${contextoDescricao || '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
