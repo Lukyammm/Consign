@@ -25,14 +25,14 @@
             /* Misc */
             --focus-ring: rgba(59, 130, 246, 0.25);
             --sidebar-width: 250px;
-            --em-uso-base: #c6cacf;
-            --em-uso-border-color: color-mix(in srgb, var(--em-uso-base) 70%, black 30%);
+            --em-uso-base: #0d2f67;
+            --em-uso-border-color: color-mix(in srgb, var(--em-uso-base) 65%, white 35%);
             --em-uso-card-bg: linear-gradient(145deg,
-                color-mix(in srgb, var(--em-uso-base) 96%, black 4%),
-                color-mix(in srgb, var(--em-uso-base) 92%, white 8%));
-            --em-uso-badge-bg: color-mix(in srgb, var(--em-uso-base) 65%, white 35%);
-            --em-uso-badge-text: #000929;
-            --em-uso-text: #000929;
+                color-mix(in srgb, var(--em-uso-base) 94%, black 6%),
+                color-mix(in srgb, var(--em-uso-base) 88%, white 12%));
+            --em-uso-badge-bg: color-mix(in srgb, var(--em-uso-base) 72%, white 28%);
+            --em-uso-badge-text: #f6f8ff;
+            --em-uso-text: #f6f8ff;
             --extended-badge-bg: color-mix(in srgb, var(--primary-color) 14%, white 86%);
             --extended-badge-text: color-mix(in srgb, var(--primary-color) 80%, black 20%);
             --extended-row-bg: color-mix(in srgb, var(--primary-color) 10%, white 90%);
@@ -91,7 +91,7 @@
         /* Sidebar */
         .sidebar {
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, #014f51, color-mix(in srgb, #000000 75%, #0a5c65));
+            background: linear-gradient(180deg, #0e2f63, color-mix(in srgb, #010814 78%, #133f82));
             color: white;
             height: 100vh;
             position: fixed;
@@ -1109,7 +1109,7 @@
             color: var(--primary-color);
         }
         .card.livre .card-icon   { color: var(--success-color); }
-        .card.em-uso .card-icon  { color: var(--em-uso-border-color); }
+        .card.em-uso .card-icon  { color: var(--em-uso-badge-text); }
         .card.proximo .card-icon { color: var(--warning-color); }
         .card.vencido .card-icon { color: var(--danger-color); }
         .card-value {
@@ -1129,7 +1129,7 @@
         .card.em-uso .card-icon .fa-user-clock,
         .armario-card.em-uso .fa-user-clock,
         .sidebar-menu .fa-user-clock {
-            color: #dfe3eb;
+            color: #f2f6ff;
         }
         .card.em-uso .card-description {
             color: color-mix(in srgb, var(--em-uso-text) 75%, transparent);
@@ -1497,12 +1497,16 @@
             color: var(--success-color);
         }
         .status-em-uso {
-            background-color: var(--em-uso-badge-bg);
-            color: var(--em-uso-badge-text);
+            background-color: #c6cacf;
+            color: #000929;
+        }
+        .status-em-uso .fa-user-clock,
+        .status-em-uso .fas.fa-user-clock {
+            color: #001c45;
         }
         .armario-card.em-uso .status-em-uso {
-            background-color: color-mix(in srgb, var(--em-uso-base) 70%, white 30%);
-            color: #ffffff;
+            background-color: #c6cacf;
+            color: #000929;
         }
         .status-proximo {
             background-color: color-mix(in srgb, var(--warning-color) 20%, transparent);
