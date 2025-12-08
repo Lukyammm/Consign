@@ -1326,7 +1326,11 @@ function handlePost(e) {
       case 'excluirArquivoTemporario':
         return ContentService.createTextOutput(JSON.stringify(excluirArquivoTemporario(e.parameter)))
           .setMimeType(ContentService.MimeType.JSON);
-      
+
+      case 'getMovimentacoesResumo':
+        return ContentService.createTextOutput(JSON.stringify(getMovimentacoesResumo(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
       case 'getMovimentacoes':
         return ContentService.createTextOutput(JSON.stringify(getMovimentacoes(e.parameter)))
           .setMimeType(ContentService.MimeType.JSON);
@@ -5355,8 +5359,90 @@ function getMovimentacoes(dados) {
           dataHoraRegistro: converterParaDataHoraIso(linhaDados[8], ''),
           status: statusLinha || '',
           itens: itens
-        });
+  });
+}
+
+function getMovimentacoesResumo(dados) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Movimentações');
+  var estruturaMov = garantirEstruturaMovimentacoes(sheet);
+  var colunaStatus = estruturaMov.colunaStatus;
+
+  var listaArmarios = dados && dados.armarios ? dados.armarios : [];
+  if (typeof listaArmarios === 'string') {
+    try {
+      listaArmarios = JSON.parse(listaArmarios);
+    } catch (erroParse) {
+      listaArmarios = [];
+    }
+  }
+
+  if (!sheet || sheet.getLastRow() < 2 || !Array.isArray(listaArmarios) || !listaArmarios.length) {
+    return { success: true, data: {} };
+  }
+
+  var chavesEsperadas = {};
+  var numerosParaChaves = {};
+
+  listaArmarios.forEach(function(item) {
+    var idNormalizado = normalizarIdentificador(item.id || item.armarioId);
+    var numeroNormalizado = normalizarNumeroArmario(item.numero || item.numeroArmario);
+    var chavePrincipal = idNormalizado || numeroNormalizado;
+
+    if (!chavePrincipal) {
+      return;
+    }
+
+    chavesEsperadas[chavePrincipal] = true;
+
+    if (numeroNormalizado) {
+      if (!numerosParaChaves[numeroNormalizado]) {
+        numerosParaChaves[numeroNormalizado] = [];
       }
+      numerosParaChaves[numeroNormalizado].push(chavePrincipal);
+    }
+  });
+
+  if (Object.keys(chavesEsperadas).length === 0) {
+    return { success: true, data: {} };
+  }
+
+  var totalLinhas = sheet.getLastRow() - 1;
+  if (totalLinhas <= 0) {
+    return { success: true, data: {} };
+  }
+
+  var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), estruturaMov.colunaItens, estruturaMov.colunaVolume);
+  var linhas = sheet.getRange(2, 1, totalLinhas, largura).getValues();
+  var contagens = {};
+
+  for (var i = 0; i < linhas.length; i++) {
+    var linha = linhas[i];
+    var statusLinha = colunaStatus && colunaStatus <= linha.length ? linha[colunaStatus - 1] : '';
+    var statusNormalizado = normalizarTextoBasico(statusLinha);
+    if (statusNormalizado === 'finalizado') {
+      continue;
+    }
+
+    var idLinha = normalizarIdentificador(linha[1]);
+    var numeroLinha = normalizarNumeroArmario(linha[2]);
+    var chave = '';
+
+    if (idLinha && chavesEsperadas[idLinha]) {
+      chave = idLinha;
+    } else if (numeroLinha && numerosParaChaves[numeroLinha] && numerosParaChaves[numeroLinha].length) {
+      chave = numerosParaChaves[numeroLinha][0];
+    }
+
+    if (!chave) {
+      continue;
+    }
+
+    contagens[chave] = (contagens[chave] || 0) + 1;
+  }
+
+  return { success: true, data: contagens };
+}
 
       return { success: true, data: movimentacoes };
 
