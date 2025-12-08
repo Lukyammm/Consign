@@ -561,6 +561,41 @@
                 <div class="data-table">
                     <div class="table-header">
                         <h3>Logs do Sistema</h3>
+                        <div class="logs-filters" aria-label="Filtros dos logs">
+                            <div class="filter-group">
+                                <label class="sr-only" for="log-busca">Buscar</label>
+                                <div class="filter-search compact">
+                                    <i class="fas fa-search" aria-hidden="true"></i>
+                                    <input type="text" id="log-busca" placeholder="Buscar em ação, detalhes ou usuário" aria-label="Buscar nos logs">
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label for="log-usuario">Usuário</label>
+                                <select id="log-usuario">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="log-acao">Ação</label>
+                                <select id="log-acao">
+                                    <option value="">Todas</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="log-origem">Origem</label>
+                                <select id="log-origem">
+                                    <option value="">Todas</option>
+                                </select>
+                            </div>
+                            <div class="filter-group date">
+                                <label for="log-data-inicio">De</label>
+                                <input type="date" id="log-data-inicio">
+                            </div>
+                            <div class="filter-group date">
+                                <label for="log-data-fim">Até</label>
+                                <input type="date" id="log-data-fim">
+                            </div>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table id="tabela-logs">
@@ -570,6 +605,8 @@
                                     <th>Usuário</th>
                                     <th>Ação</th>
                                     <th>Detalhes</th>
+                                    <th>Origem</th>
+                                    <th>Contexto</th>
                                 </tr>
                             </thead>
                             <tbody>
