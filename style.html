@@ -1480,16 +1480,18 @@
             color: var(--success-color);
         }
         .status-em-uso {
-            background-color: #c6cacf;
-            color: #000929;
+            background-color: color-mix(in srgb, var(--em-uso-badge-bg) 22%, transparent);
+            color: var(--em-uso-badge-text);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--em-uso-badge-bg) 40%, transparent);
         }
         .status-em-uso .fa-user-clock,
         .status-em-uso .fas.fa-user-clock {
             color: #000929;
         }
         .armario-card.em-uso .status-em-uso {
-            background-color: #c6cacf;
-            color: #000929;
+            background-color: color-mix(in srgb, var(--em-uso-card-bg) 15%, transparent);
+            color: var(--em-uso-text);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--em-uso-border-color) 35%, transparent);
         }
         .status-proximo {
             background-color: color-mix(in srgb, var(--warning-color) 20%, transparent);
