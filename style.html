@@ -3475,10 +3475,19 @@
                 line-height: 1.2;
                 border-left: none;
             }
+            .sidebar-menu a.active {
+                background-color: transparent;
+            }
             .sidebar-menu i {
                 margin-right: 0;
                 font-size: 1.15rem;
                 width: auto;
+                transition: transform 0.2s ease, color 0.2s ease, filter 0.2s ease;
+            }
+            .sidebar-menu a.active i {
+                color: #f4c542;
+                transform: scale(1.15);
+                filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
             }
             .sidebar-logout-button {
                 padding: 14px 0;
