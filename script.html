@@ -2872,8 +2872,8 @@
 
                     if (ehContingencia) {
                         detailsHTML += `
+                            <p><strong>Paciente:</strong> <strong>${armario.nomePaciente}</strong></p>
                             <p><strong>Acompanhante:</strong> ${armario.nomeVisitante}</p>
-                            <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
                             <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
                             ${observacaoHtml}
                             ${dataRegistroHtml}
@@ -2883,8 +2883,8 @@
                         const prontuario = armario.prontuario || '-';
                         const leito = armario.leito || '-';
                         detailsHTML += `
+                            <p><strong>Paciente:</strong> <strong>${armario.nomePaciente}</strong></p>
                             <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
-                            <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
                             <p class="armario-pront-leito">
                                 <span class="armario-pront"><strong>Prontuário:</strong> ${prontuario}</span>
                                 <span class="armario-leito"><strong>Leito:</strong> ${leito}</span>
