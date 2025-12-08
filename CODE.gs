@@ -3053,6 +3053,10 @@ function getHistorico(tipo) {
 
   return executarComCache(chaveCache, CACHE_TTL_HISTORICO, function() {
     try {
+      if (tipoNormalizado === 'acompanhante') {
+        return montarHistoricoTermosResponsabilidade();
+      }
+
       var ss = SpreadsheetApp.getActiveSpreadsheet();
       var sheetName = tipoNormalizado === 'acompanhante' ? 'Histórico Acompanhantes' : 'Histórico Visitantes';
       var sheet = ss.getSheetByName(sheetName);
@@ -3097,6 +3101,50 @@ function getHistorico(tipo) {
       return { success: false, error: error.toString() };
     }
   });
+}
+
+function montarHistoricoTermosResponsabilidade() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Termos de Responsabilidade');
+
+  if (!sheet || sheet.getLastRow() < 2) {
+    return { success: true, data: [] };
+  }
+
+  var totalLinhasDados = sheet.getLastRow() - 1;
+  var totalColunasDados = Math.max(sheet.getLastColumn(), 21);
+  var data = sheet.getRange(2, 1, totalLinhasDados, totalColunasDados).getValues();
+  var historico = [];
+
+  data.forEach(function(row) {
+    if (!row[0]) {
+      return;
+    }
+
+    var assinaturas = normalizarAssinaturas(row[18]);
+    var dataAplicacao = converterParaDataHoraIso(row[16], '');
+    var finalizadoEm = converterParaDataHoraIso(assinaturas.finalizadoEm, '');
+
+    historico.push({
+      id: row[0],
+      data: formatarDataPlanilha(dataAplicacao),
+      armario: row[2] || '',
+      nome: row[9] || '',
+      paciente: row[3] || '',
+      leito: row[7] || '',
+      volumes: row[15] || '',
+      horaInicio: formatarHorarioPlanilha(dataAplicacao),
+      horaFim: formatarHorarioPlanilha(finalizadoEm),
+      status: row[19] || (finalizadoEm ? 'Finalizado' : 'Em andamento'),
+      tipo: 'Acompanhante',
+      unidade: row[6] || '',
+      whatsapp: row[10] || '',
+      usuario: assinaturas.responsavelFinalizacao || '',
+      observacoes: row[20] || ''
+    });
+  });
+
+  return { success: true, data: historico.reverse() };
 }
 
 function getPlanilhaLiberacao(parametros) {
