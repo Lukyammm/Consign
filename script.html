@@ -46,13 +46,6 @@
                 movimentacoes: {},
                 usuarios: [],
                 logs: [],
-                filtrosLogs: {
-                    busca: '',
-                    acao: '',
-                    usuario: '',
-                    dataInicio: '',
-                    dataFim: ''
-                },
                 carregamentoTermosId: 0,
                 autenticado: false,
                 usuarioAutenticado: null,
@@ -518,11 +511,6 @@
             usuarioSenha: document.getElementById('usuario-senha'),
             usuarioStatus: document.getElementById('usuario-status'),
             usuarioUnidades: document.getElementById('usuario-unidades'),
-            logBusca: document.getElementById('log-busca'),
-            logUsuarioSelect: document.getElementById('log-usuario'),
-            logAcaoSelect: document.getElementById('log-acao'),
-            logDataInicio: document.getElementById('log-data-inicio'),
-            logDataFim: document.getElementById('log-data-fim'),
             modalClose: document.getElementById('modal-close'),
             usuarioModalClose: document.getElementById('usuario-modal-close'),
             btnCancelar: document.getElementById('btn-cancelar'),
@@ -2333,36 +2321,6 @@
                 elementos.dashboardSearch.addEventListener('input', () => {
                     estado.buscaDashboard = elementos.dashboardSearch.value || '';
                     renderizarArmarios();
-                });
-            }
-            if (elementos.logBusca) {
-                elementos.logBusca.addEventListener('input', () => {
-                    estado.filtrosLogs.busca = elementos.logBusca.value || '';
-                    renderizarTabelaLogs();
-                });
-            }
-            if (elementos.logUsuarioSelect) {
-                elementos.logUsuarioSelect.addEventListener('change', () => {
-                    estado.filtrosLogs.usuario = elementos.logUsuarioSelect.value || '';
-                    renderizarTabelaLogs();
-                });
-            }
-            if (elementos.logAcaoSelect) {
-                elementos.logAcaoSelect.addEventListener('change', () => {
-                    estado.filtrosLogs.acao = elementos.logAcaoSelect.value || '';
-                    renderizarTabelaLogs();
-                });
-            }
-            if (elementos.logDataInicio) {
-                elementos.logDataInicio.addEventListener('change', () => {
-                    estado.filtrosLogs.dataInicio = elementos.logDataInicio.value || '';
-                    renderizarTabelaLogs();
-                });
-            }
-            if (elementos.logDataFim) {
-                elementos.logDataFim.addEventListener('change', () => {
-                    estado.filtrosLogs.dataFim = elementos.logDataFim.value || '';
-                    renderizarTabelaLogs();
                 });
             }
             if (elementos.toggleDadosButton) {
@@ -4197,83 +4155,13 @@
                 finalizar();
             }
         }
-        function montarDescricaoContextoLog(contexto) {
-            if (!contexto || typeof contexto !== 'object') {
-                return '';
-            }
-            const pares = Object.entries(contexto)
-                .filter(([, valor]) => valor !== undefined && valor !== null && String(valor).trim())
-                .map(([chave, valor]) => `${chave}: ${valor}`);
-            return pares.join(' • ');
-        }
-        function obterLogsFiltrados() {
-            const { filtrosLogs } = estado;
-            const busca = normalizarTexto(filtrosLogs.busca || '');
-            const acaoFiltro = normalizarTexto(filtrosLogs.acao || '');
-            const usuarioFiltro = normalizarTexto(filtrosLogs.usuario || '');
-            const dataInicio = filtrosLogs.dataInicio ? new Date(filtrosLogs.dataInicio) : null;
-            const dataFim = filtrosLogs.dataFim ? new Date(filtrosLogs.dataFim + 'T23:59:59') : null;
-
-            return (estado.logs || []).filter(log => {
-                const dataRegistro = log.dataHora ? new Date(log.dataHora) : null;
-                if (dataInicio && dataRegistro && dataRegistro < dataInicio) return false;
-                if (dataFim && dataRegistro && dataRegistro > dataFim) return false;
-
-                const acaoNormalizada = normalizarTexto(log.acao || '');
-                if (acaoFiltro && acaoNormalizada !== acaoFiltro) return false;
-
-                const usuarioNormalizado = normalizarTexto(log.usuario || '');
-                if (usuarioFiltro && usuarioNormalizado !== usuarioFiltro) return false;
-
-                if (!busca) return true;
-                const camposPesquisa = [
-                    log.usuario,
-                    log.acao,
-                    log.detalhes
-                ].map(valor => normalizarTexto(valor || ''));
-
-                return camposPesquisa.some(texto => texto.includes(busca));
-            });
-        }
-        function popularFiltrosLogs() {
-            const usuarios = new Set();
-            const acoes = new Set();
-
-            (estado.logs || []).forEach(log => {
-                if (log.usuario) usuarios.add(log.usuario);
-                if (log.acao) acoes.add(log.acao);
-            });
-
-            const preencherSelect = (select, valores) => {
-                if (!select) return;
-                const valorAtual = select.value;
-                select.innerHTML = '<option value="">Todos</option>' +
-                    Array.from(valores)
-                        .sort((a, b) => a.localeCompare(b, 'pt-BR'))
-                        .map(valor => `<option value="${valor}">${valor}</option>`)
-                        .join('');
-                if (valores.has(valorAtual)) {
-                    select.value = valorAtual;
-                }
-            };
-
-            preencherSelect(elementos.logUsuarioSelect, usuarios);
-            preencherSelect(elementos.logAcaoSelect, acoes);
-        }
-        function renderizarTabelaLogs() {
+        async function carregarTabelaLogs() {
             const tbody = document.querySelector('#tabela-logs tbody');
             if (!tbody) return;
-            const logsFiltrados = obterLogsFiltrados();
+            const resultado = await callGoogleScript('getLogs');
+            if (!resultado.success) return;
             tbody.innerHTML = '';
-
-            if (!logsFiltrados.length) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="4" class="table-empty">Nenhum log encontrado com os filtros selecionados.</td>';
-                tbody.appendChild(tr);
-                return;
-            }
-
-            logsFiltrados.forEach(log => {
+            resultado.data.forEach(log => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${formatarDataHora(log.dataHora)}</td>
@@ -4283,17 +4171,6 @@
                 `;
                 tbody.appendChild(tr);
             });
-        }
-        async function carregarTabelaLogs() {
-            const resultado = await callGoogleScript('getLogs');
-            if (!resultado.success) {
-                mostrarErro('Não foi possível carregar os logs.');
-                return;
-            }
-
-            estado.logs = Array.isArray(resultado.data) ? resultado.data : [];
-            popularFiltrosLogs();
-            renderizarTabelaLogs();
         }
         function atualizarSeletoresUnidade() {
             if (!elementos.unitSelect) return;
