@@ -3887,16 +3887,31 @@
             }
 
             const linhas = [];
+            const movimentacoesPorArmario = new Map();
+
+            await Promise.all(armariosComTermo.map(async (armario) => {
+                try {
+                    const movResultado = await callGoogleScript('getMovimentacoes', montarPayloadTermo(armario));
+                    movimentacoesPorArmario.set(
+                        normalizarIdentificador(armario.id),
+                        movResultado.success && Array.isArray(movResultado.data)
+                            ? movResultado.data.length
+                            : 0
+                    );
+                } catch (erroMovimentacoes) {
+                    console.error('Não foi possível carregar movimentações do termo:', erroMovimentacoes);
+                    movimentacoesPorArmario.set(normalizarIdentificador(armario.id), 0);
+                }
+            }));
+
+            if (estado.carregamentoTermosId !== carregamentoId) return;
 
             for (const armario of armariosComTermo) {
                 const termoInfo = armario.termoInfo || null;
                 const statusTermoNormalizado = normalizarTexto(armario.termoStatus);
                 const finalizado = statusTermoNormalizado === 'finalizado';
                 const emAndamento = statusTermoNormalizado === 'em andamento';
-                const movResultado = await callGoogleScript('getMovimentacoes', montarPayloadTermo(armario));
-                if (estado.carregamentoTermosId !== carregamentoId) return;
-
-                const numMovimentacoes = movResultado.success ? movResultado.data.length : 0;
+                const numMovimentacoes = movimentacoesPorArmario.get(normalizarIdentificador(armario.id)) || 0;
                 const aplicadoEm = finalizado
                     ? formatarData(termoInfo?.finalizadoEm || termoInfo?.aplicadoEm)
                     : termoInfo?.aplicadoEm ? formatarData(termoInfo.aplicadoEm) : '-';
