@@ -1163,7 +1163,6 @@ function adicionarDadosIniciais() {
 
 // Função principal para lidar com requisições POST
 var usuarioContextoRequisicao = '';
-var contextoRequisicaoAtual = {};
 
 function definirContextoUsuario(parametros) {
   usuarioContextoRequisicao = '';
@@ -1196,67 +1195,14 @@ function definirContextoUsuario(parametros) {
   }
 }
 
-function definirContextoRequisicao(e) {
-  contextoRequisicaoAtual = {};
-  try {
-    var parametros = e && e.parameter ? e.parameter : null;
-    if (!parametros) {
-      return;
-    }
-
-    var camposBasicos = ['action', 'tipo', 'unidade', 'unidadeAtual', 'numero', 'numeroArmario'];
-    camposBasicos.forEach(function(chave) {
-      if (parametros[chave] !== undefined && parametros[chave] !== null) {
-        var valor = parametros[chave].toString().trim();
-        if (valor) {
-          contextoRequisicaoAtual[chave] = valor;
-        }
-      }
-    });
-  } catch (erroContexto) {
-    contextoRequisicaoAtual = {};
-  }
-}
-
 function limparContextoUsuario() {
   usuarioContextoRequisicao = '';
-}
-
-function limparContextoRequisicao() {
-  contextoRequisicaoAtual = {};
-}
-
-function ehObjetoContextoValido(valor) {
-  return valor && typeof valor === 'object' && !Array.isArray(valor);
-}
-
-function obterContextoLogPadrao() {
-  if (!ehObjetoContextoValido(contextoRequisicaoAtual)) {
-    return {};
-  }
-
-  var contexto = {};
-  if (contextoRequisicaoAtual.action) {
-    contexto.acaoRequisicao = contextoRequisicaoAtual.action;
-  }
-  if (contextoRequisicaoAtual.tipo) {
-    contexto.tipo = contextoRequisicaoAtual.tipo;
-  }
-  if (contextoRequisicaoAtual.unidade || contextoRequisicaoAtual.unidadeAtual) {
-    contexto.unidade = (contextoRequisicaoAtual.unidade || contextoRequisicaoAtual.unidadeAtual || '').toString();
-  }
-  if (contextoRequisicaoAtual.numeroArmario || contextoRequisicaoAtual.numero) {
-    contexto.numeroArmario = (contextoRequisicaoAtual.numeroArmario || contextoRequisicaoAtual.numero || '').toString();
-  }
-
-  return contexto;
 }
 
 function handlePost(e) {
   var action = e.parameter.action;
 
   definirContextoUsuario(e && e.parameter);
-  definirContextoRequisicao(e);
 
   try {
     switch(action) {
@@ -1407,7 +1353,6 @@ function handlePost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   } finally {
     limparContextoUsuario();
-    limparContextoRequisicao();
   }
 }
 
@@ -5621,7 +5566,7 @@ function finalizarMovimentacoesArmario(armarioId, numeroArmario, tipo) {
 }
 
 // Funções para LOGS
-function registrarLog(acao, detalhes, contextoExtra) {
+function registrarLog(acao, detalhes) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     if (!ss) {
@@ -5638,17 +5583,18 @@ function registrarLog(acao, detalhes, contextoExtra) {
       }
     }
 
-    if (sheet.getLastColumn() < 4) {
-      sheet.insertColumns(sheet.getLastColumn() + 1, 4 - sheet.getLastColumn());
+    if (sheet.getLastColumn() < 5) {
+      sheet.insertColumns(sheet.getLastColumn() + 1, 5 - sheet.getLastColumn());
     }
 
-    var cabecalhos = sheet.getRange(1, 1, 1, 4).getValues()[0];
+    var cabecalhos = sheet.getRange(1, 1, 1, 5).getValues()[0];
     if (!cabecalhos[0]) {
-      sheet.getRange(1, 1, 1, 4).setValues([[
+      sheet.getRange(1, 1, 1, 5).setValues([[
         'Data/Hora',
         'Usuário',
         'Ação',
-        'Detalhes'
+        'Detalhes',
+        'IP'
       ]]);
     }
 
@@ -5659,28 +5605,16 @@ function registrarLog(acao, detalhes, contextoExtra) {
 
     var dataLog = obterDataHoraAtualFormatada().dataHoraIso;
     var usuarioLog = determinarResponsavelRegistro(usuarioContextoRequisicao) || 'desconhecido';
-    var contextoPadrao = obterContextoLogPadrao();
-    var contextoLog = ehObjetoContextoValido(contextoExtra)
-      ? contextoExtra
-      : (contextoExtra ? { origem: contextoExtra.toString() } : {});
-    var contextoFinal = {};
-
-    Object.keys(contextoPadrao).forEach(function(chave) {
-      contextoFinal[chave] = contextoPadrao[chave];
-    });
-
-    Object.keys(contextoLog).forEach(function(chave) {
-      contextoFinal[chave] = contextoLog[chave];
-    });
 
     var novaLinha = [
       dataLog,
       usuarioLog,
       acao || '',
-      detalhes || ''
+      detalhes || '',
+      ''
     ];
 
-    sheet.getRange(lastRow + 1, 1, 1, 4).setValues([novaLinha]);
+    sheet.getRange(lastRow + 1, 1, 1, 5).setValues([novaLinha]);
 
   } catch (error) {
     console.error('Falha ao registrar log:', error);
@@ -5691,40 +5625,22 @@ function getLogs() {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('LOGS');
-
+    
     if (!sheet || sheet.getLastRow() < 2) {
       return { success: true, data: [] };
     }
-
-    var estrutura = obterEstruturaPlanilha(sheet);
-    var totalLinhas = sheet.getLastRow() - 1;
-    var totalColunas = Math.max(estrutura.ultimaColuna, 4);
-    var data = sheet.getRange(2, 1, totalLinhas, totalColunas).getValues();
+    
+    var data = sheet.getRange(2, 1, sheet.getLastRow()-1, 5).getValues();
     var logs = [];
-
+    
     data.forEach(function(row) {
-      var dataHora = obterValorLinhaFlexivel(row, estrutura, ['data/hora', 'data hora', 'data'], '');
-      var usuario = obterValorLinhaFlexivel(row, estrutura, ['usuário', 'usuario'], '');
-      var acao = obterValorLinhaFlexivel(row, estrutura, ['ação', 'acao'], '');
-      var detalhes = obterValorLinha(row, estrutura, 'detalhes', '');
-      if (dataHora || usuario || acao || detalhes) {
-        var contextoProcessado = {};
-        var contextoBruto = obterValorLinhaFlexivel(row, estrutura, ['contexto', 'dados contexto'], '');
-        if (contextoBruto) {
-          try {
-            contextoProcessado = typeof contextoBruto === 'string' ? JSON.parse(contextoBruto) : contextoBruto;
-          } catch (erroContexto) {
-            contextoProcessado = { valor: contextoBruto };
-          }
-        }
-
+      if (row[0]) {
         logs.push({
-          dataHora: dataHora,
-          usuario: usuario,
-          acao: acao,
-          detalhes: detalhes,
-          origem: obterValorLinhaFlexivel(row, estrutura, ['origem'], ''),
-          contexto: contextoProcessado
+          dataHora: row[0],
+          usuario: row[1],
+          acao: row[2],
+          detalhes: row[3],
+          ip: row[4]
         });
       }
     });
