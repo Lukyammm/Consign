@@ -2917,7 +2917,7 @@
                     const paciente = armario.nomePaciente || '-';
                     const prontuario = armario.prontuario || '-';
                     detailsHTML += `
-                        <p><strong>Paciente:</strong> ${paciente}</p>
+                        <p class="armario-paciente"><strong>Paciente:</strong> <span class="armario-paciente-nome">${paciente}</span></p>
                         <p><strong>Prontuário:</strong> ${prontuario}</p>
                     `;
                 } else {
@@ -2940,7 +2940,7 @@
 
                     if (ehContingencia) {
                         detailsHTML += `
-                            <p><strong>Paciente:</strong> <strong>${armario.nomePaciente}</strong></p>
+                            <p class="armario-paciente"><strong>Paciente:</strong> <span class="armario-paciente-nome">${armario.nomePaciente}</span></p>
                             <p><strong>Acompanhante:</strong> ${armario.nomeVisitante}</p>
                             <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
                             ${observacaoHtml}
@@ -2951,7 +2951,7 @@
                         const prontuario = armario.prontuario || '-';
                         const leito = armario.leito || '-';
                         detailsHTML += `
-                            <p><strong>Paciente:</strong> <strong>${armario.nomePaciente}</strong></p>
+                            <p class="armario-paciente"><strong>Paciente:</strong> <span class="armario-paciente-nome">${armario.nomePaciente}</span></p>
                             <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
                             <p class="armario-pront-leito">
                                 <span class="armario-pront"><strong>Prontuário:</strong> ${prontuario}</span>
