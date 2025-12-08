@@ -534,6 +534,8 @@
             dashboardSearch: document.getElementById('dashboard-search'),
             toggleDadosButton: document.getElementById('toggle-dados'),
             contingenciaButton: document.getElementById('btn-contingencia'),
+            cardsHero: document.querySelector('.cards-hero'),
+            cardProximo: document.querySelector('.card.proximo'),
             cardsCount: {
                 livres: document.getElementById('livres-count'),
                 emUso: document.getElementById('em-uso-count'),
@@ -2792,6 +2794,7 @@
         // Atualizar interface baseada no perfil
         function atualizarInterface() {
             atualizarVisibilidadeContingencia();
+            atualizarVisibilidadeCardsHero();
             // Renderizar armários
             if (estado.paginaAtual === 'dashboard') {
                 renderizarArmarios();
@@ -2805,6 +2808,20 @@
                 || perfilNormalizado === 'todos'
                 || perfilAtualEhAdmin();
             elementos.contingenciaButton.style.display = visivel ? 'inline-flex' : 'none';
+        }
+        function atualizarVisibilidadeCardsHero() {
+            const containerHero = elementos.cardsHero;
+            const cardProximo = elementos.cardProximo;
+            if (!containerHero) return;
+
+            const perfilNormalizado = normalizarTexto(estado.perfilAtual);
+            const exibirHeroVisitante = perfilNormalizado === 'geral' || perfilNormalizado === 'visitante';
+
+            containerHero.style.display = exibirHeroVisitante ? '' : 'none';
+
+            if (cardProximo) {
+                cardProximo.style.display = exibirHeroVisitante ? '' : 'none';
+            }
         }
         function obterFiltrosAtivosDashboard() {
             if (!Array.isArray(estado.filtrosSelecionados) || estado.filtrosSelecionados.length === 0) {
