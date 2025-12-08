@@ -1001,6 +1001,15 @@
                 ...extras
             };
         }
+        function obterChaveMovimentacaoArmario(armario) {
+            if (!armario) return '';
+            const idPlanilha = armario.idPlanilha !== undefined && armario.idPlanilha !== null
+                ? normalizarIdentificador(armario.idPlanilha)
+                : '';
+            const numero = normalizarIdentificador(armario.numero);
+            const idInterface = normalizarIdentificador(armario.id);
+            return idPlanilha || numero || idInterface;
+        }
         function montarPayloadAcaoArmario(armario, extras = {}) {
             const identificadores = montarIdentificadoresArmario(armario) || { idPlanilha: '', numeroArmario: '', tipo: '' };
             return {
@@ -1799,6 +1808,7 @@
                 }));
                 estado.armarios = filtrarListaPorPermissao(armariosProcessados, item => item.unidade);
                 estado.armariosCarregados = true;
+                estado.movimentacoes = {};
                 agendarAtualizacaoResumoDashboard();
                 salvarArmariosNoCache(estado.armarios);
                 return true;
@@ -4042,21 +4052,49 @@
 
             const linhas = [];
             const movimentacoesPorArmario = new Map();
+            const armariosParaResumo = [];
 
-            await Promise.all(armariosComTermo.map(async (armario) => {
-                try {
-                    const movResultado = await callGoogleScript('getMovimentacoes', montarPayloadTermo(armario));
-                    movimentacoesPorArmario.set(
-                        normalizarIdentificador(armario.id),
-                        movResultado.success && Array.isArray(movResultado.data)
-                            ? movResultado.data.length
-                            : 0
-                    );
-                } catch (erroMovimentacoes) {
-                    console.error('Não foi possível carregar movimentações do termo:', erroMovimentacoes);
-                    movimentacoesPorArmario.set(normalizarIdentificador(armario.id), 0);
+            armariosComTermo.forEach((armario) => {
+                const chaveMovimentacao = obterChaveMovimentacaoArmario(armario);
+                const cache = estado.movimentacoes[chaveMovimentacao];
+                if (cache && Number.isFinite(cache.contagem)) {
+                    movimentacoesPorArmario.set(chaveMovimentacao, cache.contagem);
+                    return;
                 }
-            }));
+
+                armariosParaResumo.push({
+                    chave: chaveMovimentacao,
+                    id: armario.idPlanilha || armario.id || '',
+                    numero: armario.numero || '',
+                    numeroArmario: armario.numero || '',
+                    armarioId: armario.idPlanilha || '',
+                    tipo: armario.tipo || ''
+                });
+            });
+
+            if (armariosParaResumo.length) {
+                try {
+                    const respostaResumo = await callGoogleScript('getMovimentacoesResumo', {
+                        armarios: armariosParaResumo.map(item => ({
+                            id: item.id,
+                            numero: item.numero,
+                            numeroArmario: item.numeroArmario,
+                            armarioId: item.armarioId,
+                            tipo: item.tipo
+                        }))
+                    });
+
+                    if (respostaResumo && respostaResumo.success && respostaResumo.data) {
+                        Object.entries(respostaResumo.data).forEach(([chave, valor]) => {
+                            const contagem = Number(valor) || 0;
+                            estado.movimentacoes[chave] = { contagem, atualizadoEm: Date.now() };
+                            movimentacoesPorArmario.set(chave, contagem);
+                        });
+                    }
+                } catch (erroResumo) {
+                    console.error('Erro ao carregar resumo de movimentações:', erroResumo);
+                }
+            }
 
             if (estado.carregamentoTermosId !== carregamentoId) return;
 
@@ -4065,7 +4103,9 @@
                 const statusTermoNormalizado = normalizarTexto(armario.termoStatus);
                 const finalizado = statusTermoNormalizado === 'finalizado';
                 const emAndamento = statusTermoNormalizado === 'em andamento';
-                const numMovimentacoes = movimentacoesPorArmario.get(normalizarIdentificador(armario.id)) || 0;
+                const chaveMovimentacao = obterChaveMovimentacaoArmario(armario);
+                const numMovimentacoes = movimentacoesPorArmario.get(chaveMovimentacao)
+                    ?? (estado.movimentacoes[chaveMovimentacao]?.contagem || 0);
                 const aplicadoEm = finalizado
                     ? formatarData(termoInfo?.finalizadoEm || termoInfo?.aplicadoEm)
                     : termoInfo?.aplicadoEm ? formatarData(termoInfo.aplicadoEm) : '-';
