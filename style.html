@@ -1191,6 +1191,43 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 4px var(--focus-ring);
         }
+        .logs-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            align-items: end;
+            width: 100%;
+        }
+        .logs-filters .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .logs-filters .filter-search {
+            min-width: 0;
+            width: 100%;
+            box-shadow: none;
+        }
+        .logs-filters select,
+        .logs-filters input[type="date"] {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--surface-color);
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+        .logs-filters select:focus,
+        .logs-filters input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+        .logs-filters label {
+            font-weight: 600;
+            color: var(--muted-color);
+            font-size: 0.9rem;
+        }
         .contingencia-actions {
             display: flex;
             gap: 10px;
