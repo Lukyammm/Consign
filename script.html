@@ -47,6 +47,11 @@
                 usuarios: [],
                 logs: [],
                 carregamentoTermosId: 0,
+                filtrosTermos: {
+                    status: 'todos',
+                    unidade: 'todas',
+                    busca: ''
+                },
                 autenticado: false,
                 usuarioAutenticado: null,
                 liberacao: criarEstadoLiberacaoInicial(),
@@ -54,6 +59,11 @@
             };
         }
         let estado = criarEstadoInicial();
+        const filtrosTermoPadrao = {
+            status: 'todos',
+            unidade: 'todas',
+            busca: ''
+        };
         function obterEstadoLiberacao() {
             if (!estado.liberacao) {
                 estado.liberacao = criarEstadoLiberacaoInicial();
@@ -567,6 +577,10 @@
             termoAssinaturaClear: document.getElementById('termo-signature-clear'),
             tabelaTermos: document.getElementById('tabela-termos'),
             tabelaTermosBody: document.querySelector('#tabela-termos tbody'),
+            termoFiltroStatus: document.getElementById('termo-filtro-status'),
+            termoFiltroUnidade: document.getElementById('termo-filtro-unidade'),
+            termoFiltroBusca: document.getElementById('termo-filtro-busca'),
+            termoFiltroLimpar: document.getElementById('termo-filtro-limpar'),
             movimentacaoModal: document.getElementById('movimentacao-modal'),
             movimentacaoModalClose: document.getElementById('movimentacao-modal-close'),
             movimentacoesList: document.getElementById('movimentacoes-list'),
@@ -2608,6 +2622,28 @@
             if (elementos.logsBtnLimpar) {
                 elementos.logsBtnLimpar.addEventListener('click', limparFiltrosLogs);
             }
+            const aplicarFiltrosTermosDebounced = debounce(() => carregarTabelaTermos({ recarregarArmarios: false }), 150);
+            if (elementos.termoFiltroStatus) {
+                elementos.termoFiltroStatus.addEventListener('change', () => {
+                    atualizarFiltrosTermo({ status: elementos.termoFiltroStatus.value || 'todos' });
+                    aplicarFiltrosTermosDebounced();
+                });
+            }
+            if (elementos.termoFiltroUnidade) {
+                elementos.termoFiltroUnidade.addEventListener('change', () => {
+                    atualizarFiltrosTermo({ unidade: elementos.termoFiltroUnidade.value || 'todas' });
+                    aplicarFiltrosTermosDebounced();
+                });
+            }
+            if (elementos.termoFiltroBusca) {
+                elementos.termoFiltroBusca.addEventListener('input', () => {
+                    atualizarFiltrosTermo({ busca: elementos.termoFiltroBusca.value || '' });
+                    aplicarFiltrosTermosDebounced();
+                });
+            }
+            if (elementos.termoFiltroLimpar) {
+                elementos.termoFiltroLimpar.addEventListener('click', limparFiltrosTermos);
+            }
             // Tabela de termos
             elementos.tabelaTermos.addEventListener('click', tratarAcaoTermo);
             if (elementos.tabelaUnidadesBody) {
@@ -3865,6 +3901,63 @@
                 tbody.appendChild(tr);
             });
         }
+        function obterFiltrosTermo() {
+            const filtrosAtuais = estado.filtrosTermos || filtrosTermoPadrao;
+            estado.filtrosTermos = { ...filtrosTermoPadrao, ...filtrosAtuais };
+            return estado.filtrosTermos;
+        }
+        function atualizarFiltrosTermo(filtros = {}) {
+            estado.filtrosTermos = { ...filtrosTermoPadrao, ...estado.filtrosTermos, ...filtros };
+            return estado.filtrosTermos;
+        }
+        function sincronizarCamposFiltroTermo() {
+            const filtros = obterFiltrosTermo();
+            if (elementos.termoFiltroStatus && elementos.termoFiltroStatus.value !== filtros.status) {
+                elementos.termoFiltroStatus.value = filtros.status;
+            }
+            if (elementos.termoFiltroUnidade && elementos.termoFiltroUnidade.value !== filtros.unidade) {
+                elementos.termoFiltroUnidade.value = filtros.unidade;
+            }
+            if (elementos.termoFiltroBusca && elementos.termoFiltroBusca.value !== filtros.busca) {
+                elementos.termoFiltroBusca.value = filtros.busca;
+            }
+        }
+        function atualizarFiltroUnidadeTermos() {
+            if (!elementos.termoFiltroUnidade) return;
+            const filtros = obterFiltrosTermo();
+            const unidadesDisponiveis = obterUnidadesPermitidas();
+            const idsPermitidos = obterIdsPermitidos();
+            const permitirTodas = idsPermitidos === null;
+            const valorAtualNormalizado = normalizarTexto(filtros.unidade || 'todas');
+            const opcoes = permitirTodas ? ['<option value="todas">Todas as unidades</option>'] : [];
+            unidadesDisponiveis.forEach(unidade => {
+                const nomeLimpo = (unidade.nome || '').trim();
+                const desativada = unidade.status !== 'ativa';
+                const label = desativada ? `${nomeLimpo} (inativa)` : nomeLimpo;
+                opcoes.push(`<option value="${nomeLimpo}" ${desativada ? 'disabled' : ''}>${label}</option>`);
+            });
+            elementos.termoFiltroUnidade.innerHTML = opcoes.join('');
+            const opcaoEncontrada = Array.from(elementos.termoFiltroUnidade.options)
+                .find(opt => normalizarTexto(opt.value) === valorAtualNormalizado && !opt.disabled);
+            if (opcaoEncontrada) {
+                elementos.termoFiltroUnidade.value = opcaoEncontrada.value;
+                estado.filtrosTermos.unidade = opcaoEncontrada.value;
+            } else {
+                if (!permitirTodas && elementos.termoFiltroUnidade.options.length) {
+                    const primeiraAtiva = Array.from(elementos.termoFiltroUnidade.options).find(opt => !opt.disabled);
+                    elementos.termoFiltroUnidade.value = primeiraAtiva ? primeiraAtiva.value : '';
+                    estado.filtrosTermos.unidade = elementos.termoFiltroUnidade.value || '';
+                } else {
+                    elementos.termoFiltroUnidade.value = 'todas';
+                    estado.filtrosTermos.unidade = 'todas';
+                }
+            }
+        }
+        function limparFiltrosTermos() {
+            atualizarFiltrosTermo({ ...filtrosTermoPadrao });
+            sincronizarCamposFiltroTermo();
+            carregarTabelaTermos({ recarregarArmarios: false });
+        }
         async function carregarTabelaTermos(opcoes = {}) {
             const { recarregarArmarios = true } = opcoes;
             if (!elementos.tabelaTermosBody) return;
@@ -3883,13 +3976,49 @@
                 return;
             }
 
+            atualizarFiltroUnidadeTermos();
+            sincronizarCamposFiltroTermo();
+            const filtros = obterFiltrosTermo();
+            const statusFiltro = normalizarTexto(filtros.status);
+            const unidadeFiltro = normalizarTexto(filtros.unidade);
+            const buscaFiltro = normalizarTextoBusca(filtros.busca);
+            const possuiFiltros = statusFiltro !== 'todos' || unidadeFiltro !== 'todas' || Boolean(buscaFiltro);
+
             const armariosComTermo = estado.armarios
                 .filter(a => normalizarTexto(a.tipo) === 'acompanhante')
+                .filter(a => usuarioPodeVerUnidade(a.unidade))
                 .filter(a => {
                     const statusArmario = normalizarTexto(a.status);
                     const statusTermo = normalizarTexto(a.termoStatus);
                     return statusArmario !== 'livre' || statusTermo === 'finalizado';
                 })
+                .filter(a => {
+                    if (!buscaFiltro) return true;
+                    const camposBusca = [
+                        a.numero,
+                        a.nomePaciente,
+                        a.nomeVisitante,
+                        a.prontuario,
+                        a.unidade,
+                        a.termoInfo?.paciente,
+                        a.termoInfo?.acompanhante
+                    ];
+                    return camposBusca.some(campo => normalizarTextoBusca(campo).includes(buscaFiltro));
+                })
+                .filter(a => {
+                    const statusTermoNormalizado = normalizarTexto(a.termoStatus || a.termoInfo?.status);
+                    if (statusFiltro === 'pendente') {
+                        return statusTermoNormalizado === 'pendente';
+                    }
+                    if (statusFiltro === 'em andamento' || statusFiltro === 'andamento') {
+                        return statusTermoNormalizado === 'em andamento';
+                    }
+                    if (statusFiltro === 'finalizado') {
+                        return statusTermoNormalizado === 'finalizado' || Boolean(a.termoInfo?.finalizado);
+                    }
+                    return true;
+                })
+                .filter(a => unidadeFiltro === 'todas' || normalizarTexto(a.unidade) === unidadeFiltro)
                 .sort((a, b) => {
                     const peso = (valor) => {
                         if (!valor.termoInfo) return 0;
@@ -3904,7 +4033,10 @@
                 });
 
             if (!armariosComTermo.length) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:16px; color:#5b6b86;">Nenhum termo ativo ou pendente no momento.</td></tr>';
+                const mensagemVazia = possuiFiltros
+                    ? 'Nenhum termo encontrado para os filtros selecionados.'
+                    : 'Nenhum termo ativo ou pendente no momento.';
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:16px; color:#5b6b86;">${mensagemVazia}</td></tr>`;
                 return;
             }
 
@@ -4286,6 +4418,7 @@
             }
             atualizarSelectorPersonalizado(elementos.unitSelect);
             salvarPreferenciasCabecalho();
+            atualizarFiltroUnidadeTermos();
         }
         function renderizarTabelaUnidades() {
             if (!elementos.tabelaUnidadesBody) return;
