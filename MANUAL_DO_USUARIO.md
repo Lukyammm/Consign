@@ -102,3 +102,10 @@ Este manual foi pensado para quem não é técnico. Ele explica, em linguagem di
 2. Garantir que todos os **Termos de Responsabilidade** estejam aplicados e salvos.
 3. Revisar se há registros pendentes na página de **Liberações**.
 4. Fazer logout para encerrar a sessão.
+
+## 18. Aparência sugerida dos cards de armários em uso
+- Fundo em cinza escuro (#2f3237) com gradiente sutil para um cinza ligeiramente mais claro (#3a3d43) ao centro do card.
+- Bordas com leve arredondamento (6–8px) para suavizar o visual.
+- Texto em branco ou cinza-claro com contraste mínimo de 4.5:1 para acessibilidade.
+- Sombras discretas (por exemplo, 0 4px 12px rgba(0,0,0,0.25)) para destacar sem exagerar.
+- Espaçamento interno generoso (16–20px) para facilitar leitura e toque em dispositivos móveis.
