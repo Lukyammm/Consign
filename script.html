@@ -587,6 +587,12 @@
             tabelaUnidadesBody: document.querySelector('#tabela-unidades tbody'),
             tabelaUsuarios: document.getElementById('tabela-usuarios'),
             tabelaUsuariosBody: document.querySelector('#tabela-usuarios tbody'),
+            tabelaLogsBody: document.querySelector('#tabela-logs tbody'),
+            logsDataInicio: document.getElementById('logs-data-inicio'),
+            logsDataFim: document.getElementById('logs-data-fim'),
+            logsFiltroUsuario: document.getElementById('logs-filtro-usuario'),
+            logsBusca: document.getElementById('logs-busca'),
+            logsBtnLimpar: document.getElementById('logs-btn-limpar'),
             tabelaLiberacao: document.getElementById('tabela-liberacao'),
             tabelaLiberacaoHead: document.querySelector('#tabela-liberacao thead tr'),
             tabelaLiberacaoBody: document.querySelector('#tabela-liberacao tbody'),
@@ -2586,6 +2592,22 @@
                     }
                 });
             }
+            const aplicarFiltrosLogsDebounced = debounce(aplicarFiltrosLogs, 150);
+            if (elementos.logsDataInicio) {
+                elementos.logsDataInicio.addEventListener('change', aplicarFiltrosLogsDebounced);
+            }
+            if (elementos.logsDataFim) {
+                elementos.logsDataFim.addEventListener('change', aplicarFiltrosLogsDebounced);
+            }
+            if (elementos.logsFiltroUsuario) {
+                elementos.logsFiltroUsuario.addEventListener('input', aplicarFiltrosLogsDebounced);
+            }
+            if (elementos.logsBusca) {
+                elementos.logsBusca.addEventListener('input', aplicarFiltrosLogsDebounced);
+            }
+            if (elementos.logsBtnLimpar) {
+                elementos.logsBtnLimpar.addEventListener('click', limparFiltrosLogs);
+            }
             // Tabela de termos
             elementos.tabelaTermos.addEventListener('click', tratarAcaoTermo);
             if (elementos.tabelaUnidadesBody) {
@@ -4155,13 +4177,62 @@
                 finalizar();
             }
         }
-        async function carregarTabelaLogs() {
-            const tbody = document.querySelector('#tabela-logs tbody');
-            if (!tbody) return;
-            const resultado = await callGoogleScript('getLogs');
-            if (!resultado.success) return;
-            tbody.innerHTML = '';
-            resultado.data.forEach(log => {
+        function exibirEstadoTabelaLogs(mensagem, tipo = 'empty') {
+            if (!elementos.tabelaLogsBody) return;
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 4;
+            td.textContent = mensagem;
+            td.className = tipo === 'loading' ? 'table-loading' : tipo === 'error' ? 'table-error' : 'table-empty';
+            tr.appendChild(td);
+            elementos.tabelaLogsBody.innerHTML = '';
+            elementos.tabelaLogsBody.appendChild(tr);
+        }
+        function limparFiltrosLogs() {
+            if (elementos.logsDataInicio) elementos.logsDataInicio.value = '';
+            if (elementos.logsDataFim) elementos.logsDataFim.value = '';
+            if (elementos.logsFiltroUsuario) elementos.logsFiltroUsuario.value = '';
+            if (elementos.logsBusca) elementos.logsBusca.value = '';
+            aplicarFiltrosLogs();
+        }
+        function aplicarFiltrosLogs() {
+            if (!elementos.tabelaLogsBody) return;
+            if (!Array.isArray(estado.logs) || estado.logs.length === 0) {
+                exibirEstadoTabelaLogs('Nenhum log disponível.');
+                return;
+            }
+
+            const dataInicioValor = elementos.logsDataInicio?.value || '';
+            const dataFimValor = elementos.logsDataFim?.value || '';
+            const filtroUsuario = normalizarTextoBusca(elementos.logsFiltroUsuario?.value);
+            const filtroBusca = normalizarTextoBusca(elementos.logsBusca?.value);
+
+            const dataInicio = dataInicioValor ? new Date(`${dataInicioValor}T00:00:00`) : null;
+            const dataFim = dataFimValor ? new Date(`${dataFimValor}T23:59:59`) : null;
+
+            const logsFiltrados = estado.logs.filter(log => {
+                const dataLog = new Date(log.dataHora);
+                if (Number.isNaN(dataLog.getTime())) return false;
+                if (dataInicio && dataLog < dataInicio) return false;
+                if (dataFim && dataLog > dataFim) return false;
+                if (filtroUsuario) {
+                    const usuario = normalizarTextoBusca(log.usuario);
+                    if (!usuario.includes(filtroUsuario)) return false;
+                }
+                if (filtroBusca) {
+                    const texto = normalizarTextoBusca(`${log.usuario} ${log.acao} ${log.detalhes}`);
+                    if (!texto.includes(filtroBusca)) return false;
+                }
+                return true;
+            });
+
+            if (logsFiltrados.length === 0) {
+                exibirEstadoTabelaLogs('Nenhum log encontrado com os filtros selecionados.');
+                return;
+            }
+
+            elementos.tabelaLogsBody.innerHTML = '';
+            logsFiltrados.forEach(log => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${formatarDataHora(log.dataHora)}</td>
@@ -4169,8 +4240,19 @@
                     <td>${log.acao}</td>
                     <td>${log.detalhes}</td>
                 `;
-                tbody.appendChild(tr);
+                elementos.tabelaLogsBody.appendChild(tr);
             });
+        }
+        async function carregarTabelaLogs() {
+            if (!elementos.tabelaLogsBody) return;
+            exibirEstadoTabelaLogs('Carregando logs...', 'loading');
+            const resultado = await callGoogleScript('getLogs');
+            if (!resultado.success) {
+                exibirEstadoTabelaLogs('Não foi possível carregar os logs.', 'error');
+                return;
+            }
+            estado.logs = Array.isArray(resultado.data) ? resultado.data : [];
+            aplicarFiltrosLogs();
         }
         function atualizarSeletoresUnidade() {
             if (!elementos.unitSelect) return;

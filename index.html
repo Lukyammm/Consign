@@ -560,7 +560,31 @@
             <div class="page" id="logs">
                 <div class="data-table">
                     <div class="table-header">
-                        <h3>Logs do Sistema</h3>
+                        <div>
+                            <h3>Logs do Sistema</h3>
+                            <p class="table-subtitle">Filtre por período, usuário ou palavra-chave.</p>
+                        </div>
+                        <div class="table-header-controls">
+                            <div class="filter-group">
+                                <label for="logs-data-inicio">Data inicial</label>
+                                <input type="date" id="logs-data-inicio">
+                            </div>
+                            <div class="filter-group">
+                                <label for="logs-data-fim">Data final</label>
+                                <input type="date" id="logs-data-fim">
+                            </div>
+                            <div class="filter-group">
+                                <label for="logs-filtro-usuario">Usuário</label>
+                                <input type="text" id="logs-filtro-usuario" placeholder="Nome ou matrícula">
+                            </div>
+                            <div class="filter-group">
+                                <label for="logs-busca">Palavra-chave</label>
+                                <input type="text" id="logs-busca" placeholder="Ação ou detalhes do log">
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="logs-btn-limpar">
+                                <i class="fas fa-eraser"></i> Limpar filtros
+                            </button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table id="tabela-logs">
