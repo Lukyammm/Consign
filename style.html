@@ -1609,7 +1609,8 @@
             letter-spacing: 0.02em;
         }
         .table-header-controls input[type="date"],
-        .table-header-controls input[type="text"] {
+        .table-header-controls input[type="text"],
+        .table-header-controls select {
             padding: 10px 12px;
             border-radius: 10px;
             border: 1px solid var(--border-color);
@@ -1619,7 +1620,8 @@
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
         .table-header-controls input[type="date"]:focus,
-        .table-header-controls input[type="text"]:focus {
+        .table-header-controls input[type="text"]:focus,
+        .table-header-controls select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px var(--focus-ring);
             outline: none;
@@ -3599,7 +3601,8 @@
                 width: 100%;
             }
             .table-header-controls input[type="date"],
-            .table-header-controls input[type="text"] {
+            .table-header-controls input[type="text"],
+            .table-header-controls select {
                 width: 100%;
             }
             .header {

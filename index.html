@@ -445,8 +445,34 @@
             <div class="page" id="termo-responsabilidade">
                 <div class="data-table">
                     <div class="table-header">
-                        <h3>Termos de Responsabilidade</h3>
-                        <p style="color:#5b6b86; font-size:0.9rem;">Consulte termos aplicados e pendentes dos armários de acompanhantes em uso.</p>
+                        <div class="table-header-info">
+                            <h3>Termos de Responsabilidade</h3>
+                            <p class="table-subtitle">Consulte termos aplicados e pendentes dos armários de acompanhantes em uso.</p>
+                        </div>
+                        <div class="table-header-controls">
+                            <div class="filter-group">
+                                <label for="termo-filtro-status">Status do termo</label>
+                                <select id="termo-filtro-status">
+                                    <option value="todos">Todos</option>
+                                    <option value="pendente">Pendente</option>
+                                    <option value="em andamento">Em andamento</option>
+                                    <option value="finalizado">Finalizado</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="termo-filtro-unidade">Unidade</label>
+                                <select id="termo-filtro-unidade">
+                                    <option value="todas">Todas as unidades</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="termo-filtro-busca">Busca rápida</label>
+                                <input type="text" id="termo-filtro-busca" placeholder="Paciente, acompanhante ou armário">
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="termo-filtro-limpar">
+                                <i class="fas fa-eraser" aria-hidden="true"></i> Limpar filtros
+                            </button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table id="tabela-termos">
