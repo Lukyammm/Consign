@@ -1067,7 +1067,10 @@
         .card.em-uso {
             position: relative;
             border-top: 4px solid var(--em-uso-border-color);
-            background: var(--em-uso-card-bg);
+            background: radial-gradient(circle at 50% 40%,
+                    color-mix(in srgb, var(--em-uso-card-bg) 55%, white 45%) 0%,
+                    color-mix(in srgb, var(--em-uso-card-bg) 85%, white 15%) 45%,
+                    var(--em-uso-card-bg) 100%);
             color: var(--em-uso-text);
             overflow: hidden;
         }
@@ -1312,7 +1315,10 @@
             position: relative;
             overflow: hidden;
             border-left-color: var(--em-uso-border-color);
-            background: var(--em-uso-card-bg);
+            background: radial-gradient(circle at 50% 40%,
+                    color-mix(in srgb, var(--em-uso-card-bg) 55%, white 45%) 0%,
+                    color-mix(in srgb, var(--em-uso-card-bg) 85%, white 15%) 45%,
+                    var(--em-uso-card-bg) 100%);
             color: var(--em-uso-text);
             box-shadow: 0 14px 32px color-mix(in srgb, var(--em-uso-border-color) 30%, transparent);
         }
