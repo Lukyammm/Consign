@@ -593,6 +593,7 @@
             movimentacaoForm: document.getElementById('movimentacao-form'),
             movimentacaoModalTitle: document.getElementById('movimentacao-modal-title'),
             movTipo: document.getElementById('mov-tipo'),
+            movTipoOpcoes: document.querySelectorAll('.mov-tipo-btn'),
             movDescricao: document.getElementById('mov-descricao'),
             movItensList: document.getElementById('mov-itens-list'),
             movItensResumo: document.getElementById('mov-itens-resumo'),
@@ -2610,28 +2611,49 @@
                 elementos.termoAssinaturaCanvas.addEventListener('pointerleave', finalizarAssinaturaTermo);
                 elementos.termoAssinaturaCanvas.addEventListener('pointercancel', finalizarAssinaturaTermo);
             }
-            window.addEventListener('resize', debounce(() => {
-                inicializarCanvasAssinatura();
-            }, 150));
-            // Movimentações
-            elementos.movimentacaoModalClose.addEventListener('click', fecharMovimentacaoModal);
-            elementos.movimentacaoForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const botao = elementos.movimentacaoForm.querySelector('button[type="submit"]');
-                const finalizarLoading = iniciarLoadingBotao(botao);
-                try {
-                    await salvarMovimentacao();
-                } finally {
-                    finalizarLoading();
-                }
+        window.addEventListener('resize', debounce(() => {
+            inicializarCanvasAssinatura();
+        }, 150));
+
+        function atualizarTipoMovimentacaoSelecionado(tipoSelecionado = '') {
+            const tipoNormalizado = normalizarTexto(tipoSelecionado);
+            if (elementos.movTipo) {
+                elementos.movTipo.value = tipoNormalizado;
+            }
+            elementos.movTipoOpcoes?.forEach(botao => {
+                const ehAtivo = normalizarTexto(botao.dataset.movOpcao) === tipoNormalizado && !!tipoNormalizado;
+                botao.classList.toggle('active', ehAtivo);
+                botao.setAttribute('aria-pressed', ehAtivo ? 'true' : 'false');
             });
-            elementos.movTipo.addEventListener('change', () => {
-                preencherItensMovimentacaoAPartirInventario(elementos.movTipo.value);
+        }
+
+        // Movimentações
+        elementos.movimentacaoModalClose.addEventListener('click', fecharMovimentacaoModal);
+        elementos.movimentacaoForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const botao = elementos.movimentacaoForm.querySelector('button[type="submit"]');
+            const finalizarLoading = iniciarLoadingBotao(botao);
+            try {
+                await salvarMovimentacao();
+            } finally {
+                finalizarLoading();
+            }
+        });
+        elementos.movTipo.addEventListener('change', () => {
+            atualizarTipoMovimentacaoSelecionado(elementos.movTipo.value);
+            preencherItensMovimentacaoAPartirInventario(elementos.movTipo.value);
+        });
+        elementos.movTipoOpcoes?.forEach(botao => {
+            botao.addEventListener('click', () => {
+                const valor = botao.dataset.movOpcao || '';
+                atualizarTipoMovimentacaoSelecionado(valor);
+                preencherItensMovimentacaoAPartirInventario(valor || elementos.movTipo.value);
             });
-            elementos.movAddItem?.addEventListener('click', () => {
-                adicionarItemMovimentacaoLinha();
-            });
-            elementos.movPreencherItens?.addEventListener('click', () => {
+        });
+        elementos.movAddItem?.addEventListener('click', () => {
+            adicionarItemMovimentacaoLinha();
+        });
+        elementos.movPreencherItens?.addEventListener('click', () => {
                 preencherItensMovimentacaoAPartirInventario(elementos.movTipo.value || 'saida');
             });
             if (elementos.impressaoReservaClose) {
@@ -7300,6 +7322,7 @@
             movimentacaoArmarioAtual = id;
             elementos.movimentacaoModalTitle.textContent = `Movimentações - Armário ${armario.numero}`;
             elementos.movimentacaoForm.reset();
+            atualizarTipoMovimentacaoSelecionado('');
             limparItensMovimentacaoFormulario();
             atualizarResponsavelMovimentacaoInfo();
             const padraoLocal = obterDataHoraLocalPadrao();
@@ -7505,7 +7528,7 @@
                     await renderizarMovimentacoes(movimentacaoArmarioAtual);
                     mostrarSucesso('Movimentação registrada com sucesso');
                     elementos.movimentacaoForm.reset();
-                    elementos.movTipo.value = '';
+                    atualizarTipoMovimentacaoSelecionado('');
                     limparItensMovimentacaoFormulario();
                     const padraoLocal = obterDataHoraLocalPadrao();
                     elementos.movData.value = padraoLocal.data;
