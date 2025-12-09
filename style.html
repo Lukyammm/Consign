@@ -65,9 +65,9 @@
             --border-color: #1f2937;
             --shadow-color: rgba(0, 0, 0, 0.45);
             --focus-ring: rgba(139, 179, 255, 0.35);
-            --sidebar-gradient-start: #0b1220;
-            --sidebar-gradient-end: #0f172a;
-            --header-surface: #0d172a;
+            --sidebar-gradient-start: #2d323b;
+            --sidebar-gradient-end: #3a404c;
+            --header-surface: #2f353f;
             --muted-surface: #111827;
             --input-surface: #0f172a;
             --strong-surface: #0a152a;
@@ -90,8 +90,8 @@
             --border-color: #f8cde7;
             --shadow-color: rgba(244, 114, 182, 0.12);
             --focus-ring: rgba(244, 114, 182, 0.25);
-            --sidebar-gradient-start: #f472b6;
-            --sidebar-gradient-end: #f9a8d4;
+            --sidebar-gradient-start: #b31663;
+            --sidebar-gradient-end: #8f0e4c;
             --header-surface: #fff7fb;
             --muted-surface: #ffe9f3;
             --input-surface: #ffffff;
@@ -300,9 +300,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 0;
+            padding: 16px 18px;
             margin-bottom: 20px;
-            border-bottom: 1px solid color-mix(in srgb, var(--dark-color) 8%, transparent);
+            background: var(--header-surface);
+            border: 1px solid color-mix(in srgb, var(--dark-color) 8%, transparent);
+            border-radius: 14px;
+            box-shadow: 0 8px 22px var(--shadow-color);
             flex-wrap: wrap;
             gap: 16px;
             position: relative;
