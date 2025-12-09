@@ -2841,12 +2841,42 @@
         }
         // Atualizar interface baseada no perfil
         function atualizarInterface() {
+            ajustarFiltrosDashboardParaPerfil();
             atualizarVisibilidadeContingencia();
             atualizarVisibilidadeCardsHero();
             // Renderizar armários
             if (estado.paginaAtual === 'dashboard') {
                 renderizarArmarios();
             }
+        }
+        function obterFiltrosPermitidosPorPerfil() {
+            const perfilNormalizado = normalizarTexto(estado.perfilAtual);
+            const filtrosAcompanhante = ['todos', 'livre', 'em-uso', 'contingencia'];
+            const filtrosCompletos = ['todos', 'livre', 'em-uso', 'proximo', 'vencido', 'contingencia'];
+            return perfilNormalizado === 'acompanhante' ? filtrosAcompanhante : filtrosCompletos;
+        }
+        function ajustarFiltrosDashboardParaPerfil() {
+            if (!elementos.filterBtns || elementos.filterBtns.length === 0) return;
+
+            const permitidos = new Set(obterFiltrosPermitidosPorPerfil());
+            let filtrosAtuais = Array.isArray(estado.filtrosSelecionados)
+                ? estado.filtrosSelecionados.map(normalizarTexto).filter(Boolean)
+                : [];
+
+            filtrosAtuais = filtrosAtuais.filter(filtro => permitidos.has(filtro));
+            if (filtrosAtuais.length === 0) {
+                filtrosAtuais = ['todos'];
+            }
+
+            estado.filtrosSelecionados = filtrosAtuais;
+
+            elementos.filterBtns.forEach(botao => {
+                const filtro = normalizarTexto(botao.dataset.filter) || 'todos';
+                const visivel = permitidos.has(filtro);
+                botao.style.display = visivel ? '' : 'none';
+            });
+
+            atualizarBotoesFiltroDashboard();
         }
         function atualizarVisibilidadeContingencia() {
             if (!elementos.contingenciaButton) return;
