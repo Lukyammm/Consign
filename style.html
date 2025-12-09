@@ -1577,13 +1577,20 @@
         .armario-card.em-uso .armario-details {
             color: color-mix(in srgb, var(--em-uso-text) 85%, transparent);
         }
+        .armario-paciente {
+            font-size: 1.2rem;
+            color: #0047b9;
+        }
+        .armario-paciente strong,
         .armario-paciente .armario-paciente-nome {
-            font-size: 1.05rem;
+            font-size: 1.2rem;
             font-weight: 800;
             letter-spacing: 0.01em;
+            color: inherit;
         }
+        .armario-card.em-uso .armario-paciente,
         .armario-card.em-uso .armario-paciente .armario-paciente-nome {
-            color: var(--em-uso-text);
+            color: #0047b9;
         }
         .armario-pront-leito {
             display: flex;
