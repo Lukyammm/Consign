@@ -342,9 +342,9 @@
             Object.entries(rascunhosOriginais).forEach(([id, valores]) => {
                 if (rascunhoOcupacaoTemDados(valores)) {
                     rascunhosFiltrados[id] = {
-                        paciente: (valores.paciente || '').toString(),
+                        paciente: padronizarNomeMaiusculo(valores.paciente),
                         prontuario: (valores.prontuario || '').toString(),
-                        acompanhante: (valores.acompanhante || '').toString()
+                        acompanhante: padronizarNomeMaiusculo(valores.acompanhante)
                     };
                 }
             });
@@ -952,6 +952,44 @@
         });
         const normalizarTexto = (valor) => (valor ?? '').toString().trim().toLowerCase();
         const normalizarIdentificador = (valor) => (valor ?? '').toString().trim();
+        const padronizarNomeMaiusculo = (valor) => (valor ?? '').toString().trim().toUpperCase();
+        function aplicarMaiusculasEmCampo(campo) {
+            if (!campo) return;
+            const atualizarValor = () => {
+                const { selectionStart, selectionEnd, value } = campo;
+                const maiusculo = (value || '').toUpperCase();
+                if (maiusculo !== value) {
+                    campo.value = maiusculo;
+                    if (selectionStart !== null && selectionEnd !== null && campo.setSelectionRange) {
+                        campo.setSelectionRange(selectionStart, selectionEnd);
+                    }
+                }
+            };
+            campo.addEventListener('input', atualizarValor);
+            atualizarValor();
+        }
+        function configurarEntradasMaiusculas() {
+            const camposFixos = [
+                document.getElementById('liberacao-paciente'),
+                document.getElementById('nome-paciente'),
+                document.getElementById('nome-visitante'),
+                document.getElementById('ocupacao-paciente'),
+                document.getElementById('ocupacao-acompanhante'),
+                document.getElementById('termo-resp-nome'),
+                document.getElementById('termo-paciente')
+            ];
+            camposFixos.forEach(aplicarMaiusculasEmCampo);
+
+            if (elementos.tabelaOcupacaoAcompanhantesBody) {
+                elementos.tabelaOcupacaoAcompanhantesBody.addEventListener('input', event => {
+                    const input = event.target.closest('input[data-ocupacao-campo]');
+                    if (!input) return;
+                    if (['paciente', 'acompanhante'].includes(input.dataset.ocupacaoCampo)) {
+                        aplicarMaiusculasEmCampo(input);
+                    }
+                });
+            }
+        }
         const normalizarTextoBusca = (valor) => {
             const texto = (valor ?? '').toString().trim().toLowerCase();
             if (texto && typeof texto.normalize === 'function') {
@@ -2132,7 +2170,7 @@
             const campoPaciente = document.getElementById('nome-paciente');
             const campoLeito = document.getElementById('leito');
             if (campoPaciente && dados.nome) {
-                campoPaciente.value = dados.nome;
+                campoPaciente.value = padronizarNomeMaiusculo(dados.nome);
             }
             if (campoLeito && dados.leito) {
                 campoLeito.value = dados.leito;
@@ -2227,6 +2265,7 @@
                 return;
             }
             eventosInicializados = true;
+            configurarEntradasMaiusculas();
             mobileNavQuery.addEventListener('change', sincronizarSidebarComViewport);
             sincronizarSidebarComViewport(mobileNavQuery);
             if (elementos.sidebarToggle) {
@@ -3657,9 +3696,9 @@
         function coletarDadosRascunho(idArmario) {
             const rascunho = obterRascunhoOcupacaoArmario(idArmario);
             return {
-                paciente: (rascunho.paciente || '').trim(),
+                paciente: padronizarNomeMaiusculo(rascunho.paciente),
                 prontuario: (rascunho.prontuario || '').trim(),
-                acompanhante: (rascunho.acompanhante || '').trim()
+                acompanhante: padronizarNomeMaiusculo(rascunho.acompanhante)
             };
         }
         function atualizarSelectOcupacaoAcompanhantes(armariosLivres) {
@@ -3786,8 +3825,8 @@
                     id: armario.idPlanilha || armario.id,
                     numero: armario.numero,
                     tipo: 'acompanhante',
-                    nomeVisitante: (dadosCadastro.acompanhante || '').trim(),
-                    nomePaciente: (dadosCadastro.paciente || '').trim(),
+                    nomeVisitante: padronizarNomeMaiusculo(dadosCadastro.acompanhante),
+                    nomePaciente: padronizarNomeMaiusculo(dadosCadastro.paciente),
                     prontuario: (dadosCadastro.prontuario || '').trim(),
                     observacoes: (dadosCadastro.observacoes || '').trim(),
                     leito: '',
@@ -3841,9 +3880,9 @@
             const estadoOcupacao = obterEstadoOcupacaoAcompanhantes();
             const armarioSelecionado = (elementos.ocupacaoArmario?.value || estadoOcupacao.armarioSelecionado || '').trim();
             const dadosCadastro = {
-                paciente: elementos.ocupacaoPaciente?.value?.trim() || '',
+                paciente: padronizarNomeMaiusculo(elementos.ocupacaoPaciente?.value),
                 prontuario: elementos.ocupacaoProntuario?.value?.trim() || '',
-                acompanhante: elementos.ocupacaoAcompanhante?.value?.trim() || ''
+                acompanhante: padronizarNomeMaiusculo(elementos.ocupacaoAcompanhante?.value)
             };
             const sucesso = await registrarOcupacaoArmario({ armarioId: armarioSelecionado, dadosCadastro, botao: elementos.ocupacaoSalvar });
             if (sucesso) {
@@ -4651,8 +4690,8 @@
                 cancelButtonText: 'Cancelar',
                 preConfirm: () => {
                     const popup = Swal.getPopup();
-                    const acompanhante = popup.querySelector('#contingencia-acompanhante').value.trim();
-                    const paciente = popup.querySelector('#contingencia-paciente').value.trim();
+                    const acompanhante = padronizarNomeMaiusculo(popup.querySelector('#contingencia-acompanhante').value);
+                    const paciente = padronizarNomeMaiusculo(popup.querySelector('#contingencia-paciente').value);
                     const prontuario = popup.querySelector('#contingencia-prontuario').value.trim();
                     const observacoes = popup.querySelector('#contingencia-observacoes').value.trim();
                     if (!acompanhante || !paciente) {
@@ -4668,8 +4707,8 @@
             }
 
             const payload = {
-                nomeAcompanhante: resultado.value.acompanhante,
-                nomePaciente: resultado.value.paciente,
+                nomeAcompanhante: padronizarNomeMaiusculo(resultado.value.acompanhante),
+                nomePaciente: padronizarNomeMaiusculo(resultado.value.paciente),
                 prontuario: resultado.value.prontuario,
                 observacoes: resultado.value.observacoes,
                 unidade: estado.unidadeAtual === 'todas' ? '' : estado.unidadeAtual,
@@ -5077,6 +5116,9 @@
                             }
                         });
                     }
+                    const popup = Swal.getPopup();
+                    aplicarMaiusculasEmCampo(popup.querySelector('#editar-nome-visitante'));
+                    aplicarMaiusculasEmCampo(popup.querySelector('#editar-nome-paciente'));
                 },
                 preConfirm: () => {
                     const popup = Swal.getPopup();
@@ -5210,8 +5252,8 @@
                 },
                 preConfirm: () => {
                     const popup = Swal.getPopup();
-                    const nomeVisitante = popup.querySelector('#editar-nome-visitante').value.trim();
-                    const nomePaciente = popup.querySelector('#editar-nome-paciente').value.trim();
+                    const nomeVisitante = padronizarNomeMaiusculo(popup.querySelector('#editar-nome-visitante').value);
+                    const nomePaciente = padronizarNomeMaiusculo(popup.querySelector('#editar-nome-paciente').value);
                     const prontuario = popup.querySelector('#editar-prontuario').value.trim();
                     const leito = popup.querySelector('#editar-leito').value.trim();
                     const volumesValor = parseInt(popup.querySelector('#editar-volumes').value, 10);
@@ -5514,8 +5556,8 @@
                     idPlanilha,
                     id: idPlanilha,
                     numero: numeroArmario,
-                    nomeVisitante: document.getElementById('nome-visitante').value.trim(),
-                    nomePaciente: document.getElementById('nome-paciente').value.trim(),
+                    nomeVisitante: padronizarNomeMaiusculo(document.getElementById('nome-visitante').value),
+                    nomePaciente: padronizarNomeMaiusculo(document.getElementById('nome-paciente').value),
                     leito: document.getElementById('leito').value.trim(),
                     whatsapp: document.getElementById('whatsapp-contato').value.trim(),
                     volumes: volumesInformados,
@@ -6803,13 +6845,13 @@
             const dadosTermo = {
                 armarioId: identificadores?.idPlanilha || '',
                 numeroArmario: identificadores?.numeroArmario || document.getElementById('termo-armario').textContent,
-                paciente: document.getElementById('termo-paciente').value.trim(),
+                paciente: padronizarNomeMaiusculo(document.getElementById('termo-paciente').value),
                 prontuario: document.getElementById('termo-prontuario').value.trim(),
                 nascimento: nascimentoIso,
                 setor: (elementos.termoSetor?.value || '').toString().trim(),
                 leito: document.getElementById('termo-leito').value.trim(),
                 consciente: document.querySelector('input[name="termo-consciente"]:checked')?.value || '',
-                acompanhante: document.getElementById('termo-resp-nome').value.trim(),
+                acompanhante: padronizarNomeMaiusculo(document.getElementById('termo-resp-nome').value),
                 telefone: document.getElementById('termo-resp-telefone').value.trim(),
                 documento: document.getElementById('termo-resp-doc').value.trim(),
                 parentesco: document.getElementById('termo-resp-parentesco').value.trim(),
