@@ -1523,18 +1523,21 @@
                 await carregarDadosIniciais();
                 atualizarCabecalhoUsuario();
                 aplicarPermissoesMenu();
+                atualizarInterface();
                 carregarDadosTabelas();
                 persistirSessaoAtual();
                 return;
             }
             aplicacaoInicializada = true;
             aplicarPreferenciasCabecalhoRestauradas();
+            atualizarInterface();
             aprimorarSeletoresCabecalho();
             inicializarCanvasAssinatura();
             inicializarEventos();
             await carregarDadosIniciais();
             atualizarCabecalhoUsuario();
             aplicarPermissoesMenu();
+            atualizarInterface();
             carregarDadosTabelas();
             persistirSessaoAtual();
         }
