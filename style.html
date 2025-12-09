@@ -30,6 +30,7 @@
             --em-uso-card-bg: color-mix(in srgb, #c6cacf 92%, white 8%);
             --em-uso-badge-bg: color-mix(in srgb, #c6cacf 70%, #000929 30%);
             --em-uso-badge-text: #000929;
+            --em-uso-icon: #8D929F;
             --em-uso-text: #000929;
             --extended-badge-bg: color-mix(in srgb, var(--primary-color) 14%, white 86%);
             --extended-badge-text: color-mix(in srgb, var(--primary-color) 80%, black 20%);
@@ -1111,7 +1112,7 @@
             color: var(--primary-color);
         }
         .card.livre .card-icon   { color: var(--success-color); }
-        .card.em-uso .card-icon  { color: var(--em-uso-badge-text); }
+        .card.em-uso .card-icon  { color: var(--em-uso-icon); }
         .card.proximo .card-icon { color: var(--warning-color); }
         .card.vencido .card-icon { color: var(--danger-color); }
         .card-value {
@@ -1132,7 +1133,7 @@
         .card.em-uso .card-icon .fas.fa-user-clock,
         .armario-card.em-uso .fa-user-clock,
         .armario-card.em-uso .fas.fa-user-clock {
-            color: var(--em-uso-text);
+            color: var(--em-uso-icon);
         }
         .card.em-uso .card-description {
             color: color-mix(in srgb, var(--em-uso-text) 75%, transparent);
