@@ -536,6 +536,9 @@
             contingenciaButton: document.getElementById('btn-contingencia'),
             cardsHero: document.querySelector('.cards-hero'),
             cardProximo: document.querySelector('.card.proximo'),
+            cardVencido: document.querySelector('.card.vencido'),
+            cardEmUso: document.querySelector('.card.em-uso'),
+            cardLivres: document.querySelector('.card.livre'),
             cardsCount: {
                 livres: document.getElementById('livres-count'),
                 emUso: document.getElementById('em-uso-count'),
@@ -2812,15 +2815,32 @@
         function atualizarVisibilidadeCardsHero() {
             const containerHero = elementos.cardsHero;
             const cardProximo = elementos.cardProximo;
+            const cardVencido = elementos.cardVencido;
+            const cardEmUso = elementos.cardEmUso;
+            const cardLivres = elementos.cardLivres;
             if (!containerHero) return;
 
             const perfilNormalizado = normalizarTexto(estado.perfilAtual);
             const exibirHeroVisitante = perfilNormalizado === 'geral' || perfilNormalizado === 'visitante';
+            const exibirHeroAcompanhante = perfilNormalizado === 'acompanhante';
+            const exibirHero = exibirHeroVisitante || exibirHeroAcompanhante;
 
-            containerHero.style.display = exibirHeroVisitante ? '' : 'none';
+            containerHero.style.display = exibirHero ? '' : 'none';
 
             if (cardProximo) {
                 cardProximo.style.display = exibirHeroVisitante ? '' : 'none';
+            }
+
+            if (cardVencido) {
+                cardVencido.style.display = exibirHeroVisitante ? '' : 'none';
+            }
+
+            if (cardEmUso) {
+                cardEmUso.style.display = exibirHero ? '' : 'none';
+            }
+
+            if (cardLivres) {
+                cardLivres.style.display = exibirHero ? '' : 'none';
             }
         }
         function obterFiltrosAtivosDashboard() {
