@@ -2929,6 +2929,55 @@
             gap: 8px;
             margin-top: 8px;
         }
+        .mov-tipo-picker {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            margin: 8px 0 4px;
+        }
+        .mov-tipo-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+            background: color-mix(in srgb, var(--surface-color) 92%, white 8%);
+            text-align: left;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .mov-tipo-btn:hover,
+        .mov-tipo-btn:focus-visible {
+            border-color: color-mix(in srgb, var(--primary-color) 32%, var(--border-color));
+            box-shadow: 0 10px 22px color-mix(in srgb, var(--primary-color) 18%, var(--shadow-color));
+            transform: translateY(-1px);
+            outline: none;
+        }
+        .mov-tipo-btn.active {
+            border-color: color-mix(in srgb, var(--primary-color) 50%, var(--border-color));
+            background: color-mix(in srgb, var(--primary-color) 14%, var(--surface-color));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 12px 24px color-mix(in srgb, var(--primary-color) 20%, transparent);
+        }
+        .mov-tipo-btn .mov-tipo-text strong {
+            display: block;
+            font-size: 0.98rem;
+            margin-bottom: 2px;
+        }
+        .mov-tipo-btn .mov-tipo-text small {
+            display: block;
+            color: var(--muted-color);
+            font-size: 0.82rem;
+        }
+        .mov-tipo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            background: color-mix(in srgb, var(--primary-color) 18%, transparent);
+            color: color-mix(in srgb, var(--primary-color) 90%, black 10%);
+        }
         .movimentacao-item-row {
             display: grid;
             grid-template-columns: 110px 1fr auto;
