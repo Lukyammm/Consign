@@ -2889,9 +2889,9 @@
             return estado.filtrosSelecionados;
         }
         function atualizarBotoesFiltroDashboard() {
-            const ativos = obterFiltrosAtivosDashboard();
+            const ativos = obterFiltrosAtivosDashboard().map(normalizarTexto);
             elementos.filterBtns.forEach(botao => {
-                const filtro = botao.dataset.filter || 'todos';
+                const filtro = normalizarTexto(botao.dataset.filter) || 'todos';
                 botao.classList.toggle('active', ativos.includes(filtro));
             });
         }
@@ -2912,24 +2912,37 @@
             }
         }
         function alternarFiltroDashboard(filtroSelecionado) {
-            if (!filtroSelecionado || filtroSelecionado === 'todos') {
+            const filtroNormalizado = normalizarTexto(filtroSelecionado);
+            if (!filtroNormalizado || filtroNormalizado === 'todos') {
                 estado.filtrosSelecionados = ['todos'];
                 return;
             }
             const atuais = Array.isArray(estado.filtrosSelecionados)
                 ? estado.filtrosSelecionados.filter(Boolean)
                 : [];
-            const conjunto = new Set(atuais);
+            const conjunto = new Set(atuais.map(normalizarTexto));
             conjunto.delete('todos');
-            if (conjunto.has(filtroSelecionado)) {
-                conjunto.delete(filtroSelecionado);
+            if (conjunto.has(filtroNormalizado)) {
+                conjunto.delete(filtroNormalizado);
             } else {
-                conjunto.add(filtroSelecionado);
+                conjunto.add(filtroNormalizado);
             }
             if (conjunto.size === 0) {
                 conjunto.add('todos');
             }
             estado.filtrosSelecionados = Array.from(conjunto);
+        }
+        function armarioPassaNosFiltrosSelecionados(armario, filtrosAtivos) {
+            const filtrosNormalizados = new Set((filtrosAtivos || []).map(normalizarTexto));
+            if (filtrosNormalizados.has('todos')) {
+                return true;
+            }
+            const statusNormalizado = normalizarTexto(armario.status);
+            const ehContingencia = armarioEhContingencia(armario);
+            if (ehContingencia && filtrosNormalizados.has('contingencia')) {
+                return true;
+            }
+            return filtrosNormalizados.has(statusNormalizado);
         }
         function armarioCorrespondeBusca(armario, termoBusca) {
             const filtroNormalizado = normalizarTextoBusca(termoBusca);
@@ -2973,7 +2986,7 @@
                     return correspondePerfil && correspondeUnidade;
                 })
                 .filter(a => !(armarioEhContingencia(a) && normalizarTexto(a.status) === 'livre'))
-                .filter(a => filtrosAtivos.includes('todos') || filtrosAtivos.includes(a.status))
+                .filter(a => armarioPassaNosFiltrosSelecionados(a, filtrosAtivos))
                 .filter(armario => !termoBusca || armarioCorrespondeBusca(armario, termoBusca));
 
             const criarCardArmario = (armario) => {
