@@ -1149,21 +1149,60 @@
         }
         .filters-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
+            align-items: center;
         }
         .filter-btn {
-            padding: 8px 16px;
-            border: 1px solid var(--border-color);
-            background-color: var(--surface-color);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border: 1.5px solid color-mix(in srgb, var(--border-color) 70%, #d8dde6 30%);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--surface-color) 96%, #f5f7fb 4%), color-mix(in srgb, var(--surface-color) 92%, #eef2f9 8%));
             border-radius: 999px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+            font-weight: 600;
+            color: color-mix(in srgb, var(--dark-color) 84%, var(--muted-color) 16%);
+            letter-spacing: 0.01em;
+            box-shadow: 0 10px 26px color-mix(in srgb, var(--shadow-color) 78%, transparent);
+        }
+        .filter-btn:hover,
+        .filter-btn:focus-visible {
+            transform: translateY(-1px);
+            border-color: color-mix(in srgb, var(--primary-color) 45%, var(--border-color) 55%);
+            box-shadow: 0 14px 32px color-mix(in srgb, var(--primary-color) 12%, var(--shadow-color) 88%);
+            outline: none;
+        }
+        .filter-btn:focus-visible {
+            box-shadow: 0 0 0 6px var(--focus-ring), 0 14px 32px color-mix(in srgb, var(--primary-color) 14%, var(--shadow-color) 86%);
         }
         .filter-btn.active {
-            background-color: var(--primary-color);
             color: white;
-            border-color: var(--primary-color);
+            border-color: transparent;
+            box-shadow: 0 14px 36px color-mix(in srgb, var(--primary-color) 22%, var(--shadow-color) 78%);
+        }
+        .filter-btn[data-filter="todos"].active {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 90%, white 10%), color-mix(in srgb, var(--primary-dark) 68%, var(--primary-color) 32%));
+        }
+        .filter-btn[data-filter="livre"].active {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--success-color) 86%, white 14%), color-mix(in srgb, var(--success-color) 70%, #0f5132 30%));
+            color: color-mix(in srgb, #062814 35%, white 65%);
+        }
+        .filter-btn[data-filter="em-uso"].active {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--em-uso-badge-bg) 90%, white 10%), color-mix(in srgb, var(--em-uso-border-color) 76%, var(--em-uso-badge-bg) 24%));
+            color: var(--em-uso-badge-text);
+        }
+        .filter-btn[data-filter="proximo"].active {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--warning-color) 88%, white 12%), color-mix(in srgb, var(--warning-color) 72%, #b45309 28%));
+            color: color-mix(in srgb, #7a3b00 38%, white 62%);
+        }
+        .filter-btn[data-filter="vencido"].active {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--danger-color) 90%, white 10%), color-mix(in srgb, var(--danger-dark) 75%, var(--danger-color) 25%));
+        }
+        .filter-btn[data-filter="contingencia"].active {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-dark) 74%, var(--primary-color) 26%), color-mix(in srgb, var(--primary-color) 88%, white 12%));
         }
         .filter-search {
             position: relative;
