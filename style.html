@@ -1187,12 +1187,16 @@
             background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 90%, white 10%), color-mix(in srgb, var(--primary-dark) 68%, var(--primary-color) 32%));
         }
         .filter-btn[data-filter="livre"].active {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--success-color) 86%, white 14%), color-mix(in srgb, var(--success-color) 70%, #0f5132 30%));
-            color: color-mix(in srgb, #062814 35%, white 65%);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--success-color) 20%, transparent), color-mix(in srgb, var(--success-color) 28%, #ffffff));
+            border-color: color-mix(in srgb, var(--success-color) 55%, transparent);
+            color: var(--success-color);
+            box-shadow: 0 14px 28px color-mix(in srgb, var(--success-color) 18%, var(--shadow-color) 82%);
         }
         .filter-btn[data-filter="em-uso"].active {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--em-uso-badge-bg) 90%, white 10%), color-mix(in srgb, var(--em-uso-border-color) 76%, var(--em-uso-badge-bg) 24%));
-            color: var(--em-uso-badge-text);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--em-uso-card-bg) 70%, white 30%), color-mix(in srgb, var(--em-uso-border-color) 52%, var(--em-uso-card-bg) 48%));
+            border-color: color-mix(in srgb, var(--em-uso-border-color) 65%, transparent);
+            color: var(--em-uso-text);
+            box-shadow: 0 14px 28px color-mix(in srgb, var(--em-uso-border-color) 24%, var(--shadow-color) 76%);
         }
         .filter-btn[data-filter="proximo"].active {
             background: linear-gradient(135deg, color-mix(in srgb, var(--warning-color) 88%, white 12%), color-mix(in srgb, var(--warning-color) 72%, #b45309 28%));
@@ -1202,7 +1206,10 @@
             background: linear-gradient(135deg, color-mix(in srgb, var(--danger-color) 90%, white 10%), color-mix(in srgb, var(--danger-dark) 75%, var(--danger-color) 25%));
         }
         .filter-btn[data-filter="contingencia"].active {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-dark) 74%, var(--primary-color) 26%), color-mix(in srgb, var(--primary-color) 88%, white 12%));
+            background: color-mix(in srgb, var(--primary-color) 10%, var(--surface-color) 90%);
+            border: 1px dashed color-mix(in srgb, var(--primary-color) 30%, var(--border-color));
+            color: color-mix(in srgb, var(--primary-color) 75%, var(--dark-color) 25%);
+            box-shadow: 0 14px 28px color-mix(in srgb, var(--primary-color) 18%, var(--shadow-color) 82%);
         }
         .filter-search {
             position: relative;
