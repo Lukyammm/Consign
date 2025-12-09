@@ -593,12 +593,22 @@
             movimentacaoForm: document.getElementById('movimentacao-form'),
             movimentacaoModalTitle: document.getElementById('movimentacao-modal-title'),
             movTipo: document.getElementById('mov-tipo'),
-            movDescricao: document.getElementById('mov-descricao'),
+            movTabs: document.querySelectorAll('.mov-tab'),
+            movTabPanels: document.querySelectorAll('.mov-tab-panel'),
             movItensList: document.getElementById('mov-itens-list'),
+            movItensLabel: document.getElementById('mov-itens-label'),
+            movItensHelper: document.getElementById('mov-itens-helper'),
+            movItensPills: document.getElementById('mov-itens-pills'),
             movItensResumo: document.getElementById('mov-itens-resumo'),
             movItensResumoBody: document.getElementById('mov-itens-resumo-body'),
-            movAddItem: document.getElementById('mov-add-item'),
-            movPreencherItens: document.getElementById('mov-preencher-itens'),
+            movEntradaQuantidade: document.getElementById('mov-entrada-quantidade'),
+            movEntradaDescricao: document.getElementById('mov-entrada-descricao'),
+            movEntradaAdicionar: document.getElementById('mov-entrada-adicionar'),
+            movSaidaPreencher: document.getElementById('mov-saida-preencher'),
+            movSaidaAddPersonalizado: document.getElementById('mov-saida-add-personalizado'),
+            movObservacao: document.getElementById('mov-observacao'),
+            movObservacaoLabel: document.getElementById('mov-observacao-label'),
+            movObservacaoGroup: document.getElementById('mov-observacao-group'),
             movResponsavelInfo: document.getElementById('mov-responsavel-info'),
             movData: document.getElementById('mov-data'),
             movHora: document.getElementById('mov-hora'),
@@ -2625,15 +2635,12 @@
                     finalizarLoading();
                 }
             });
-            elementos.movTipo.addEventListener('change', () => {
-                preencherItensMovimentacaoAPartirInventario(elementos.movTipo.value);
+            elementos.movTabs?.forEach(tab => {
+                tab.addEventListener('click', () => ativarAbaMovimentacao(tab.dataset.movTab));
             });
-            elementos.movAddItem?.addEventListener('click', () => {
-                adicionarItemMovimentacaoLinha();
-            });
-            elementos.movPreencherItens?.addEventListener('click', () => {
-                preencherItensMovimentacaoAPartirInventario(elementos.movTipo.value || 'saida');
-            });
+            elementos.movEntradaAdicionar?.addEventListener('click', adicionarItemEntradaRapido);
+            elementos.movSaidaPreencher?.addEventListener('click', () => preencherItensMovimentacaoAPartirInventario('saida'));
+            elementos.movSaidaAddPersonalizado?.addEventListener('click', adicionarItemSaidaNaoCadastrado);
             if (elementos.impressaoReservaClose) {
                 elementos.impressaoReservaClose.addEventListener('click', () => fecharModalImpressaoReserva());
             }
@@ -7205,29 +7212,27 @@
                 elementos.movItensList.innerHTML = '';
             }
         }
-        function adicionarItemMovimentacaoLinha(item = {}) {
-            if (!elementos.movItensList) return;
+        function criarLinhaEntrada(item = {}) {
+            if (!elementos.movItensList) return null;
             const linha = document.createElement('div');
             linha.className = 'movimentacao-item-row';
-
             const idBase = `mov-item-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
             const campoQuantidade = document.createElement('input');
             campoQuantidade.type = 'number';
-            campoQuantidade.min = '0';
+            campoQuantidade.min = '1';
             campoQuantidade.step = '1';
             campoQuantidade.placeholder = 'Qtd.';
             campoQuantidade.className = 'form-control';
             campoQuantidade.id = `${idBase}-qtd`;
-            if (item.quantidade !== undefined && item.quantidade !== null) {
-                campoQuantidade.value = Number(item.quantidade);
-            }
+            campoQuantidade.value = item.quantidade ? Number(item.quantidade) : '';
 
             const campoDescricao = document.createElement('input');
             campoDescricao.type = 'text';
             campoDescricao.placeholder = 'Descrição do item';
             campoDescricao.className = 'form-control';
             campoDescricao.id = `${idBase}-descricao`;
+            campoDescricao.setAttribute('list', 'termo-itens-sugestoes');
             campoDescricao.value = item.descricao || '';
 
             const campoQuantidadeWrapper = document.createElement('div');
@@ -7252,9 +7257,8 @@
             botaoRemover.type = 'button';
             botaoRemover.className = 'btn btn-ghost btn-danger-outline mov-remover-item';
             botaoRemover.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i><span>Remover</span>';
-            botaoRemover.addEventListener('click', () => {
-                linha.remove();
-            });
+            botaoRemover.title = 'Remover este item';
+            botaoRemover.addEventListener('click', () => linha.remove());
 
             const acoesWrapper = document.createElement('div');
             acoesWrapper.className = 'mov-item-actions';
@@ -7264,27 +7268,188 @@
             linha.appendChild(campoDescricaoWrapper);
             linha.appendChild(acoesWrapper);
             elementos.movItensList.appendChild(linha);
+            return linha;
+        }
+        function criarLinhaSaida(item = {}, origem = 'registrado') {
+            if (!elementos.movItensList) return null;
+            const linha = document.createElement('div');
+            linha.className = 'movimentacao-item-row readonly';
+            linha.dataset.quantidade = item.quantidade || 0;
+            linha.dataset.descricao = item.descricao || '';
+            linha.dataset.origem = origem;
+            linha.dataset.remover = 'false';
+
+            const corpo = document.createElement('div');
+            corpo.className = 'mov-item-display';
+            const titulo = document.createElement('div');
+            titulo.innerHTML = `<strong>${Number(item.quantidade) || 0}x</strong> ${item.descricao || 'Item sem descrição'}`;
+            corpo.appendChild(titulo);
+            if (origem === 'novo') {
+                const flag = document.createElement('span');
+                flag.className = 'mov-item-flag';
+                flag.textContent = 'Item não estava cadastrado';
+                corpo.appendChild(flag);
+            }
+
+            const acoesWrapper = document.createElement('div');
+            acoesWrapper.className = 'mov-item-actions';
+            const botaoRemover = document.createElement('button');
+            botaoRemover.type = 'button';
+            botaoRemover.className = 'icon-btn';
+            botaoRemover.title = 'Remover item desta saída';
+            botaoRemover.innerHTML = '<i class="fas fa-trash" aria-hidden="true"></i>';
+            botaoRemover.addEventListener('click', async () => {
+                const jaMarcado = linha.dataset.remover === 'true';
+                if (jaMarcado) {
+                    linha.dataset.remover = 'false';
+                    linha.classList.remove('marcado-remocao');
+                    botaoRemover.title = 'Remover item desta saída';
+                    return;
+                }
+                const confirmacao = await Swal.fire({
+                    title: 'Confirmar retirada do item?',
+                    text: 'O item será incluído nesta saída sem editar quantidade ou descrição.',
+                    icon: 'question',
+                    confirmButtonText: 'Confirmar retirada',
+                    cancelButtonText: 'Cancelar',
+                    showCancelButton: true
+                });
+                if (confirmacao.isConfirmed) {
+                    linha.dataset.remover = 'true';
+                    linha.classList.add('marcado-remocao');
+                    botaoRemover.title = 'Clique para desfazer a retirada';
+                }
+            });
+            acoesWrapper.appendChild(botaoRemover);
+
+            linha.appendChild(corpo);
+            linha.appendChild(acoesWrapper);
+            elementos.movItensList.appendChild(linha);
+            return linha;
+        }
+        function registrarObservacaoConferencia(linha) {
+            const descricaoBase = linha?.dataset?.descricao || 'Item';
+            const observacaoAtual = linha?.dataset?.observacao || '';
+            Swal.fire({
+                title: 'Observação da conferência',
+                text: descricaoBase,
+                input: 'textarea',
+                inputValue: observacaoAtual,
+                inputLabel: 'Descreva o que foi conferido',
+                confirmButtonText: 'Salvar observação',
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar',
+                inputValidator: valor => {
+                    if (!valor || !valor.trim()) {
+                        return 'Informe uma observação para registrar a conferência.';
+                    }
+                    return undefined;
+                }
+            }).then(resultado => {
+                if (!resultado.isConfirmed) return;
+                const texto = resultado.value?.toString().trim();
+                linha.dataset.observacao = texto;
+                const display = linha.querySelector('.mov-item-display');
+                display?.setAttribute('data-observacao', texto);
+                if (display) {
+                    let badge = display.querySelector('.mov-item-flag.observacao');
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'mov-item-flag observacao';
+                        display.appendChild(badge);
+                    }
+                    badge.textContent = texto || 'Observação registrada';
+                }
+            });
+        }
+        function criarLinhaConferencia(item = {}) {
+            if (!elementos.movItensList) return null;
+            const linha = document.createElement('div');
+            linha.className = 'movimentacao-item-row readonly';
+            linha.dataset.quantidade = item.quantidade || 0;
+            linha.dataset.descricao = item.descricao || '';
+
+            const corpo = document.createElement('div');
+            corpo.className = 'mov-item-display';
+            const titulo = document.createElement('div');
+            titulo.innerHTML = `<strong>${Number(item.quantidade) || 0}x</strong> ${item.descricao || 'Item sem descrição'}`;
+            corpo.appendChild(titulo);
+
+            const acoesWrapper = document.createElement('div');
+            acoesWrapper.className = 'mov-item-actions';
+            const botaoVer = document.createElement('button');
+            botaoVer.type = 'button';
+            botaoVer.className = 'icon-btn';
+            botaoVer.title = 'Visualizar conferência';
+            botaoVer.innerHTML = '<i class="fas fa-eye" aria-hidden="true"></i>';
+            botaoVer.addEventListener('click', () => registrarObservacaoConferencia(linha));
+            acoesWrapper.appendChild(botaoVer);
+
+            linha.appendChild(corpo);
+            linha.appendChild(acoesWrapper);
+            elementos.movItensList.appendChild(linha);
+            return linha;
         }
         function preencherItensMovimentacaoAPartirInventario(tipo) {
             const tipoNormalizado = normalizarTexto(tipo);
             limparItensMovimentacaoFormulario();
+            const itensReferencia = (movimentacaoInventarioAtual && movimentacaoInventarioAtual.length)
+                ? movimentacaoInventarioAtual
+                : (movimentacaoVolumesBase || []);
 
             if (tipoNormalizado === 'entrada') {
-                adicionarItemMovimentacaoLinha();
+                criarLinhaEntrada();
                 return;
             }
 
-            if (movimentacaoInventarioAtual && movimentacaoInventarioAtual.length) {
-                movimentacaoInventarioAtual.forEach(item => {
-                    adicionarItemMovimentacaoLinha({ quantidade: item.quantidade, descricao: item.descricao });
-                });
-            } else {
-                adicionarItemMovimentacaoLinha();
+            if (!itensReferencia.length) {
+                const vazio = document.createElement('div');
+                vazio.className = 'info-box';
+                vazio.textContent = 'Nenhum item registrado no inventário até o momento.';
+                elementos.movItensList?.appendChild(vazio);
+                return;
             }
+
+            itensReferencia.forEach(item => {
+                if (tipoNormalizado === 'saida') {
+                    criarLinhaSaida(item, 'registrado');
+                } else if (tipoNormalizado === 'conferencia') {
+                    criarLinhaConferencia(item);
+                }
+            });
         }
         function obterItensMovimentacaoFormulario() {
             if (!elementos.movItensList) return [];
+            const tipo = normalizarTexto(elementos.movTipo?.value);
             const linhas = Array.from(elementos.movItensList.querySelectorAll('.movimentacao-item-row'));
+
+            if (tipo === 'saida') {
+                return linhas
+                    .filter(linha => linha.dataset.remover === 'true')
+                    .map(linha => {
+                        const quantidade = Number(linha.dataset.quantidade);
+                        const descricao = linha.dataset.descricao || '';
+                        return {
+                            quantidade: Number.isFinite(quantidade) ? quantidade : 0,
+                            descricao
+                        };
+                    })
+                    .filter(item => item.quantidade > 0 && item.descricao);
+            }
+
+            if (tipo === 'conferencia') {
+                return linhas.map(linha => {
+                    const quantidade = Number(linha.dataset.quantidade);
+                    const descricaoBase = linha.dataset.descricao || '';
+                    const observacao = linha.dataset.observacao || '';
+                    const descricao = observacao || descricaoBase;
+                    return {
+                        quantidade: Number.isFinite(quantidade) ? quantidade : 0,
+                        descricao
+                    };
+                }).filter(item => item.quantidade > 0 && item.descricao);
+            }
+
             return linhas.map(linha => {
                 const qtd = Number(linha.querySelector('input[type="number"]')?.value);
                 const descricao = linha.querySelector('input[type="text"]')?.value.trim() || '';
@@ -7293,6 +7458,120 @@
                     descricao
                 };
             }).filter(item => item.quantidade > 0 && item.descricao);
+        }
+        function atualizarContextoMovimentacao(tipo) {
+            const tipoNormalizado = normalizarTexto(tipo);
+            const descricaoPorTipo = {
+                entrada: {
+                    label: 'Observações da entrada (opcional)',
+                    placeholder: 'Adicione observações gerais da entrada, se necessário.',
+                    helper: 'Informe quantidade e descrição obrigatoriamente na lista de itens.',
+                    pill: 'Entrada com rastreio'
+                },
+                saida: {
+                    label: 'Observações da saída (opcional)',
+                    placeholder: 'Use se precisar contextualizar a retirada.',
+                    helper: 'Remova apenas o que será retirado. Sem edição de quantidade ou descrição.',
+                    pill: 'Saída sem edição'
+                },
+                conferencia: {
+                    label: 'Descrição da conferência (obrigatória)',
+                    placeholder: 'Descreva o que foi verificado nesta conferência.',
+                    helper: 'Clique no ícone de visualização para registrar observações por item.',
+                    pill: 'Conferência registrada'
+                }
+            };
+
+            const contexto = descricaoPorTipo[tipoNormalizado] || descricaoPorTipo.entrada;
+            if (elementos.movObservacaoLabel) {
+                elementos.movObservacaoLabel.textContent = contexto.label;
+            }
+            if (elementos.movObservacao) {
+                elementos.movObservacao.placeholder = contexto.placeholder;
+                elementos.movObservacao.required = tipoNormalizado === 'conferencia';
+                if (tipoNormalizado !== 'conferencia') {
+                    elementos.movObservacao.removeAttribute('aria-required');
+                }
+            }
+            if (elementos.movItensHelper) {
+                elementos.movItensHelper.textContent = contexto.helper;
+            }
+            if (elementos.movItensPills) {
+                elementos.movItensPills.textContent = contexto.pill;
+            }
+        }
+        function ativarAbaMovimentacao(tipo = 'entrada') {
+            const tipoNormalizado = normalizarTexto(tipo) || 'entrada';
+            if (elementos.movTipo) {
+                elementos.movTipo.value = tipoNormalizado;
+            }
+            elementos.movTabs?.forEach(tab => {
+                const ativo = tab.dataset.movTab === tipoNormalizado;
+                tab.classList.toggle('active', ativo);
+                tab.setAttribute('aria-selected', ativo ? 'true' : 'false');
+            });
+            elementos.movTabPanels?.forEach(painel => {
+                painel.classList.toggle('active', painel.dataset.movPanel === tipoNormalizado);
+            });
+            atualizarContextoMovimentacao(tipoNormalizado);
+            if (tipoNormalizado !== 'conferencia' && elementos.movObservacao) {
+                elementos.movObservacao.value = '';
+            }
+            preencherItensMovimentacaoAPartirInventario(tipoNormalizado);
+        }
+        function adicionarItemEntradaRapido() {
+            const quantidade = Number(elementos.movEntradaQuantidade?.value);
+            const descricao = elementos.movEntradaDescricao?.value?.trim();
+            if (!descricao) {
+                mostrarErro('Informe a descrição usando a lista suspensa.');
+                elementos.movEntradaDescricao?.focus();
+                return;
+            }
+            if (!Number.isFinite(quantidade) || quantidade <= 0) {
+                mostrarErro('Informe uma quantidade maior que zero.');
+                elementos.movEntradaQuantidade?.focus();
+                return;
+            }
+            criarLinhaEntrada({ quantidade, descricao });
+            elementos.movEntradaQuantidade.value = '';
+            elementos.movEntradaDescricao.value = '';
+            elementos.movEntradaQuantidade.focus();
+        }
+        async function adicionarItemSaidaNaoCadastrado() {
+            const html = `
+                <div class="form-group">
+                    <label for="saida-novo-qtd">Quantidade</label>
+                    <input type="number" id="saida-novo-qtd" min="1" step="1" class="swal2-input" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="saida-novo-desc">Descrição</label>
+                    <input type="text" id="saida-novo-desc" list="termo-itens-sugestoes" class="swal2-input" placeholder="Digite ou escolha na lista">
+                </div>
+            `;
+            const resultado = await Swal.fire({
+                title: 'Registrar saída de item não cadastrado',
+                html,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'Registrar saída',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const qtd = Number(document.getElementById('saida-novo-qtd')?.value);
+                    const desc = document.getElementById('saida-novo-desc')?.value?.trim();
+                    if (!desc) {
+                        Swal.showValidationMessage('Informe a descrição do item.');
+                        return false;
+                    }
+                    if (!Number.isFinite(qtd) || qtd <= 0) {
+                        Swal.showValidationMessage('Informe uma quantidade maior que zero.');
+                        return false;
+                    }
+                    return { quantidade: qtd, descricao: desc };
+                }
+            });
+            if (resultado.isConfirmed && resultado.value) {
+                criarLinhaSaida(resultado.value, 'novo');
+            }
         }
         async function abrirMovimentacoes(id) {
             const armario = obterArmarioPorId(id);
@@ -7305,9 +7584,13 @@
             const padraoLocal = obterDataHoraLocalPadrao();
             elementos.movData.value = padraoLocal.data;
             elementos.movHora.value = padraoLocal.hora;
+            if (elementos.movObservacao) {
+                elementos.movObservacao.value = '';
+            }
             movimentacaoInventarioAtual = [];
             movimentacaoVolumesBase = [];
             movimentacoesRegistradas = [];
+            ativarAbaMovimentacao('entrada');
             if (elementos.movimentacaoModal.style.display !== 'flex') {
                 travaRolagem.aplicar();
             }
@@ -7489,12 +7772,17 @@
                     mostrarErro('Adicione ao menos um item conferido para registrar.');
                     return;
                 }
+                const observacaoMov = elementos.movObservacao?.value?.trim() || '';
+                if (tipoSelecionado === 'conferencia' && !observacaoMov) {
+                    mostrarErro('Descreva o que foi conferido para registrar a conferência.');
+                    return;
+                }
                 const dados = {
                     armarioId: identificadores?.idPlanilha || '',
                     numeroArmario: identificadores?.numeroArmario || '',
                     tipo: tipoSelecionado || identificadores?.tipo || '',
                     tipoArmario: identificadores?.tipo || '',
-                    descricao: elementos.movDescricao.value.trim(),
+                    descricao: observacaoMov,
                     responsavel: responsavelRegistro,
                     data: elementos.movData.value,
                     hora: elementos.movHora.value,
@@ -7505,11 +7793,15 @@
                     await renderizarMovimentacoes(movimentacaoArmarioAtual);
                     mostrarSucesso('Movimentação registrada com sucesso');
                     elementos.movimentacaoForm.reset();
-                    elementos.movTipo.value = '';
+                    elementos.movTipo.value = tipoSelecionado;
+                    if (elementos.movObservacao) {
+                        elementos.movObservacao.value = '';
+                    }
                     limparItensMovimentacaoFormulario();
                     const padraoLocal = obterDataHoraLocalPadrao();
                     elementos.movData.value = padraoLocal.data;
                     elementos.movHora.value = padraoLocal.hora;
+                    ativarAbaMovimentacao(tipoSelecionado);
                 } else {
                     notificarErroPadrao(resultado);
                 }

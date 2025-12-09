@@ -2809,7 +2809,7 @@
         }
         .mov-modal-grid {
             display: grid;
-            grid-template-columns: 1.05fr 0.95fr;
+            grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
             gap: 16px;
         }
         .mov-card {
@@ -2841,10 +2841,51 @@
             flex-direction: column;
             gap: 14px;
         }
+        .mov-card-operations {
+            min-height: 100%;
+        }
+        .mov-card-info {
+            gap: 16px;
+        }
         .form-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 12px;
+        }
+        .mov-tabs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .mov-tab {
+            border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+            background: color-mix(in srgb, var(--primary-color) 10%, white 90%);
+            color: color-mix(in srgb, var(--primary-color) 85%, black 15%);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .mov-tab:hover,
+        .mov-tab:focus-visible {
+            box-shadow: 0 10px 20px color-mix(in srgb, var(--primary-color) 24%, transparent);
+            outline: none;
+        }
+        .mov-tab.active {
+            background: color-mix(in srgb, var(--primary-color) 18%, white 82%);
+            color: var(--primary-color);
+            border-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
+        }
+        .mov-tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin: 6px 0 4px;
+        }
+        .mov-tab-panel.active {
+            display: flex;
         }
         .form-group-header {
             display: flex;
@@ -2943,6 +2984,10 @@
             overflow: hidden;
             transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
         }
+        .movimentacao-item-row.readonly {
+            grid-template-columns: 1fr auto;
+            align-items: center;
+        }
         .movimentacao-item-row::before {
             content: "";
             position: absolute;
@@ -2964,6 +3009,19 @@
             box-shadow: 0 14px 30px color-mix(in srgb, var(--primary-color) 16%, var(--shadow-color));
             transform: translateY(-1px);
         }
+        .movimentacao-item-row.marcado-remocao {
+            border-color: color-mix(in srgb, var(--danger-color) 40%, var(--border-color));
+            background: color-mix(in srgb, var(--danger-color) 8%, var(--surface-color));
+        }
+        .mov-item-display {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            color: var(--dark-color);
+        }
+        .mov-item-display strong {
+            color: var(--text-color);
+        }
         .movimentacao-item-row input[type="number"],
         .movimentacao-item-row input[type="text"] {
             width: 100%;
@@ -2972,6 +3030,17 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
+        }
+        .mov-item-flag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 10px;
+            background: color-mix(in srgb, var(--warning-color) 18%, transparent);
+            color: color-mix(in srgb, var(--warning-dark) 80%, black 20%);
+            font-size: 0.85rem;
+            width: fit-content;
         }
         .mov-item-label {
             font-size: 0.78rem;
@@ -2985,6 +3054,25 @@
             justify-content: flex-end;
             gap: 6px;
             padding-top: 4px;
+        }
+        .mov-item-actions .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            border: 1px dashed color-mix(in srgb, var(--border-color) 60%, transparent);
+            background: color-mix(in srgb, var(--surface-color) 92%, white 8%);
+            color: var(--text-color);
+            transition: all 0.2s ease;
+        }
+        .mov-item-actions .icon-btn:hover,
+        .mov-item-actions .icon-btn:focus-visible {
+            border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
+            color: var(--primary-color);
+            box-shadow: 0 8px 18px color-mix(in srgb, var(--primary-color) 24%, transparent);
+            outline: none;
         }
         .mov-remover-item {
             display: inline-flex;
@@ -3031,6 +3119,10 @@
             gap: 8px;
             flex-wrap: wrap;
             margin-top: 8px;
+        }
+        .form-inline-actions.space-between {
+            justify-content: space-between;
+            align-items: center;
         }
         .movimentacao-itens-detalhe {
             margin: 8px 0 0 2px;

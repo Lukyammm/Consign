@@ -976,40 +976,65 @@
                     </div>
                 </div>
                 <div class="mov-modal-grid">
-                    <section class="mov-card">
+                    <section class="mov-card mov-card-operations">
                         <header class="mov-card-header">
                             <div>
                                 <p class="eyebrow">Registrar nova movimentação</p>
-                                <h4>Dados principais</h4>
-                                <p class="helper-text">Preencha o tipo, descreva o que ocorreu e detalhe os volumes movimentados.</p>
+                                <h4>Fluxo principal</h4>
+                                <p class="helper-text">Use as abas para alternar entre entrada, saída ou conferência e detalhe apenas o necessário.</p>
                             </div>
                         </header>
                         <div class="mov-card-body">
                             <form id="movimentacao-form">
-                                <div class="form-group">
-                                    <label for="mov-tipo">Tipo de movimentação</label>
-                                    <select id="mov-tipo" class="form-control" required>
-                                        <option value="">Selecione</option>
-                                        <option value="entrada">Entrada de pertences</option>
-                                        <option value="saida">Saída de pertences</option>
-                                        <option value="conferencia">Conferência</option>
-                                    </select>
+                                <input type="hidden" id="mov-tipo" value="entrada">
+                                <div class="mov-tabs" role="tablist" aria-label="Tipo de movimentação">
+                                    <button type="button" class="mov-tab active" data-mov-tab="entrada" aria-selected="true">Entrada</button>
+                                    <button type="button" class="mov-tab" data-mov-tab="saida" aria-selected="false">Saídas de pertences</button>
+                                    <button type="button" class="mov-tab" data-mov-tab="conferencia" aria-selected="false">Conferência</button>
                                 </div>
-                                <div class="form-group">
-                                    <label for="mov-descricao">Descrição</label>
-                                    <textarea id="mov-descricao" class="form-control" rows="3" required placeholder="Descreva brevemente o que ocorreu"></textarea>
+                                <div class="mov-tab-panel active" data-mov-panel="entrada">
+                                    <p class="helper-text">Informe quantidade e descrição usando a lista suspensa já usada no cadastro do termo.</p>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="mov-entrada-quantidade">Quantidade de volume</label>
+                                            <input type="number" min="1" step="1" id="mov-entrada-quantidade" class="form-control" placeholder="0" aria-describedby="mov-entrada-help">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mov-entrada-descricao">Descrição (lista suspensa)</label>
+                                            <input type="text" list="termo-itens-sugestoes" id="mov-entrada-descricao" class="form-control" placeholder="Selecione ou digite a descrição">
+                                        </div>
+                                    </div>
+                                    <div class="form-inline-actions">
+                                        <button type="button" class="btn btn-secondary" id="mov-entrada-adicionar">Adicionar à entrada</button>
+                                        <span class="helper-text" id="mov-entrada-help">Descrição obrigatória e quantidade maior que zero.</span>
+                                    </div>
+                                </div>
+                                <div class="mov-tab-panel" data-mov-panel="saida">
+                                    <p class="helper-text">Todos os itens registrados aparecem abaixo. Clique no ícone para marcar os itens que sairão.</p>
+                                    <div class="form-inline-actions space-between">
+                                        <span class="pill">Listagem de saída</span>
+                                        <button type="button" class="btn btn-ghost" id="mov-saida-preencher">Recarregar lista</button>
+                                    </div>
+                                    <div class="info-box info-compact">Itens carregam sem edição de quantidade ou descrição. Use o ícone para marcar ou desfazer a retirada.</div>
+                                    <div class="form-inline-actions">
+                                        <button type="button" class="btn btn-secondary" id="mov-saida-add-personalizado">O item que quero retirar não está cadastrado</button>
+                                    </div>
+                                </div>
+                                <div class="mov-tab-panel" data-mov-panel="conferencia">
+                                    <p class="helper-text">Visualize os itens e registre apenas a observação ao clicar no ícone de visualização.</p>
+                                    <div class="info-box info-compact">Conferência em modo leitura: não altere quantidade ou descrição, apenas descreva o que foi conferido.</div>
                                 </div>
                                 <div class="form-group">
                                     <div class="form-group-header">
-                                        <label>Itens desta movimentação</label>
-                                        <span class="pill">Listagem obrigatória</span>
+                                        <label id="mov-itens-label">Itens desta movimentação</label>
+                                        <span class="pill" id="mov-itens-pills">Listagem obrigatória</span>
                                     </div>
-                                    <div class="helper-text">Prefira reaproveitar os volumes cadastrados na abertura ou em entradas anteriores para manter a rastreabilidade.</div>
+                                    <div class="helper-text" id="mov-itens-helper">Prefira reaproveitar os volumes cadastrados na abertura ou em entradas anteriores para manter a rastreabilidade.</div>
                                     <div class="movimentacao-itens-list" id="mov-itens-list"></div>
-                                    <div class="form-inline-actions">
-                                        <button type="button" class="btn btn-secondary" id="mov-add-item">Adicionar item não cadastrado</button>
-                                        <button type="button" class="btn btn-ghost" id="mov-preencher-itens">Preencher com itens registrados</button>
-                                    </div>
+                                </div>
+                                <div class="form-group" id="mov-observacao-group">
+                                    <label for="mov-observacao" id="mov-observacao-label">Observações da movimentação</label>
+                                    <textarea id="mov-observacao" class="form-control" rows="3" placeholder="Use apenas se precisar registrar detalhes"></textarea>
                                 </div>
                                 <div class="form-group">
                                     <label>Responsável pelo registro</label>
@@ -1031,17 +1056,17 @@
                             </form>
                         </div>
                     </section>
-                    <aside class="mov-card-stack">
+                    <aside class="mov-card-stack mov-card-info">
                         <div class="mov-card">
                             <header class="mov-card-header">
                                 <div>
-                                    <p class="eyebrow">Inventário atual</p>
-                                    <h4>Itens registrados no armário</h4>
+                                    <p class="eyebrow">Informações e histórico</p>
+                                    <h4>Resumo rápido</h4>
                                 </div>
                             </header>
                             <div class="mov-card-body">
                                 <div class="info-box info-compact">
-                                    Consulte o inventário consolidado antes de registrar saídas ou conferências.
+                                    Resumo das movimentações já registradas. Itens pendentes ou removidos ficam destacados.
                                 </div>
                                 <div class="mov-itens-resumo" id="mov-itens-resumo">
                                     <div class="mov-itens-resumo-header">Itens registrados no armário</div>
