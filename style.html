@@ -306,6 +306,44 @@
             transition: all 0.3s;
             overflow-x: hidden;
         }
+        /* Dark theme layout swap */
+        [data-theme="escuro"] .sidebar {
+            background: var(--bg-color);
+            color: var(--text-color);
+            border-right: 1px solid var(--border-color);
+            box-shadow: 4px 0 18px rgba(15, 23, 42, 0.08);
+        }
+        [data-theme="escuro"] .sidebar-header {
+            border-bottom: 1px solid color-mix(in srgb, var(--dark-color) 10%, transparent);
+        }
+        [data-theme="escuro"] .sidebar-menu a {
+            color: var(--text-color);
+        }
+        [data-theme="escuro"] .sidebar-menu a:hover {
+            background-color: color-mix(in srgb, var(--primary-color) 12%, transparent);
+            border-left-color: var(--primary-color);
+        }
+        [data-theme="escuro"] .sidebar-menu a.active {
+            background-color: color-mix(in srgb, var(--primary-color) 16%, transparent);
+            border-left-color: var(--primary-color);
+        }
+        [data-theme="escuro"] .sidebar-footer {
+            border-top: 1px solid var(--border-color);
+        }
+        [data-theme="escuro"] .sidebar-logout-button {
+            border: 1px solid color-mix(in srgb, var(--primary-color) 45%, var(--border-color) 55%);
+            background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+            color: var(--text-color);
+        }
+        [data-theme="escuro"] .sidebar-logout-button:hover {
+            background: color-mix(in srgb, var(--primary-color) 20%, transparent);
+            border-color: color-mix(in srgb, var(--primary-color) 55%, var(--border-color) 45%);
+        }
+        [data-theme="escuro"] .main-content {
+            background:
+                radial-gradient(circle at 20% 20%, var(--sidebar-highlight, rgba(255, 255, 255, 0.1)) 0%, transparent 42%),
+                linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
+        }
         /* Header */
         .header {
             display: flex;
@@ -384,6 +422,18 @@
         .theme-switcher-trigger i:first-child {
             color: var(--primary-color);
             font-size: 1.1rem;
+        }
+        [data-theme="escuro"] .theme-switcher-trigger i:first-child {
+            color: white;
+            background: color-mix(in srgb, var(--primary-dark) 88%, var(--primary-color) 12%);
+            padding: 8px;
+            border-radius: 10px;
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
         }
         .theme-switcher-label {
             display: flex;
@@ -531,20 +581,45 @@
             margin: 0;
             font-size: 1.05rem;
         }
+        [data-theme="escuro"] .selector-control.compact {
+            background: color-mix(in srgb, var(--primary-dark) 88%, var(--primary-color) 12%);
+            border-color: color-mix(in srgb, var(--primary-dark) 65%, transparent);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+        }
+        [data-theme="escuro"] .selector-control.compact .selector-trigger {
+            color: white;
+        }
+        [data-theme="escuro"] .selector-control.compact .selector-icon {
+            color: white;
+        }
         .selector-control:hover {
             border-color: color-mix(in srgb, var(--primary-color) 60%, white 40%);
             box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
             transform: translateY(-1px);
+        }
+        [data-theme="escuro"] .selector-control.compact:hover {
+            border-color: color-mix(in srgb, #ffffff 28%, var(--primary-dark) 72%);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
         }
         .selector-control.open,
         .selector-control:focus-within {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 4px var(--focus-ring);
         }
+        [data-theme="escuro"] .selector-control.compact.open,
+        [data-theme="escuro"] .selector-control.compact:focus-within {
+            border-color: color-mix(in srgb, #ffffff 35%, var(--primary-dark) 65%);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 45%, transparent);
+        }
         .selector-icon {
             color: var(--primary-color);
             font-size: 1.1rem;
             flex-shrink: 0;
+        }
+        [data-theme="escuro"] .selector-control.compact .selector-icon,
+        [data-theme="escuro"] .selector-control.compact.open .selector-icon,
+        [data-theme="escuro"] .selector-control.compact:focus-within .selector-icon {
+            color: white;
         }
         .selector-trigger {
             flex: 1;
