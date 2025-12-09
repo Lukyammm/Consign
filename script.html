@@ -592,6 +592,12 @@
             movimentacoesList: document.getElementById('movimentacoes-list'),
             movimentacaoForm: document.getElementById('movimentacao-form'),
             movimentacaoModalTitle: document.getElementById('movimentacao-modal-title'),
+            movConferenciaDialog: document.getElementById('mov-conferencia-dialog'),
+            movConferenciaFechar: document.getElementById('mov-conferencia-fechar'),
+            movConferenciaItem: document.getElementById('mov-conferencia-item'),
+            movConferenciaTexto: document.getElementById('mov-conferencia-texto'),
+            movConferenciaSalvar: document.getElementById('mov-conferencia-salvar'),
+            movConferenciaCancelar: document.getElementById('mov-conferencia-cancelar'),
             movTipo: document.getElementById('mov-tipo'),
             movTabs: document.querySelectorAll('.mov-tab'),
             movTabPanels: document.querySelectorAll('.mov-tab-panel'),
@@ -1414,6 +1420,7 @@
         let movimentacaoInventarioAtual = [];
         let movimentacaoVolumesBase = [];
         let movimentacoesRegistradas = [];
+        let linhaConferenciaAtual = null;
         let termoAssinaturaDesenhada = false;
         let termoDesenhandoAssinatura = false;
         // Inicialização
@@ -2641,6 +2648,17 @@
             elementos.movEntradaAdicionar?.addEventListener('click', adicionarItemEntradaRapido);
             elementos.movSaidaPreencher?.addEventListener('click', () => preencherItensMovimentacaoAPartirInventario('saida'));
             elementos.movSaidaAddPersonalizado?.addEventListener('click', adicionarItemSaidaNaoCadastrado);
+            elementos.movConferenciaFechar?.addEventListener('click', fecharDialogoConferencia);
+            elementos.movConferenciaSalvar?.addEventListener('click', salvarDialogoConferencia);
+            elementos.movConferenciaCancelar?.addEventListener('click', fecharDialogoConferencia);
+            elementos.movConferenciaDialog?.addEventListener('click', evento => {
+                if (evento.target === elementos.movConferenciaDialog) {
+                    fecharDialogoConferencia();
+                }
+            });
+            elementos.movConferenciaTexto?.addEventListener('input', () => {
+                elementos.movConferenciaDialog?.classList.remove('erro');
+            });
             if (elementos.impressaoReservaClose) {
                 elementos.impressaoReservaClose.addEventListener('click', () => fecharModalImpressaoReserva());
             }
@@ -7277,7 +7295,7 @@
             linha.dataset.quantidade = item.quantidade || 0;
             linha.dataset.descricao = item.descricao || '';
             linha.dataset.origem = origem;
-            linha.dataset.remover = 'false';
+            linha.dataset.removerQuantidade = '0';
 
             const corpo = document.createElement('div');
             corpo.className = 'mov-item-display';
@@ -7293,31 +7311,45 @@
 
             const acoesWrapper = document.createElement('div');
             acoesWrapper.className = 'mov-item-actions';
+            const indicador = document.createElement('span');
+            indicador.className = 'mov-item-flag remocao-indicador hidden';
+            indicador.textContent = '';
+            corpo.appendChild(indicador);
+
             const botaoRemover = document.createElement('button');
             botaoRemover.type = 'button';
             botaoRemover.className = 'icon-btn';
-            botaoRemover.title = 'Remover item desta saída';
+            botaoRemover.title = 'Remover 1 volume desta saída';
             botaoRemover.innerHTML = '<i class="fas fa-trash" aria-hidden="true"></i>';
             botaoRemover.addEventListener('click', async () => {
-                const jaMarcado = linha.dataset.remover === 'true';
-                if (jaMarcado) {
-                    linha.dataset.remover = 'false';
-                    linha.classList.remove('marcado-remocao');
-                    botaoRemover.title = 'Remover item desta saída';
+                const quantidadeTotal = Number(linha.dataset.quantidade) || 0;
+                const removerAtual = Number(linha.dataset.removerQuantidade) || 0;
+                const restantes = quantidadeTotal - removerAtual;
+
+                if (quantidadeTotal <= 0) return;
+
+                if (restantes <= 0) {
+                    linha.dataset.removerQuantidade = '0';
+                    atualizarIndicadorRemocao(linha);
                     return;
                 }
+
                 const confirmacao = await Swal.fire({
-                    title: 'Confirmar retirada do item?',
-                    text: 'O item será incluído nesta saída sem editar quantidade ou descrição.',
+                    title: 'Confirmar retirada de 1 volume?',
+                    text: `Ainda há ${restantes} volume(s) disponível(is) deste item.`,
                     icon: 'question',
-                    confirmButtonText: 'Confirmar retirada',
+                    confirmButtonText: 'Remover volume',
                     cancelButtonText: 'Cancelar',
                     showCancelButton: true
                 });
+
                 if (confirmacao.isConfirmed) {
-                    linha.dataset.remover = 'true';
-                    linha.classList.add('marcado-remocao');
-                    botaoRemover.title = 'Clique para desfazer a retirada';
+                    const novoValor = Math.min(quantidadeTotal, removerAtual + 1);
+                    linha.dataset.removerQuantidade = String(novoValor);
+                    atualizarIndicadorRemocao(linha);
+                    botaoRemover.title = novoValor >= quantidadeTotal
+                        ? 'Clique para desfazer a retirada deste item'
+                        : 'Remover mais um volume deste item';
                 }
             });
             acoesWrapper.appendChild(botaoRemover);
@@ -7327,40 +7359,74 @@
             elementos.movItensList.appendChild(linha);
             return linha;
         }
+        function atualizarIndicadorRemocao(linha) {
+            if (!linha) return;
+            const indicador = linha.querySelector('.remocao-indicador');
+            const quantidadeTotal = Number(linha.dataset.quantidade) || 0;
+            const removerQuantidade = Number(linha.dataset.removerQuantidade) || 0;
+
+            if (!indicador) return;
+
+            if (removerQuantidade > 0) {
+                indicador.textContent = `Remover ${removerQuantidade}/${quantidadeTotal}`;
+                indicador.classList.remove('hidden');
+                linha.classList.add('marcado-remocao');
+            } else {
+                indicador.textContent = '';
+                indicador.classList.add('hidden');
+                linha.classList.remove('marcado-remocao');
+            }
+        }
         function registrarObservacaoConferencia(linha) {
             const descricaoBase = linha?.dataset?.descricao || 'Item';
             const observacaoAtual = linha?.dataset?.observacao || '';
-            Swal.fire({
-                title: 'Observação da conferência',
-                text: descricaoBase,
-                input: 'textarea',
-                inputValue: observacaoAtual,
-                inputLabel: 'Descreva o que foi conferido',
-                confirmButtonText: 'Salvar observação',
-                showCancelButton: true,
-                cancelButtonText: 'Cancelar',
-                inputValidator: valor => {
-                    if (!valor || !valor.trim()) {
-                        return 'Informe uma observação para registrar a conferência.';
-                    }
-                    return undefined;
+            if (!elementos.movConferenciaDialog) return;
+
+            linhaConferenciaAtual = linha;
+            elementos.movConferenciaDialog.classList.remove('erro');
+            elementos.movConferenciaDialog.setAttribute('aria-hidden', 'false');
+            elementos.movConferenciaDialog.classList.add('aberto');
+            if (elementos.movConferenciaItem) {
+                elementos.movConferenciaItem.textContent = descricaoBase;
+            }
+            if (elementos.movConferenciaTexto) {
+                elementos.movConferenciaTexto.value = observacaoAtual;
+                elementos.movConferenciaTexto.focus();
+            }
+        }
+        function salvarDialogoConferencia() {
+            const texto = elementos.movConferenciaTexto?.value?.trim();
+            if (!linhaConferenciaAtual || !elementos.movConferenciaDialog) {
+                fecharDialogoConferencia();
+                return;
+            }
+            if (!texto) {
+                elementos.movConferenciaDialog.classList.add('erro');
+                elementos.movConferenciaTexto?.focus();
+                return;
+            }
+
+            linhaConferenciaAtual.dataset.observacao = texto;
+            const display = linhaConferenciaAtual.querySelector('.mov-item-display');
+            display?.setAttribute('data-observacao', texto);
+            if (display) {
+                let badge = display.querySelector('.mov-item-flag.observacao');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'mov-item-flag observacao';
+                    display.appendChild(badge);
                 }
-            }).then(resultado => {
-                if (!resultado.isConfirmed) return;
-                const texto = resultado.value?.toString().trim();
-                linha.dataset.observacao = texto;
-                const display = linha.querySelector('.mov-item-display');
-                display?.setAttribute('data-observacao', texto);
-                if (display) {
-                    let badge = display.querySelector('.mov-item-flag.observacao');
-                    if (!badge) {
-                        badge = document.createElement('span');
-                        badge.className = 'mov-item-flag observacao';
-                        display.appendChild(badge);
-                    }
-                    badge.textContent = texto || 'Observação registrada';
-                }
-            });
+                badge.textContent = texto || 'Observação registrada';
+            }
+            fecharDialogoConferencia();
+        }
+        function fecharDialogoConferencia() {
+            if (elementos.movConferenciaDialog) {
+                elementos.movConferenciaDialog.classList.remove('aberto');
+                elementos.movConferenciaDialog.classList.remove('erro');
+                elementos.movConferenciaDialog.setAttribute('aria-hidden', 'true');
+            }
+            linhaConferenciaAtual = null;
         }
         function criarLinhaConferencia(item = {}) {
             if (!elementos.movItensList) return null;
@@ -7398,7 +7464,10 @@
                 : (movimentacaoVolumesBase || []);
 
             if (tipoNormalizado === 'entrada') {
-                criarLinhaEntrada();
+                const vazio = document.createElement('div');
+                vazio.className = 'info-box info-compact';
+                vazio.textContent = 'Adicione os itens de entrada usando o botão abaixo.';
+                elementos.movItensList?.appendChild(vazio);
                 return;
             }
 
@@ -7425,15 +7494,20 @@
 
             if (tipo === 'saida') {
                 return linhas
-                    .filter(linha => linha.dataset.remover === 'true')
                     .map(linha => {
+                        const removerQuantidade = Number(linha.dataset.removerQuantidade);
                         const quantidade = Number(linha.dataset.quantidade);
                         const descricao = linha.dataset.descricao || '';
                         return {
-                            quantidade: Number.isFinite(quantidade) ? quantidade : 0,
-                            descricao
+                            quantidade: Number.isFinite(removerQuantidade) && removerQuantidade > 0
+                                ? removerQuantidade
+                                : 0,
+                            descricao,
+                            totalDisponivel: Number.isFinite(quantidade) ? quantidade : 0
                         };
                     })
+                    .filter(item => item.quantidade > 0 && item.descricao)
+                    .map(item => ({ quantidade: item.quantidade, descricao: item.descricao }))
                     .filter(item => item.quantidade > 0 && item.descricao);
             }
 
@@ -7532,6 +7606,10 @@
                 elementos.movEntradaQuantidade?.focus();
                 return;
             }
+            const placeholder = elementos.movItensList?.querySelector('.info-box.info-compact');
+            if (placeholder) {
+                placeholder.remove();
+            }
             criarLinhaEntrada({ quantidade, descricao });
             elementos.movEntradaQuantidade.value = '';
             elementos.movEntradaDescricao.value = '';
@@ -7605,6 +7683,7 @@
             }
             elementos.movimentacaoModal.style.display = 'none';
             movimentacaoArmarioAtual = null;
+            fecharDialogoConferencia();
         }
         function mostrarLoadingMovimentacoes() {
             if (!elementos.movimentacoesList) return;
