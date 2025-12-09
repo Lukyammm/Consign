@@ -531,6 +531,7 @@
             visitaEstendidaGroup: document.getElementById('visita-estendida-group'),
             visitaEstendidaInput: document.getElementById('visita-estendida'),
             filterBtns: document.querySelectorAll('.filter-btn'),
+            filterSearchWrapper: document.querySelector('.filter-search'),
             dashboardSearch: document.getElementById('dashboard-search'),
             toggleDadosButton: document.getElementById('toggle-dados'),
             contingenciaButton: document.getElementById('btn-contingencia'),
@@ -2395,6 +2396,11 @@
                 elementos.dashboardSearch.addEventListener('input', () => {
                     estado.buscaDashboard = elementos.dashboardSearch.value || '';
                     renderizarArmarios();
+                });
+            }
+            if (elementos.filterSearchWrapper && elementos.dashboardSearch) {
+                elementos.filterSearchWrapper.addEventListener('click', () => {
+                    elementos.dashboardSearch.focus();
                 });
             }
             if (elementos.toggleDadosButton) {
