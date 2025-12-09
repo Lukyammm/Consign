@@ -52,7 +52,6 @@
                     unidade: 'todas',
                     busca: ''
                 },
-                temaAtual: 'claro',
                 autenticado: false,
                 usuarioAutenticado: null,
                 liberacao: criarEstadoLiberacaoInicial(),
@@ -83,8 +82,7 @@
             rascunhosOcupacao: 'locknac_rascunhos_ocupacao',
             rascunhoArmario: 'locknac_rascunho_armario',
             rascunhoTermo: 'locknac_rascunho_termo',
-            preferenciasCabecalho: 'locknac_preferencias_cabecalho',
-            temaPreferido: 'locknac_tema_preferido'
+            preferenciasCabecalho: 'locknac_preferencias_cabecalho'
         };
         const travaRolagem = {
             contador: 0,
@@ -136,246 +134,6 @@
                 url: 'https://api.dicebear.com/7.x/bottts/png?seed=Robotica&backgroundColor=dbebff'
             }
         ];
-        const THEMES = {
-            claro: {
-                label: 'Claro',
-                description: 'Visual equilibrado e luminoso',
-                swatch: ['#3b82f6', '#10b981', '#f9fafb', '#1f2937'],
-                prefersDark: false,
-                variables: {
-                    '--primary-color': '#3B82F6',
-                    '--secondary-color': '#10B981',
-                    '--success-color': '#22C55E',
-                    '--warning-color': '#F59E0B',
-                    '--danger-color': '#EF4444',
-                    '--primary-dark': '#1D4ED8',
-                    '--danger-dark': '#991B1B',
-                    '--dark-color': '#1F2937',
-                    '--light-color': '#F3F4F6',
-                    '--text-color': '#1F2937',
-                    '--muted-color': '#6B7280',
-                    '--surface-color': '#FFFFFF',
-                    '--bg-color': '#F9FAFB',
-                    '--border-color': '#E5E7EB',
-                    '--shadow-color': 'rgba(15, 23, 42, 0.08)',
-                    '--focus-ring': 'rgba(59, 130, 246, 0.25)',
-                    '--sidebar-gradient-start': '#0e2f63',
-                    '--sidebar-gradient-end': 'color-mix(in srgb, #010814 78%, #133f82)',
-                    '--header-surface': '#ffffff',
-                    '--muted-surface': '#f8fafc',
-                    '--input-surface': '#ffffff',
-                    '--strong-surface': '#0f172a'
-                }
-            },
-            escuro: {
-                label: 'Escuro',
-                description: 'Contraste elevado para pouca luz',
-                swatch: ['#0b1220', '#111827', '#8bb3ff', '#38bdf8'],
-                prefersDark: true,
-                variables: {
-                    '--primary-color': '#8bb3ff',
-                    '--secondary-color': '#38bdf8',
-                    '--success-color': '#34d399',
-                    '--warning-color': '#fbbf24',
-                    '--danger-color': '#fb7185',
-                    '--primary-dark': '#1d4ed8',
-                    '--danger-dark': '#b91c1c',
-                    '--dark-color': '#e5e7eb',
-                    '--light-color': '#0b1220',
-                    '--text-color': '#e2e8f0',
-                    '--muted-color': '#9ca3af',
-                    '--surface-color': '#111827',
-                    '--bg-color': '#0b1220',
-                    '--border-color': '#1f2937',
-                    '--shadow-color': 'rgba(0, 0, 0, 0.45)',
-                    '--focus-ring': 'rgba(139, 179, 255, 0.35)',
-                    '--sidebar-gradient-start': '#2d323b',
-                    '--sidebar-gradient-end': '#3a404c',
-                    '--header-surface': '#2f353f',
-                    '--muted-surface': '#111827',
-                    '--input-surface': '#0f172a',
-                    '--strong-surface': '#0a152a'
-                }
-            },
-            pink: {
-                label: 'Pink',
-                description: 'Paleta suave com destaque rosé',
-                swatch: ['#f472b6', '#c084fc', '#fff7fb', '#4b1d35'],
-                prefersDark: false,
-                variables: {
-                    '--primary-color': '#f472b6',
-                    '--secondary-color': '#c084fc',
-                    '--success-color': '#10b981',
-                    '--warning-color': '#f59e0b',
-                    '--danger-color': '#fda4af',
-                    '--primary-dark': '#db2777',
-                    '--danger-dark': '#f43f5e',
-                    '--dark-color': '#3d0f23',
-                    '--light-color': '#fff7fb',
-                    '--text-color': '#321327',
-                    '--muted-color': '#8f3b63',
-                    '--surface-color': '#fff9fd',
-                    '--bg-color': '#fff7fb',
-                    '--border-color': '#f8cde7',
-                    '--shadow-color': 'rgba(244, 114, 182, 0.12)',
-                    '--focus-ring': 'rgba(244, 114, 182, 0.25)',
-                    '--sidebar-gradient-start': '#b31663',
-                    '--sidebar-gradient-end': '#8f0e4c',
-                    '--header-surface': '#fff7fb',
-                    '--muted-surface': '#ffe9f3',
-                    '--input-surface': '#ffffff',
-                    '--strong-surface': '#4b1d35'
-                }
-            }
-        };
-        const themeVariableKeys = Object.values(THEMES).reduce((acumulador, tema) => {
-            Object.keys(tema.variables || {}).forEach(chave => acumulador.add(chave));
-            return acumulador;
-        }, new Set());
-        function aplicarTema(temaId, { persistir = true } = {}) {
-            const temaValido = THEMES[temaId] ? temaId : 'claro';
-            const tema = THEMES[temaValido];
-            const root = document.documentElement;
-
-            themeVariableKeys.forEach(chave => root.style.removeProperty(chave));
-            Object.entries(tema.variables || {}).forEach(([chave, valor]) => root.style.setProperty(chave, valor));
-
-            root.setAttribute('data-theme', temaValido);
-            root.style.colorScheme = tema.prefersDark ? 'dark' : 'light';
-            estado.temaAtual = temaValido;
-
-            if (persistir) {
-                const storage = obterArmazenamentoLocal();
-                if (storage) {
-                    try {
-                        storage.setItem(STORAGE_KEYS.temaPreferido, temaValido);
-                    } catch (erro) {
-                        console.warn('Não foi possível salvar o tema selecionado:', erro);
-                    }
-                }
-            }
-
-            atualizarTemaSelecionadoUI();
-        }
-        function restaurarTemaPreferido() {
-            const storage = obterArmazenamentoLocal();
-            if (!storage) {
-                aplicarTema(estado.temaAtual, { persistir: false });
-                return;
-            }
-            try {
-                const salvo = storage.getItem(STORAGE_KEYS.temaPreferido);
-                if (salvo && THEMES[salvo]) {
-                    aplicarTema(salvo, { persistir: false });
-                } else {
-                    aplicarTema(estado.temaAtual, { persistir: false });
-                }
-            } catch (erro) {
-                console.warn('Falha ao restaurar tema preferido:', erro);
-                aplicarTema(estado.temaAtual, { persistir: false });
-            }
-        }
-        function atualizarTemaSelecionadoUI() {
-            if (!elementos.themeSwitcher || !elementos.themeSwitcherOptions) {
-                return;
-            }
-            const tema = THEMES[estado.temaAtual] || THEMES.claro;
-            if (elementos.themeSwitcherCurrent) {
-                elementos.themeSwitcherCurrent.textContent = tema.label;
-            }
-            Array.from(elementos.themeSwitcherOptions.children).forEach(botao => {
-                const selecionado = botao.dataset.theme === estado.temaAtual;
-                botao.setAttribute('aria-selected', selecionado ? 'true' : 'false');
-                botao.classList.toggle('is-active', selecionado);
-            });
-        }
-        function fecharOpcoesTema() {
-            if (elementos.themeSwitcher) {
-                elementos.themeSwitcher.classList.remove('open');
-            }
-            if (elementos.themeSwitcherTrigger) {
-                elementos.themeSwitcherTrigger.setAttribute('aria-expanded', 'false');
-            }
-        }
-        function alternarOpcoesTema() {
-            if (!elementos.themeSwitcher) return;
-            const aberto = elementos.themeSwitcher.classList.toggle('open');
-            if (elementos.themeSwitcherTrigger) {
-                elementos.themeSwitcherTrigger.setAttribute('aria-expanded', aberto ? 'true' : 'false');
-            }
-        }
-        function criarOpcaoTema(temaId, tema) {
-            const botao = document.createElement('button');
-            botao.type = 'button';
-            botao.className = 'theme-option';
-            botao.dataset.theme = temaId;
-            botao.setAttribute('role', 'option');
-            botao.setAttribute('aria-selected', 'false');
-
-            const swatch = document.createElement('div');
-            swatch.className = 'theme-swatch';
-            (tema.swatch || []).slice(0, 4).forEach(cor => {
-                const bloco = document.createElement('span');
-                bloco.style.background = cor;
-                swatch.appendChild(bloco);
-            });
-
-            const info = document.createElement('div');
-            info.className = 'theme-info';
-            const titulo = document.createElement('div');
-            titulo.className = 'theme-name';
-            titulo.textContent = tema.label;
-            const descricao = document.createElement('div');
-            descricao.className = 'theme-desc';
-            descricao.textContent = tema.description;
-            info.append(titulo, descricao);
-
-            botao.append(swatch, info);
-            botao.addEventListener('click', () => {
-                aplicarTema(temaId);
-                fecharOpcoesTema();
-            });
-            botao.addEventListener('keydown', (evento) => {
-                if (evento.key === 'Enter' || evento.key === ' ') {
-                    evento.preventDefault();
-                    aplicarTema(temaId);
-                    fecharOpcoesTema();
-                }
-            });
-
-            return botao;
-        }
-        function preencherOpcoesTema() {
-            if (!elementos.themeSwitcherOptions) return;
-            elementos.themeSwitcherOptions.innerHTML = '';
-            Object.entries(THEMES).forEach(([temaId, tema]) => {
-                const botao = criarOpcaoTema(temaId, tema);
-                elementos.themeSwitcherOptions.appendChild(botao);
-            });
-            atualizarTemaSelecionadoUI();
-        }
-        function registrarEventosTema() {
-            if (!elementos.themeSwitcherTrigger) return;
-            elementos.themeSwitcherTrigger.addEventListener('click', () => {
-                alternarOpcoesTema();
-            });
-            document.addEventListener('click', (evento) => {
-                if (!elementos.themeSwitcher) return;
-                if (!elementos.themeSwitcher.contains(evento.target)) {
-                    fecharOpcoesTema();
-                }
-            });
-            document.addEventListener('keydown', (evento) => {
-                if (evento.key === 'Escape') {
-                    fecharOpcoesTema();
-                }
-            });
-        }
-        function inicializarTemas() {
-            preencherOpcoesTema();
-            restaurarTemaPreferido();
-            registrarEventosTema();
-        }
         let armazenamentoLocalDisponivel;
         let rascunhosOcupacaoRestaurados = false;
         function removerRascunhoChave(chave) {
@@ -793,10 +551,6 @@
             headerUserAvatar: document.getElementById('header-user-avatar'),
             headerUserName: document.getElementById('header-user-name'),
             headerUserRole: document.getElementById('header-user-role'),
-            themeSwitcher: document.getElementById('theme-switcher'),
-            themeSwitcherTrigger: document.getElementById('theme-switcher-trigger'),
-            themeSwitcherOptions: document.getElementById('theme-switcher-options'),
-            themeSwitcherCurrent: document.getElementById('theme-switcher-current'),
             avatarModal: document.getElementById('avatar-modal'),
             avatarModalBackdrop: document.getElementById('avatar-modal-backdrop'),
             avatarModalClose: document.getElementById('avatar-modal-close'),
@@ -1656,7 +1410,6 @@
             atualizarOpcoesSetorTermo();
             atualizarResponsavelMovimentacaoInfo();
             inicializarLogin();
-            inicializarTemas();
         });
         function aguardar(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
