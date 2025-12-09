@@ -26,6 +26,7 @@
             --bg-color: #F9FAFB;
             --border-color: #E5E7EB;
             --shadow-color: rgba(15, 23, 42, 0.08);
+            --sidebar-highlight: rgba(255, 255, 255, 0.12);
 
             /* Typography */
             --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
@@ -59,24 +60,25 @@
             --danger-color: #ff6b6b;
             --primary-dark: #1d4ed8;
             --danger-dark: #b91c1c;
-            --dark-color: #f2f2f5;
-            --light-color: #e6e8ee;
-            --text-color: #f2f2f5;
-            --muted-color: #b4b7c2;
-            --surface-color: #16171d;
-            --bg-color: #121212;
-            --border-color: #2c2f38;
-            --shadow-color: rgba(0, 0, 0, 0.45);
+            --dark-color: #e8edf7;
+            --light-color: #dce5f6;
+            --text-color: #e8edf7;
+            --muted-color: #9fb1d0;
+            --surface-color: #182235;
+            --bg-color: #0f172a;
+            --border-color: #243251;
+            --shadow-color: rgba(7, 12, 25, 0.55);
             --focus-ring: rgba(78, 161, 255, 0.35);
-            --sidebar-gradient-start: #12131a;
-            --sidebar-gradient-end: #1a1c24;
-            --header-surface: #16171d;
-            --muted-surface: #0f1118;
-            --input-surface: #16171d;
-            --strong-surface: #0b0c10;
-            --logo-icon-bg: rgba(231, 233, 240, 0.12);
-            --logo-icon-color: #d7d9df;
-            --logo-icon-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            --sidebar-gradient-start: #16294a;
+            --sidebar-gradient-end: #0d172a;
+            --sidebar-highlight: rgba(99, 179, 255, 0.08);
+            --header-surface: #111b2f;
+            --muted-surface: #141d31;
+            --input-surface: #141f34;
+            --strong-surface: #0d1526;
+            --logo-icon-bg: rgba(231, 233, 240, 0.14);
+            --logo-icon-color: #e0e6f2;
+            --logo-icon-shadow: 0 12px 30px rgba(5, 10, 22, 0.5);
             color-scheme: dark;
         }
         [data-theme="pink"] {
@@ -102,6 +104,7 @@
             --muted-surface: #ffe9f3;
             --input-surface: #ffffff;
             --strong-surface: #4b1d35;
+            --sidebar-highlight: rgba(244, 114, 182, 0.18);
             color-scheme: light;
         }
         .sr-only {
@@ -157,7 +160,9 @@
         /* Sidebar */
         .sidebar {
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--sidebar-gradient-start), var(--sidebar-gradient-end));
+            background:
+                radial-gradient(circle at 20% 20%, var(--sidebar-highlight, rgba(255, 255, 255, 0.1)) 0%, transparent 42%),
+                linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
             color: white;
             height: 100vh;
             position: fixed;
