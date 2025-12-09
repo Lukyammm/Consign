@@ -36,6 +36,63 @@
             --extended-badge-text: color-mix(in srgb, var(--primary-color) 80%, black 20%);
             --extended-row-bg: color-mix(in srgb, var(--primary-color) 10%, white 90%);
             --extended-border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
+        } 
+        .mov-item-flag.remocao-indicador {
+            background: color-mix(in srgb, var(--danger-color) 12%, var(--surface-color) 88%);
+            color: var(--danger-dark);
+            border: 1px dashed color-mix(in srgb, var(--danger-color) 35%, transparent);
+            margin-left: 8px;
+        }
+        .mov-conferencia-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            z-index: 15;
+        }
+        .mov-conferencia-overlay.aberto {
+            opacity: 1;
+            visibility: visible;
+        }
+        .mov-conferencia-card {
+            width: 100%;
+            max-width: 540px;
+            background: var(--surface-color);
+            border-radius: 16px;
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .mov-conferencia-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .mov-conferencia-item {
+            font-weight: 600;
+            margin: 4px 0 10px;
+        }
+        .mov-conferencia-body {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .mov-conferencia-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .mov-conferencia-overlay.erro textarea {
+            border-color: var(--danger-color);
         }
         .sr-only {
             position: absolute;
@@ -1843,6 +1900,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
         .modal-header {
             padding: 18px 24px;

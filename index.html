@@ -1089,6 +1089,25 @@
                     </aside>
                 </div>
             </div>
+            <div class="mov-conferencia-overlay" id="mov-conferencia-dialog" aria-hidden="true" role="dialog" aria-modal="true">
+                <div class="mov-conferencia-card" role="document">
+                    <div class="mov-conferencia-header">
+                        <h4>Observação da conferência</h4>
+                        <button type="button" class="modal-close" aria-label="Fechar" id="mov-conferencia-fechar">&times;</button>
+                    </div>
+                    <div class="mov-conferencia-body">
+                        <p class="eyebrow">Item conferido</p>
+                        <p class="mov-conferencia-item" id="mov-conferencia-item">Item</p>
+                        <label for="mov-conferencia-texto">Observação</label>
+                        <textarea id="mov-conferencia-texto" rows="4" class="form-control" placeholder="Descreva o que foi conferido"></textarea>
+                        <div class="helper-text">O texto é obrigatório para registrar a conferência.</div>
+                    </div>
+                    <div class="mov-conferencia-actions">
+                        <button type="button" class="btn btn-ghost" id="mov-conferencia-cancelar">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="mov-conferencia-salvar">Salvar observação</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <!-- Modal de impressão da reserva do armário -->
