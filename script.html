@@ -2038,36 +2038,45 @@
             const tipo = mime && mime.toString().trim() ? mime.toString().trim() : 'image/png';
             return `data:${tipo};base64,${base64}`;
         }
+        function ajustarCanvasAssinatura(canvas, fallbackAltura = 160, assinaturaExistente = '') {
+            if (!canvas) return '';
+
+            const rect = canvas.getBoundingClientRect();
+            const estilo = getComputedStyle(canvas);
+            const larguraCalculada = Math.max(rect.width, canvas.offsetWidth, canvas.parentElement?.clientWidth || 0, 420);
+            const alturaEstimada = parseFloat(estilo.height) || rect.height || fallbackAltura;
+            const alturaFinal = Math.max(alturaEstimada, fallbackAltura);
+            const imagemAtual = assinaturaExistente || (canvas.width && canvas.height ? canvas.toDataURL('image/png') : '');
+
+            canvas.width = larguraCalculada;
+            canvas.height = alturaFinal;
+            canvas.style.height = `${alturaFinal}px`;
+
+            const ctx = canvas.getContext('2d');
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#0b1324';
+
+            return imagemAtual;
+        }
         function inicializarCanvasAssinatura() {
             if (elementos.termoAssinaturaCanvas) {
                 const assinaturaTermoExistente = termoAssinaturaDesenhada
                     ? elementos.termoAssinaturaCanvas.toDataURL('image/png')
-                    : null;
-                const rectTermo = elementos.termoAssinaturaCanvas.getBoundingClientRect();
-                if (rectTermo.width && rectTermo.height) {
-                    elementos.termoAssinaturaCanvas.width = rectTermo.width;
-                    elementos.termoAssinaturaCanvas.height = rectTermo.height;
-                }
-                const ctxTermo = elementos.termoAssinaturaCanvas.getContext('2d');
-                ctxTermo.lineWidth = 2;
-                ctxTermo.lineCap = 'round';
-                ctxTermo.lineJoin = 'round';
-                ctxTermo.strokeStyle = '#0b1324';
-                if (assinaturaTermoExistente) {
-                    restaurarDesenhoCanvas(elementos.termoAssinaturaCanvas, assinaturaTermoExistente);
+                    : '';
+                const imagemTermo = ajustarCanvasAssinatura(elementos.termoAssinaturaCanvas, 170, assinaturaTermoExistente);
+                if (imagemTermo) {
+                    restaurarDesenhoCanvas(elementos.termoAssinaturaCanvas, imagemTermo);
                 }
             }
             if (elementos.movSignatureCanvas) {
                 const assinaturaMovExistente = movAssinaturaDesenhada
                     ? (elementos.movSignatureCanvas.toDataURL('image/png') || movAssinaturaImagemAtual)
                     : movAssinaturaImagemAtual;
-                const rectMov = elementos.movSignatureCanvas.getBoundingClientRect();
-                if (rectMov.width && rectMov.height) {
-                    elementos.movSignatureCanvas.width = rectMov.width;
-                    elementos.movSignatureCanvas.height = rectMov.height;
-                }
-                if (assinaturaMovExistente) {
-                    restaurarDesenhoCanvas(elementos.movSignatureCanvas, assinaturaMovExistente);
+                const imagemMov = ajustarCanvasAssinatura(elementos.movSignatureCanvas, 170, assinaturaMovExistente);
+                if (imagemMov) {
+                    restaurarDesenhoCanvas(elementos.movSignatureCanvas, imagemMov);
                 }
             }
         }
