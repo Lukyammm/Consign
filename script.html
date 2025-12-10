@@ -2043,16 +2043,24 @@
 
             const rect = canvas.getBoundingClientRect();
             const estilo = getComputedStyle(canvas);
-            const larguraCalculada = Math.max(rect.width, canvas.offsetWidth, canvas.parentElement?.clientWidth || 0, 420);
+            const larguraCss = rect.width
+                || canvas.clientWidth
+                || canvas.offsetWidth
+                || canvas.parentElement?.clientWidth
+                || fallbackAltura * 2;
             const alturaEstimada = parseFloat(estilo.height) || rect.height || fallbackAltura;
             const alturaFinal = Math.max(alturaEstimada, fallbackAltura);
             const imagemAtual = assinaturaExistente || (canvas.width && canvas.height ? canvas.toDataURL('image/png') : '');
 
-            canvas.width = larguraCalculada;
-            canvas.height = alturaFinal;
+            const escala = window.devicePixelRatio || 1;
+            canvas.width = Math.max(1, Math.round(larguraCss * escala));
+            canvas.height = Math.max(1, Math.round(alturaFinal * escala));
+            canvas.style.width = `${larguraCss}px`;
             canvas.style.height = `${alturaFinal}px`;
 
             const ctx = canvas.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(escala, escala);
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
