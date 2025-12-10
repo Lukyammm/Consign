@@ -411,6 +411,23 @@
                 elementos.avatarUrlInput.removeAttribute('aria-invalid');
             }
         }
+        function painelNotificacoesAberto() {
+            return Boolean(elementos.notificationPanel?.classList.contains('is-open'));
+        }
+        function atualizarPainelNotificacoes(aberto) {
+            if (!elementos.notificationPanel) {
+                return;
+            }
+            const deveAbrir = Boolean(aberto);
+            elementos.notificationPanel.classList.toggle('is-open', deveAbrir);
+            elementos.notificationPanel.setAttribute('aria-hidden', deveAbrir ? 'false' : 'true');
+            if (elementos.notificationBell) {
+                elementos.notificationBell.setAttribute('aria-expanded', deveAbrir ? 'true' : 'false');
+            }
+        }
+        function alternarPainelNotificacoes() {
+            atualizarPainelNotificacoes(!painelNotificacoesAberto());
+        }
         function aplicarAvatarUsuario(url) {
             if (!estado.autenticado || !estado.usuarioAutenticado) {
                 fecharModalAvatar({ focusTrigger: false });
@@ -646,6 +663,7 @@
         }
         popularAvataresPadrao();
         sincronizarSelecaoAvatar();
+        atualizarPainelNotificacoes(false);
         const customSelectorInstances = new WeakMap();
         const customSelectorStore = new Set();
         const paginasRestritasUsuario = new Set(['cadastro-armarios', 'cadastro-unidades', 'usuarios', 'logs']);
@@ -1633,7 +1651,7 @@
                 elementos.appShell.classList.add('hidden');
             }
             if (elementos.notificationPanel) {
-                elementos.notificationPanel.style.display = 'none';
+                atualizarPainelNotificacoes(false);
             }
             if (elementos.notificationBadge) {
                 elementos.notificationBadge.textContent = '0';
@@ -2340,9 +2358,14 @@
             }
             // Notificações
             if (elementos.notificationBell) {
-                elementos.notificationBell.addEventListener('click', function() {
-                    elementos.notificationPanel.style.display =
-                        elementos.notificationPanel.style.display === 'block' ? 'none' : 'block';
+                elementos.notificationBell.addEventListener('click', () => {
+                    alternarPainelNotificacoes();
+                });
+                elementos.notificationBell.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        alternarPainelNotificacoes();
+                    }
                 });
             }
             if (elementos.headerUserProfile) {
@@ -2765,14 +2788,23 @@
             }
             // Fechar notificações ao clicar fora
             document.addEventListener('click', function(e) {
-                if (!elementos.notificationBell.contains(e.target) &&
-                    !elementos.notificationPanel.contains(e.target)) {
-                    elementos.notificationPanel.style.display = 'none';
+                if (!painelNotificacoesAberto()) {
+                    return;
+                }
+                const cliqueForaDoPainel = elementos.notificationPanel && !elementos.notificationPanel.contains(e.target);
+                const cliqueForaDoSino = elementos.notificationBell && !elementos.notificationBell.contains(e.target);
+                if (cliqueForaDoPainel && cliqueForaDoSino) {
+                    atualizarPainelNotificacoes(false);
                 }
             });
             document.addEventListener('keydown', event => {
-                if (event.key === 'Escape' && avatarModalAberto()) {
-                    fecharModalAvatar();
+                if (event.key === 'Escape') {
+                    if (avatarModalAberto()) {
+                        fecharModalAvatar();
+                    }
+                    if (painelNotificacoesAberto()) {
+                        atualizarPainelNotificacoes(false);
+                    }
                 }
             });
         }
