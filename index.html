@@ -55,7 +55,6 @@
                     <li><a href="#" class="active" data-page="dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
                     <li><a href="#" data-page="visitantes"><i class="fas fa-user-clock"></i> <span>Visitantes</span></a></li>
                     <li><a href="#" data-page="acompanhantes"><i class="fas fa-user-friends"></i> <span>Acompanhantes</span></a></li>
-                    <li><a href="#" data-page="ocupacao-acompanhantes"><i class="fas fa-clipboard-check"></i> <span>Pré-cadastro Acompanhantes</span></a></li>
                     <li><a href="#" data-page="historico-visitantes"><i class="fas fa-history"></i> <span>Histórico Visitantes</span></a></li>
                     <li><a href="#" data-page="historico-acompanhantes"><i class="fas fa-history"></i> <span>Histórico Acompanhantes</span></a></li>
                     <li><a href="#" data-page="liberacao"><i class="fas fa-table"></i> <span>Liberações</span></a></li>
@@ -263,75 +262,6 @@
                             </thead>
                             <tbody>
                                 <!-- Dados serão preenchidos via JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <!-- Pré-cadastro Acompanhantes -->
-            <div class="page" id="ocupacao-acompanhantes">
-                <div class="data-table">
-                    <div class="table-header">
-                        <div>
-                            <h3>Pré-cadastro de Acompanhantes</h3>
-                            <p class="table-subtitle">Use para registrar armários já ocupados antes da implantação.</p>
-                        </div>
-                    </div>
-                    <form id="ocupacao-rapida-form" class="quick-entry-card">
-                        <div class="quick-entry-grid">
-                            <div class="form-group">
-                                <label for="ocupacao-armario">Armário de acompanhante</label>
-                                <select id="ocupacao-armario" class="form-control"></select>
-                            </div>
-                            <div class="form-group">
-                                <label for="ocupacao-paciente">Nome do paciente</label>
-                                <input type="text" id="ocupacao-paciente" class="form-control" placeholder="Ex.: Maria das Dores">
-                            </div>
-                            <div class="form-group">
-                                <label for="ocupacao-prontuario">Prontuário</label>
-                                <input type="text" id="ocupacao-prontuario" class="form-control" placeholder="Opcional">
-                            </div>
-                            <div class="form-group">
-                                <label for="ocupacao-acompanhante">Nome do acompanhante</label>
-                                <input type="text" id="ocupacao-acompanhante" class="form-control" placeholder="Opcional">
-                            </div>
-                        </div>
-                        <div class="quick-entry-actions">
-                            <button type="submit" class="btn btn-primary" id="ocupacao-btn-salvar">
-                                <i class="fas fa-check"></i> Ocupar armário
-                            </button>
-                        </div>
-                        <div class="quick-entry-helper">Nenhum campo é obrigatório; selecione um armário livre e conclua.</div>
-                    </form>
-                    <div class="table-header">
-                        <div>
-                            <h4>Armários livres para acompanhantes</h4>
-                            <p class="table-subtitle">Clique em selecionar para preencher rapidamente o formulário.</p>
-                        </div>
-                        <div class="table-header-controls">
-                            <button type="button" class="btn btn-success" id="ocupacao-btn-salvar-todos">
-                                <i class="fas fa-save"></i> Salvar todos preenchidos
-                            </button>
-                            <div class="filter-group quick-entry-filter">
-                                <label for="ocupacao-filtro">Filtrar</label>
-                                <input type="text" id="ocupacao-filtro" placeholder="Número ou unidade">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="table-container">
-                        <table id="tabela-ocupacao-acompanhantes">
-                            <thead>
-                                <tr>
-                                    <th>Armário</th>
-                                    <th>Unidade</th>
-                                    <th>Paciente</th>
-                                    <th>Prontuário</th>
-                                    <th>Acompanhante</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Conteúdo preenchido via JavaScript -->
                             </tbody>
                         </table>
                     </div>
