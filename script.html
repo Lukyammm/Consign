@@ -7449,7 +7449,6 @@
             elementos.movimentacaoForm.reset();
             limparItensMovimentacaoFormulario();
             limparAssinaturaMovimentacao(true);
-            inicializarCanvasAssinatura();
             atualizarResponsavelMovimentacaoInfo();
             const padraoLocal = obterDataHoraLocalPadrao();
             elementos.movData.value = padraoLocal.data;
@@ -7465,6 +7464,8 @@
                 travaRolagem.aplicar();
             }
             elementos.movimentacaoModal.style.display = 'flex';
+            await aguardarProximoFrame();
+            inicializarCanvasAssinatura();
             mostrarLoadingMovimentacoes();
             await renderizarMovimentacoes(id);
         }
