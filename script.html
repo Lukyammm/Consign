@@ -1797,8 +1797,11 @@
             if (!estado.autenticado) {
                 return;
             }
-            exibirSkeletonArmarios();
-            restaurarArmariosDoCache();
+
+            const armariosRestauradosDoCache = restaurarArmariosDoCache();
+            if (!armariosRestauradosDoCache && !estado.armariosCarregados) {
+                exibirSkeletonArmarios();
+            }
             try {
                 const inicializacaoPromise = (async () => {
                     const resultado = await callGoogleScript('verificarInicializacao');
@@ -1818,7 +1821,7 @@
                 const carregamentoNotificacoesPromise = inicializacaoPromise.then(() => executarCarregamentoSeguro('carregar notificações', carregarNotificacoes));
 
                 const carregamentoArmarios = await carregamentoArmariosPromise;
-                if (carregamentoArmarios?.sucesso) {
+                if (carregamentoArmarios?.sucesso || estado.armariosCarregados) {
                     renderizarArmarios();
                 }
 
