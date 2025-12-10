@@ -514,6 +514,7 @@
             visitaEstendidaInput: document.getElementById('visita-estendida'),
             filterBtns: document.querySelectorAll('.filter-btn'),
             filterSearchWrapper: document.querySelector('.filter-search'),
+            filterSearchClear: document.getElementById('dashboard-search-clear'),
             dashboardSearch: document.getElementById('dashboard-search'),
             toggleDadosButton: document.getElementById('toggle-dados'),
             contingenciaButton: document.getElementById('btn-contingencia'),
@@ -2451,6 +2452,13 @@
             elementos.usuarioModalClose.addEventListener('click', fecharModalUsuario);
             elementos.btnCancelar.addEventListener('click', fecharModalArmario);
             elementos.usuarioBtnCancelar.addEventListener('click', fecharModalUsuario);
+            const atualizarVisibilidadeBotaoLimparBusca = () => {
+                if (!elementos.filterSearchClear || !elementos.dashboardSearch) return;
+                const possuiTexto = (elementos.dashboardSearch.value || '').trim().length > 0;
+                elementos.filterSearchClear.classList.toggle('visible', possuiTexto);
+                elementos.filterSearchClear.setAttribute('aria-hidden', possuiTexto ? 'false' : 'true');
+                elementos.filterSearchClear.tabIndex = possuiTexto ? 0 : -1;
+            };
             // Filtros
             elementos.filterBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -2463,11 +2471,21 @@
             if (elementos.dashboardSearch) {
                 elementos.dashboardSearch.addEventListener('input', () => {
                     estado.buscaDashboard = elementos.dashboardSearch.value || '';
+                    atualizarVisibilidadeBotaoLimparBusca();
                     renderizarArmarios();
                 });
             }
             if (elementos.filterSearchWrapper && elementos.dashboardSearch) {
                 elementos.filterSearchWrapper.addEventListener('click', () => {
+                    elementos.dashboardSearch.focus();
+                });
+            }
+            if (elementos.filterSearchClear && elementos.dashboardSearch) {
+                elementos.filterSearchClear.addEventListener('click', () => {
+                    elementos.dashboardSearch.value = '';
+                    estado.buscaDashboard = '';
+                    atualizarVisibilidadeBotaoLimparBusca();
+                    renderizarArmarios();
                     elementos.dashboardSearch.focus();
                 });
             }
@@ -2482,6 +2500,7 @@
                 elementos.contingenciaButton.addEventListener('click', abrirCadastroContingencia);
             }
             atualizarBotoesFiltroDashboard();
+            atualizarVisibilidadeBotaoLimparBusca();
             atualizarToggleDadosDashboard();
             const padraoLocalLiberacao = obterDataHoraLocalPadrao();
             if (elementos.liberacaoDataInicio) {

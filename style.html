@@ -1274,6 +1274,39 @@
             font-size: 0.95rem;
             background: transparent;
             color: var(--text-color);
+            flex: 1;
+        }
+        .filter-search .filter-clear {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 40px;
+            min-width: 40px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 16%, var(--border-color) 84%);
+            background: linear-gradient(135deg, #ffffff, color-mix(in srgb, var(--primary-color) 6%, #f5f7fb 94%));
+            color: color-mix(in srgb, var(--primary-color) 50%, var(--dark-color) 50%);
+            box-shadow: 0 10px 22px color-mix(in srgb, var(--primary-color) 12%, var(--shadow-color) 88%);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .filter-search .filter-clear i {
+            font-size: 0.9rem;
+        }
+        .filter-search .filter-clear:hover,
+        .filter-search .filter-clear:focus-visible {
+            border-color: color-mix(in srgb, var(--primary-color) 40%, var(--border-color) 60%);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 8%, #ffffff 92%), #ffffff);
+            box-shadow: 0 12px 26px color-mix(in srgb, var(--primary-color) 18%, var(--shadow-color) 82%);
+            transform: translateY(-1px);
+        }
+        .filter-search .filter-clear.visible {
+            opacity: 1;
+            pointer-events: auto;
         }
         .filter-search:focus-within {
             border-color: color-mix(in srgb, var(--primary-color) 60%, transparent);
