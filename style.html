@@ -3584,6 +3584,41 @@
             border-bottom-color: transparent;
             animation: spin 0.75s linear infinite;
         }
+        .liberacao-status {
+            margin: 8px 0 4px;
+            font-size: 0.85rem;
+            color: color-mix(in srgb, var(--muted-color) 86%, black 14%);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .liberacao-status::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--muted-color) 80%, transparent);
+            display: inline-block;
+        }
+        .liberacao-status--ok {
+            color: color-mix(in srgb, var(--success-color) 84%, black 16%);
+        }
+        .liberacao-status--ok::before {
+            background: var(--success-color);
+        }
+        .liberacao-status--erro {
+            color: color-mix(in srgb, var(--danger-color) 86%, black 14%);
+        }
+        .liberacao-status--erro::before {
+            background: var(--danger-color);
+        }
+        .liberacao-status--loading::before {
+            background: repeating-conic-gradient(from 0deg,
+                    color-mix(in srgb, var(--primary-color) 68%, white 32%) 0deg 120deg,
+                    color-mix(in srgb, var(--primary-dark) 72%, white 28%) 120deg 240deg,
+                    color-mix(in srgb, var(--primary-color) 68%, white 32%) 240deg 360deg);
+            animation: spin 1s linear infinite;
+        }
         .liberacao-progress {
             margin-top: 12px;
             display: flex;
