@@ -3038,9 +3038,34 @@
             const statusNormalizado = normalizarTexto(armario.status);
             return numeroNormalizado.startsWith('contingencia') || statusNormalizado === 'contingencia';
         }
+        let renderizarArmariosVersao = 0;
+        let renderizarArmariosAgendamento = null;
+        function cancelarRenderizacaoArmarios() {
+            if (!renderizarArmariosAgendamento) return;
+            const { tipo, id } = renderizarArmariosAgendamento;
+            if (tipo === 'idle' && typeof cancelIdleCallback === 'function') {
+                cancelIdleCallback(id);
+            }
+            if (tipo === 'timeout') {
+                clearTimeout(id);
+            }
+            renderizarArmariosAgendamento = null;
+        }
+        function agendarProcessamentoRenderizacao(callback) {
+            if (typeof requestIdleCallback === 'function') {
+                const id = requestIdleCallback(callback);
+                renderizarArmariosAgendamento = { tipo: 'idle', id };
+                return;
+            }
+            const id = setTimeout(callback, 0);
+            renderizarArmariosAgendamento = { tipo: 'timeout', id };
+        }
         // Renderizar lista de armários no dashboard
         function renderizarArmarios() {
             if (!elementos.armariosContainer) return;
+            cancelarRenderizacaoArmarios();
+            renderizarArmariosVersao += 1;
+            const versaoExecucao = renderizarArmariosVersao;
             elementos.armariosContainer.innerHTML = '';
             if (elementos.dashboardSearch && elementos.dashboardSearch.value !== (estado.buscaDashboard || '')) {
                 elementos.dashboardSearch.value = estado.buscaDashboard || '';
@@ -3166,9 +3191,11 @@
             };
 
             const processarLote = (deadline) => {
+                if (versaoExecucao !== renderizarArmariosVersao) return;
                 const tamanhoLote = 50;
                 let itensProcessados = 0;
                 while (
+                    versaoExecucao === renderizarArmariosVersao &&
                     itensProcessados < tamanhoLote &&
                     armariosParaExibir[renderizarArmarios.indiceAtual]
                 ) {
@@ -3181,19 +3208,16 @@
                         break;
                     }
                 }
+                if (versaoExecucao !== renderizarArmariosVersao) return;
                 if (renderizarArmarios.indiceAtual < armariosParaExibir.length) {
-                    const agendar = typeof requestIdleCallback === 'function'
-                        ? requestIdleCallback
-                        : (cb) => setTimeout(cb, 0);
-                    agendar(processarLote);
+                    agendarProcessamentoRenderizacao(processarLote);
+                } else {
+                    renderizarArmariosAgendamento = null;
                 }
             };
 
             renderizarArmarios.indiceAtual = 0;
-            const agendar = typeof requestIdleCallback === 'function'
-                ? requestIdleCallback
-                : (cb) => setTimeout(cb, 0);
-            agendar(processarLote);
+            agendarProcessamentoRenderizacao(processarLote);
         }
         function atualizarResumoDashboardLocal() {
             const totais = {
