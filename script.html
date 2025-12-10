@@ -69,6 +69,12 @@
             rascunhoTermo: 'locknac_rascunho_termo',
             preferenciasCabecalho: 'locknac_preferencias_cabecalho'
         };
+        const CAMADAS = {
+            modal: 850,
+            dropdown: 920,
+            overlay: 1100,
+            alert: 1250
+        };
         const travaRolagem = {
             contador: 0,
             aplicar() {
@@ -671,6 +677,13 @@
         let loginInicializado = false;
         let eventosInicializados = false;
         const estadoImpressaoReserva = { dados: null };
+        function garantirPortaisCabecalho() {
+            [elementos.notificationPanel, elementos.avatarModalBackdrop].forEach(elemento => {
+                if (elemento && elemento.parentElement !== document.body) {
+                    document.body.appendChild(elemento);
+                }
+            });
+        }
         function aprimorarSeletoresCabecalho() {
             document.querySelectorAll('.selector-control .selector-input').forEach(select => criarSelectorPersonalizado(select));
         }
@@ -1526,6 +1539,7 @@
             return { success: false, error: 'Erro de conexão com o servidor', _erroNotificado: true };
         }
         async function inicializarAplicacao() {
+            garantirPortaisCabecalho();
             if (aplicacaoInicializada) {
                 await carregarDadosIniciais();
                 atualizarCabecalhoUsuario();
@@ -1939,7 +1953,7 @@
                 if (elementos.notificationBadge) {
                     elementos.notificationBadge.textContent = estado.notificacoes.length;
                 }
-                atualizarPainelNotificacoes();
+                renderizarPainelNotificacoes();
                 return true;
             }
             return false;
@@ -7179,7 +7193,7 @@
                     target: elementos.movimentacaoModal?.querySelector('.modal-content') || elementos.movimentacaoModal || document.body,
                     backdrop: false,
                     heightAuto: false,
-                    zIndex: 2101,
+                    zIndex: CAMADAS.alert,
                     title: 'Definir quantidade para retirar',
                     html: `<p class="swal-helper-text">Disponível: <strong>${quantidadeTotal}</strong> volume(s).</p>`,
                     input: 'number',
@@ -7448,7 +7462,7 @@
                 target: elementos.movimentacaoModal?.querySelector('.modal-content') || elementos.movimentacaoModal || document.body,
                 backdrop: false,
                 heightAuto: false,
-                zIndex: 2101,
+                zIndex: CAMADAS.alert,
                 title: 'Registrar saída de item não cadastrado',
                 html,
                 focusConfirm: false,
@@ -8092,14 +8106,20 @@
             }
         }
         // Atualizar painel de notificações
-        function atualizarPainelNotificacoes() {
+        function renderizarPainelNotificacoes() {
+            if (!elementos.notificationPanel) {
+                return;
+            }
             const notificationList = elementos.notificationPanel.querySelector('.notification-list');
+            if (!notificationList) {
+                return;
+            }
             notificationList.innerHTML = '';
-           
+
             estado.notificacoes.forEach(notificacao => {
                 const item = document.createElement('div');
                 item.className = 'notification-item';
-               
+
                 item.innerHTML = `
                     <div class="notification-icon ${notificacao.tipo}">
                         <i class="fas ${notificacao.tipo === 'danger' ? 'fa-exclamation' : 'fa-clock'}"></i>
@@ -8109,7 +8129,7 @@
                         <div class="notification-time">${notificacao.tempo}</div>
                     </div>
                 `;
-               
+
                 notificationList.appendChild(item);
             });
         }
