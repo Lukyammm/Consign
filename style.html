@@ -2618,7 +2618,10 @@
             background: color-mix(in srgb, var(--primary-color) 12%, transparent);
         }
         .wizard-signature-canvas {
+            display: block;
             width: 100%;
+            max-width: 100%;
+            min-width: 100%;
             height: 150px;
             min-height: 150px;
             background: #fff;
@@ -3036,7 +3039,7 @@
         .mov-signature-area {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: stretch;
             gap: 10px;
         }
         .wizard-signature-actions {
