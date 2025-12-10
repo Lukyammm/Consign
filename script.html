@@ -7897,95 +7897,137 @@
             }
             const identificadores = montarIdentificadoresArmario(armario);
 
-            const finalizarPreparacao = mostrarOverlayCarregamento('Preparando liberação do armário...');
             let termoDados = null;
-            try {
-                const respostaTermo = await callGoogleScript('getTermo', montarPayloadTermo(armario, { incluirFinalizados: true }));
-                if (respostaTermo.success && respostaTermo.data) {
-                    termoDados = respostaTermo.data;
-                } else if (respostaTermo.error && respostaTermo.error !== 'Termo não encontrado') {
-                    mostrarErro('Não foi possível carregar as informações do termo. Atualize a lista e tente novamente.');
-                    return;
-                }
-            } catch (erroBuscaTermo) {
-                console.error('Erro ao buscar termo para liberação:', erroBuscaTermo);
-                mostrarErro('Não foi possível carregar as informações do termo. Tente novamente.');
-                return;
-            } finally {
-                finalizarPreparacao();
-            }
+            let termoErro = '';
+            const resumoId = 'liberacao-resumo-acompanhante';
+            const statusId = 'liberacao-termo-status';
 
-            if (termoDados) {
-                armario.nomeVisitante = termoDados.acompanhante || armario.nomeVisitante;
-                armario.nomePaciente = termoDados.paciente || armario.nomePaciente;
-                armario.leito = termoDados.leito || armario.leito;
-                if (termoDados.telefone) {
-                    armario.whatsapp = termoDados.telefone;
+            const aplicarDadosTermoNoArmario = (dados) => {
+                if (!dados) return;
+                armario.nomeVisitante = dados.acompanhante || armario.nomeVisitante;
+                armario.nomePaciente = dados.paciente || armario.nomePaciente;
+                armario.leito = dados.leito || armario.leito;
+                if (dados.telefone) {
+                    armario.whatsapp = dados.telefone;
                 }
-            }
+            };
 
-            const paciente = termoDados?.paciente || armario.nomePaciente || '-';
-            const prontuario = (termoDados?.prontuario || '').toString().trim();
-            const setor = (termoDados?.setor || '').toString().trim();
-            const leito = termoDados?.leito || armario.leito || '';
-            const acompanhante = termoDados?.acompanhante || armario.nomeVisitante || '-';
-            const telefone = (termoDados?.telefone || armario.whatsapp || '').toString().trim();
-            const documento = (termoDados?.documento || '').toString().trim();
-            const parentesco = (termoDados?.parentesco || '').toString().trim();
-            const inicioUso = (armario.horaInicio || '').toString().trim();
-            const aplicadoEmBruto = termoDados?.aplicadoEm ? formatarDataHora(termoDados.aplicadoEm) : '';
-            const aplicadoEm = aplicadoEmBruto && aplicadoEmBruto !== '-' ? aplicadoEmBruto : '';
-            const setorLeito = [setor, leito].map(valor => (valor || '').toString().trim()).filter(Boolean).join(' • ');
-            const volumesResumo = (() => {
-                if (termoDados?.descricaoVolumes) {
-                    return termoDados.descricaoVolumes;
-                }
-                if (Array.isArray(termoDados?.volumes) && termoDados.volumes.length) {
-                    return termoDados.volumes
-                        .map(volume => {
-                            const quantidadeNumero = Number(volume.quantidade);
-                            const quantidadeTexto = Number.isFinite(quantidadeNumero) && quantidadeNumero > 0
-                                ? `${quantidadeNumero}x`
-                                : '';
-                            const descricaoTexto = (volume.descricao || '').toString().trim();
-                            return [quantidadeTexto, descricaoTexto].filter(Boolean).join(' ');
-                        })
-                        .filter(Boolean)
-                        .join('; ');
-                }
-                const valorBruto = armario.volumes;
-                return formatarVolumeParaExibicao(valorBruto);
-            })();
+            const gerarResumoHtml = (dadosTermo) => {
+                const paciente = dadosTermo?.paciente || armario.nomePaciente || '-';
+                const prontuario = (dadosTermo?.prontuario || '').toString().trim();
+                const setor = (dadosTermo?.setor || '').toString().trim();
+                const leito = dadosTermo?.leito || armario.leito || '';
+                const acompanhante = dadosTermo?.acompanhante || armario.nomeVisitante || '-';
+                const telefone = (dadosTermo?.telefone || armario.whatsapp || '').toString().trim();
+                const documento = (dadosTermo?.documento || '').toString().trim();
+                const parentesco = (dadosTermo?.parentesco || '').toString().trim();
+                const inicioUso = (armario.horaInicio || '').toString().trim();
+                const aplicadoEmBruto = dadosTermo?.aplicadoEm ? formatarDataHora(dadosTermo.aplicadoEm) : '';
+                const aplicadoEm = aplicadoEmBruto && aplicadoEmBruto !== '-' ? aplicadoEmBruto : '';
+                const setorLeito = [setor, leito].map(valor => (valor || '').toString().trim()).filter(Boolean).join(' • ');
+                const volumesResumo = (() => {
+                    if (dadosTermo?.descricaoVolumes) {
+                        return dadosTermo.descricaoVolumes;
+                    }
+                    if (Array.isArray(dadosTermo?.volumes) && dadosTermo.volumes.length) {
+                        return dadosTermo.volumes
+                            .map(volume => {
+                                const quantidadeNumero = Number(volume.quantidade);
+                                const quantidadeTexto = Number.isFinite(quantidadeNumero) && quantidadeNumero > 0
+                                    ? `${quantidadeNumero}x`
+                                    : '';
+                                const descricaoTexto = (volume.descricao || '').toString().trim();
+                                return [quantidadeTexto, descricaoTexto].filter(Boolean).join(' ');
+                            })
+                            .filter(Boolean)
+                            .join('; ');
+                    }
+                    const valorBruto = armario.volumes;
+                    return formatarVolumeParaExibicao(valorBruto);
+                })();
 
-            const resumoHtml = `
-                <div class="info-box" style="text-align:left;">
-                    <p><strong>Acompanhante:</strong> ${acompanhante}</p>
-                    <p><strong>Paciente:</strong> ${paciente}</p>
-                    ${prontuario ? `<p><strong>Prontuário:</strong> ${prontuario}</p>` : ''}
-                    ${setorLeito ? `<p><strong>Setor/Leito:</strong> ${setorLeito}</p>` : ''}
-                    <p><strong>Volumes declarados:</strong> ${volumesResumo}</p>
-                    ${inicioUso ? `<p><strong>Início:</strong> ${inicioUso}</p>` : ''}
-                    ${aplicadoEm ? `<p><strong>Aplicado em:</strong> ${aplicadoEm}</p>` : ''}
-                    ${telefone ? `<p><strong>Contato:</strong> ${telefone}</p>` : ''}
-                    ${documento ? `<p><strong>Documento:</strong> ${documento}</p>` : ''}
-                    ${parentesco ? `<p><strong>Parentesco:</strong> ${parentesco}</p>` : ''}
-                </div>
-            `;
+                return `
+                    <div class="info-box" style="text-align:left;">
+                        <p><strong>Acompanhante:</strong> ${acompanhante}</p>
+                        <p><strong>Paciente:</strong> ${paciente}</p>
+                        ${prontuario ? `<p><strong>Prontuário:</strong> ${prontuario}</p>` : ''}
+                        ${setorLeito ? `<p><strong>Setor/Leito:</strong> ${setorLeito}</p>` : ''}
+                        <p><strong>Volumes declarados:</strong> ${volumesResumo}</p>
+                        ${inicioUso ? `<p><strong>Início:</strong> ${inicioUso}</p>` : ''}
+                        ${aplicadoEm ? `<p><strong>Aplicado em:</strong> ${aplicadoEm}</p>` : ''}
+                        ${telefone ? `<p><strong>Contato:</strong> ${telefone}</p>` : ''}
+                        ${documento ? `<p><strong>Documento:</strong> ${documento}</p>` : ''}
+                        ${parentesco ? `<p><strong>Parentesco:</strong> ${parentesco}</p>` : ''}
+                    </div>
+                `;
+            };
+
+            const atualizarResumoModal = (estadoTermo = 'carregando') => {
+                const container = Swal.getHtmlContainer();
+                if (!container) return;
+                const resumo = container.querySelector(`#${resumoId}`);
+                const status = container.querySelector(`#${statusId}`);
+                if (resumo) {
+                    resumo.innerHTML = gerarResumoHtml(termoDados);
+                }
+                if (status) {
+                    if (estadoTermo === 'carregando') {
+                        status.textContent = 'Buscando dados do termo...';
+                        status.className = 'liberacao-status liberacao-status--loading';
+                    } else if (estadoTermo === 'erro') {
+                        status.textContent = 'Não foi possível carregar dados adicionais do termo. Continue se as informações estiverem corretas.';
+                        status.className = 'liberacao-status liberacao-status--erro';
+                    } else if (estadoTermo === 'ok') {
+                        status.textContent = 'Dados do termo carregados.';
+                        status.className = 'liberacao-status liberacao-status--ok';
+                    }
+                }
+            };
+
+            const carregarTermo = async () => {
+                try {
+                    const respostaTermo = await callGoogleScript('getTermo', montarPayloadTermo(armario, { incluirFinalizados: true }));
+                    if (respostaTermo.success && respostaTermo.data) {
+                        termoDados = respostaTermo.data;
+                        aplicarDadosTermoNoArmario(termoDados);
+                        atualizarResumoModal('ok');
+                    } else if (respostaTermo.error && respostaTermo.error !== 'Termo não encontrado') {
+                        termoErro = 'Erro ao carregar termo';
+                        atualizarResumoModal('erro');
+                    } else {
+                        atualizarResumoModal('ok');
+                    }
+                } catch (erroBuscaTermo) {
+                    console.error('Erro ao buscar termo para liberação:', erroBuscaTermo);
+                    termoErro = 'Erro ao carregar termo';
+                    atualizarResumoModal('erro');
+                }
+            };
+
+            const termoPromise = carregarTermo();
 
             const resultadoConfirmacao = await Swal.fire({
                 title: `Encerrar armário ${armario.numero}?`,
-                html: `${resumoHtml}<p style="margin-top:12px; color:#4b5563;">Confirme que as informações estão corretas para finalizar o armário do acompanhante.</p>`,
+                html: `
+                    <div id="${resumoId}">${gerarResumoHtml(null)}</div>
+                    <p id="${statusId}" class="liberacao-status liberacao-status--loading">Buscando dados do termo...</p>
+                    <p style="margin-top:12px; color:#4b5563;">Confirme que as informações estão corretas para finalizar o armário do acompanhante.</p>
+                `,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Confirmo a liberação',
                 cancelButtonText: 'Cancelar',
-                focusConfirm: false
+                focusConfirm: false,
+                willOpen: () => atualizarResumoModal('carregando')
             });
+
+            await termoPromise.catch(() => {});
 
             if (!resultadoConfirmacao.isConfirmed) {
                 return;
             }
 
+            const acompanhante = termoDados?.acompanhante || armario.nomeVisitante || '-';
             const assinaturaFinal = await coletarAssinaturaEncerramento(acompanhante);
             if (!assinaturaFinal || !assinaturaFinal.base64) {
                 await Swal.fire({
