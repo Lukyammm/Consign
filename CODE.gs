@@ -4822,18 +4822,23 @@ function criarHTMLTermo(dadosTermo) {
       : (hora && !isNaN(hora.getTime())
           ? Utilities.formatDate(hora, 'America/Sao_Paulo', 'HH:mm')
           : '');
+    var assinaturaSrc = montarFonteAssinatura(mov.assinatura, mov.assinaturaMime || 'image/png');
+    var assinaturaHtml = assinaturaSrc
+      ? '<img src="' + assinaturaSrc + '" class="assinatura-img" alt="Assinatura do responsável" />'
+      : (mov.responsavel || '');
     return {
       data: dataFormatada,
       hora: horaFormatada,
       tipo: (mov.tipo || '').toString().toUpperCase(),
       descricao: mov.descricao || '',
-      responsavel: mov.responsavel || ''
+      responsavel: mov.responsavel || '',
+      assinaturaHtml: assinaturaHtml
     };
   }
 
   var movimentosNormalizados = movimentacoesLista.map(formatarMovimentacao);
   while (movimentosNormalizados.length < 8) {
-    movimentosNormalizados.push({ data: '', hora: '', tipo: '', descricao: '', responsavel: '' });
+    movimentosNormalizados.push({ data: '', hora: '', tipo: '', descricao: '', responsavel: '', assinaturaHtml: '' });
   }
   var dataDevolucaoTexto = dadosTermo.finalizadoEm
     ? formatarDataHoraCompleta(dadosTermo.finalizadoEm)
@@ -4944,10 +4949,10 @@ function criarHTMLTermo(dadosTermo) {
   partes.push('<div class="page-break"></div>');
   partes.push('<div class="section-title">Movimentações registradas</div>');
   partes.push('<table class="mov-table">');
-  partes.push('  <thead><tr><th style="width:16%">Data</th><th style="width:12%">Hora</th><th style="width:18%">Tipo</th><th>Descrição</th><th style="width:20%">Responsável</th></tr></thead>');
+  partes.push('  <thead><tr><th style="width:16%">Data</th><th style="width:12%">Hora</th><th style="width:18%">Tipo</th><th>Descrição</th><th style="width:22%">Assinatura do responsável</th></tr></thead>');
   partes.push('  <tbody>');
   movimentosNormalizados.forEach(function(mov) {
-    partes.push('<tr><td>' + (mov.data || '') + '</td><td>' + (mov.hora || '') + '</td><td>' + (mov.tipo || '') + '</td><td>' + (mov.descricao || '') + '</td><td>' + (mov.responsavel || '') + '</td></tr>');
+    partes.push('<tr><td>' + (mov.data || '') + '</td><td>' + (mov.hora || '') + '</td><td>' + (mov.tipo || '') + '</td><td>' + (mov.descricao || '') + '</td><td>' + (mov.assinaturaHtml || '') + '</td></tr>');
   });
   partes.push('  </tbody>');
   partes.push('</table>');
@@ -5097,6 +5102,8 @@ function garantirEstruturaMovimentacoes(sheet) {
   var colunaStatus = 10;
   var colunaItens = 11;
   var colunaVolume = 12;
+  var colunaAssinatura = 13;
+  var colunaAssinaturaMime = 14;
 
   if (!sheet) {
     return {
@@ -5107,7 +5114,7 @@ function garantirEstruturaMovimentacoes(sheet) {
     };
   }
 
-  var minimoColunas = Math.max(colunaItens, colunaStatus, colunaVolume);
+  var minimoColunas = Math.max(colunaItens, colunaStatus, colunaVolume, colunaAssinaturaMime);
   var totalColunas = sheet.getLastColumn();
   if (totalColunas < minimoColunas) {
     sheet.insertColumnsAfter(totalColunas, minimoColunas - totalColunas);
@@ -5124,11 +5131,19 @@ function garantirEstruturaMovimentacoes(sheet) {
   if (!cabecalhos[colunaVolume - 1]) {
     sheet.getRange(1, colunaVolume).setValue('Volume');
   }
+  if (!cabecalhos[colunaAssinatura - 1]) {
+    sheet.getRange(1, colunaAssinatura).setValue('Assinatura');
+  }
+  if (!cabecalhos[colunaAssinaturaMime - 1]) {
+    sheet.getRange(1, colunaAssinaturaMime).setValue('Assinatura MIME');
+  }
 
   return {
     colunaStatus: colunaStatus,
     colunaItens: colunaItens,
     colunaVolume: colunaVolume,
+    colunaAssinatura: colunaAssinatura,
+    colunaAssinaturaMime: colunaAssinaturaMime,
     ultimaColuna: Math.max(totalColunas, minimoColunas)
   };
 }
@@ -5229,6 +5244,8 @@ function getMovimentacoes(dados) {
   var colunaStatus = estruturaMov.colunaStatus;
   var colunaItens = estruturaMov.colunaItens;
   var colunaVolume = estruturaMov.colunaVolume;
+  var colunaAssinatura = estruturaMov.colunaAssinatura;
+  var colunaAssinaturaMime = estruturaMov.colunaAssinaturaMime;
   var possuiArmario = dados && dados.armarioId !== undefined && dados.armarioId !== null && dados.armarioId !== '';
   var armarioId = possuiArmario ? dados.armarioId : null;
   var armarioIdTexto = possuiArmario && armarioId !== null && armarioId !== undefined ? armarioId.toString().trim() : '';
@@ -5256,7 +5273,7 @@ function getMovimentacoes(dados) {
       }
 
       var linhasEncontradas = [];
-      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens, colunaVolume);
+      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens, colunaVolume, colunaAssinaturaMime);
       var intervaloIds = sheet.getRange(2, 2, totalLinhas, 1);
       var textoFinder = intervaloIds.createTextFinder(armarioIdTexto).useRegularExpression(false);
       var correspondencias = textoFinder.findAll();
@@ -5358,6 +5375,10 @@ function getMovimentacoes(dados) {
           hora: formatarHorarioPlanilha(linhaDados[7]),
           dataHoraRegistro: converterParaDataHoraIso(linhaDados[8], ''),
           status: statusLinha || '',
+          assinatura: colunaAssinatura && colunaAssinatura <= linhaDados.length ? linhaDados[colunaAssinatura - 1] : '',
+          assinaturaMime: colunaAssinaturaMime && colunaAssinaturaMime <= linhaDados.length
+            ? linhaDados[colunaAssinaturaMime - 1]
+            : '',
           itens: itens
   });
 }
@@ -5466,7 +5487,15 @@ function salvarMovimentacao(dados) {
     var colunaStatus = estruturaMov.colunaStatus;
     var colunaItens = estruturaMov.colunaItens;
     var colunaVolume = estruturaMov.colunaVolume;
-    var larguraMovimentacao = Math.max(colunaItens, estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaVolume);
+    var colunaAssinatura = estruturaMov.colunaAssinatura;
+    var colunaAssinaturaMime = estruturaMov.colunaAssinaturaMime;
+    var larguraMovimentacao = Math.max(
+      colunaItens,
+      estruturaMov.ultimaColuna,
+      sheet.getLastColumn(),
+      colunaVolume,
+      colunaAssinaturaMime
+    );
 
     // Buscar número do armário
     var tipoArmarioNormalizado = normalizarTextoBasico(dados.tipoArmario);
@@ -5502,6 +5531,21 @@ function salvarMovimentacao(dados) {
     var dataMovimentacao = formatarDataPlanilha(dados.data);
     var horaMovimentacao = formatarHorarioPlanilha(dados.hora);
     var registroMovimento = registroAtual.dataHoraIso;
+    var assinaturaBase64 = (dados.assinaturaBase64 || '').toString().trim();
+    var assinaturaMime = (dados.assinaturaMime || '').toString().trim() || 'image/png';
+
+    if (!assinaturaBase64) {
+      return { success: false, error: 'A assinatura do responsável é obrigatória.' };
+    }
+
+    var padraoPrefixo = /^data:([^;]+);base64,/i;
+    if (padraoPrefixo.test(assinaturaBase64)) {
+      var match = assinaturaBase64.match(padraoPrefixo);
+      if (match && match[1]) {
+        assinaturaMime = match[1];
+      }
+      assinaturaBase64 = assinaturaBase64.replace(padraoPrefixo, '');
+    }
 
     var itensSerializados = '';
     var itensNormalizados = [];
@@ -5566,6 +5610,12 @@ function salvarMovimentacao(dados) {
     }
     if (colunaVolume) {
       novaLinha[colunaVolume - 1] = volumeTotal || '';
+    }
+    if (colunaAssinatura) {
+      novaLinha[colunaAssinatura - 1] = assinaturaBase64;
+    }
+    if (colunaAssinaturaMime) {
+      novaLinha[colunaAssinaturaMime - 1] = assinaturaMime;
     }
 
     sheet.getRange(lastRow + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
