@@ -3002,13 +3002,13 @@
         }
         .mov-signature-wrapper {
             grid-column: 1 / -1;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
+            display: flex;
+            flex-direction: column;
             gap: 14px;
-            justify-items: center;
+            align-items: stretch;
         }
         .mov-signature-card {
-            width: min(920px, 100%);
+            width: 100%;
             border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
             border-radius: 14px;
             padding: 14px;
@@ -3026,7 +3026,17 @@
             margin: 0;
         }
         .signature-actions {
-            justify-content: center;
+            justify-content: flex-start;
+        }
+        .mov-signature-area {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .wizard-signature-actions {
+            justify-content: flex-start;
+            width: 100%;
         }
         .mov-theme-entrada .modal-content,
         .modal-content.mov-theme-entrada {
