@@ -575,6 +575,9 @@
             movObservacaoLabel: document.getElementById('mov-observacao-label'),
             movObservacaoGroup: document.getElementById('mov-observacao-group'),
             movResponsavelInfo: document.getElementById('mov-responsavel-info'),
+            movSignatureCanvas: document.getElementById('mov-signature-canvas'),
+            movSignatureClear: document.getElementById('mov-signature-clear'),
+            movSignatureField: document.getElementById('mov-signature-field'),
             movData: document.getElementById('mov-data'),
             movHora: document.getElementById('mov-hora'),
             btnNovaUnidade: document.getElementById('btn-nova-unidade'),
@@ -1360,6 +1363,9 @@
         let linhaConferenciaAtual = null;
         let termoAssinaturaDesenhada = false;
         let termoDesenhandoAssinatura = false;
+        let movAssinaturaDesenhada = false;
+        let movDesenhandoAssinatura = false;
+        let movAssinaturaImagemAtual = '';
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
             atualizarOpcoesSetorTermo();
@@ -1997,6 +2003,12 @@
                 dataUrl
             };
         }
+        function montarFonteAssinaturaCliente(base64, mime = 'image/png') {
+            if (!base64) return '';
+            if (typeof base64 === 'string' && base64.startsWith('data:')) return base64;
+            const tipo = mime && mime.toString().trim() ? mime.toString().trim() : 'image/png';
+            return `data:${tipo};base64,${base64}`;
+        }
         function inicializarCanvasAssinatura() {
             if (elementos.termoAssinaturaCanvas) {
                 const assinaturaTermoExistente = termoAssinaturaDesenhada
@@ -2014,6 +2026,19 @@
                 ctxTermo.strokeStyle = '#0b1324';
                 if (assinaturaTermoExistente) {
                     restaurarDesenhoCanvas(elementos.termoAssinaturaCanvas, assinaturaTermoExistente);
+                }
+            }
+            if (elementos.movSignatureCanvas) {
+                const assinaturaMovExistente = movAssinaturaDesenhada
+                    ? (elementos.movSignatureCanvas.toDataURL('image/png') || movAssinaturaImagemAtual)
+                    : movAssinaturaImagemAtual;
+                const rectMov = elementos.movSignatureCanvas.getBoundingClientRect();
+                if (rectMov.width && rectMov.height) {
+                    elementos.movSignatureCanvas.width = rectMov.width;
+                    elementos.movSignatureCanvas.height = rectMov.height;
+                }
+                if (assinaturaMovExistente) {
+                    restaurarDesenhoCanvas(elementos.movSignatureCanvas, assinaturaMovExistente);
                 }
             }
         }
@@ -2509,6 +2534,16 @@
                 elementos.termoAssinaturaCanvas.addEventListener('pointerup', finalizarAssinaturaTermo);
                 elementos.termoAssinaturaCanvas.addEventListener('pointerleave', finalizarAssinaturaTermo);
                 elementos.termoAssinaturaCanvas.addEventListener('pointercancel', finalizarAssinaturaTermo);
+            }
+            if (elementos.movSignatureClear) {
+                elementos.movSignatureClear.addEventListener('click', () => limparAssinaturaMovimentacao());
+            }
+            if (elementos.movSignatureCanvas) {
+                elementos.movSignatureCanvas.addEventListener('pointerdown', iniciarAssinaturaMovimentacao);
+                elementos.movSignatureCanvas.addEventListener('pointermove', desenharAssinaturaMovimentacao);
+                elementos.movSignatureCanvas.addEventListener('pointerup', finalizarAssinaturaMovimentacao);
+                elementos.movSignatureCanvas.addEventListener('pointerleave', finalizarAssinaturaMovimentacao);
+                elementos.movSignatureCanvas.addEventListener('pointercancel', finalizarAssinaturaMovimentacao);
             }
             window.addEventListener('resize', debounce(() => {
                 inicializarCanvasAssinatura();
@@ -6566,6 +6601,65 @@
             elementos.termoAssinaturaCanvas?.closest('.wizard-field')?.classList.remove('invalid');
             salvarRascunhoTermo();
         }
+        function limparAssinaturaMovimentacao(silencioso = true) {
+            const canvas = elementos.movSignatureCanvas;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            movAssinaturaDesenhada = false;
+            movDesenhandoAssinatura = false;
+            movAssinaturaImagemAtual = '';
+            if (elementos.movSignatureField) {
+                elementos.movSignatureField.classList.toggle('invalid', !silencioso);
+            }
+        }
+        function obterPosicaoAssinaturaMovimentacao(evento) {
+            const canvas = elementos.movSignatureCanvas;
+            if (!canvas) return { x: 0, y: 0 };
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: evento.clientX - rect.left,
+                y: evento.clientY - rect.top
+            };
+        }
+        function iniciarAssinaturaMovimentacao(evento) {
+            if (!elementos.movSignatureCanvas) return;
+            evento.preventDefault();
+            movDesenhandoAssinatura = true;
+            const ctx = elementos.movSignatureCanvas.getContext('2d');
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#0b1324';
+            const pos = obterPosicaoAssinaturaMovimentacao(evento);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+        function desenharAssinaturaMovimentacao(evento) {
+            if (!movDesenhandoAssinatura || !elementos.movSignatureCanvas) return;
+            evento.preventDefault();
+            const ctx = elementos.movSignatureCanvas.getContext('2d');
+            const pos = obterPosicaoAssinaturaMovimentacao(evento);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            movAssinaturaDesenhada = true;
+            elementos.movSignatureField?.classList.remove('invalid');
+        }
+        function finalizarAssinaturaMovimentacao(evento) {
+            if (!movDesenhandoAssinatura) return;
+            evento.preventDefault();
+            movDesenhandoAssinatura = false;
+            movAssinaturaDesenhada = true;
+            movAssinaturaImagemAtual = elementos.movSignatureCanvas?.toDataURL('image/png') || movAssinaturaImagemAtual;
+            elementos.movSignatureField?.classList.remove('invalid');
+        }
+        function obterAssinaturaMovimentacao() {
+            const canvas = elementos.movSignatureCanvas;
+            if (!canvas || !movAssinaturaDesenhada) {
+                return { base64: '', mime: 'image/png', dataUrl: '' };
+            }
+            return gerarAssinaturaCompacta(canvas);
+        }
         function navegarPassoTermo(delta) {
             const novoIndice = termoPassoAtual + delta;
             if (novoIndice >= 0 && novoIndice < termoSteps.length) {
@@ -7370,6 +7464,8 @@
             elementos.movimentacaoModalTitle.textContent = `Movimentações - Armário ${armario.numero}`;
             elementos.movimentacaoForm.reset();
             limparItensMovimentacaoFormulario();
+            limparAssinaturaMovimentacao(true);
+            inicializarCanvasAssinatura();
             atualizarResponsavelMovimentacaoInfo();
             const padraoLocal = obterDataHoraLocalPadrao();
             elementos.movData.value = padraoLocal.data;
@@ -7395,6 +7491,7 @@
             }
             elementos.movimentacaoModal.style.display = 'none';
             movimentacaoArmarioAtual = null;
+            limparAssinaturaMovimentacao(true);
             fecharDialogoConferencia();
         }
         function mostrarLoadingMovimentacoes() {
@@ -7510,6 +7607,10 @@
                 const bloco = document.createElement('div');
                 bloco.className = 'movimentacao-item';
                 const responsavelTexto = item.responsavel ? item.responsavel : 'Não informado';
+                const assinaturaSrc = montarFonteAssinaturaCliente(item.assinatura, item.assinaturaMime || 'image/png');
+                const assinaturaHtml = assinaturaSrc
+                    ? `<span class="mov-assinatura-preview"><img src="${assinaturaSrc}" alt="Assinatura de ${responsavelTexto}"></span>`
+                    : `<span class="mov-assinatura-texto">${responsavelTexto}</span>`;
                 const itensDetalhe = normalizarListaItensMovimentacao(item.itens);
                 const itensHtml = itensDetalhe.length
                     ? `<ul class="movimentacao-itens-detalhe">${itensDetalhe.map(it => `<li>${Number(it.quantidade)}x ${it.descricao}</li>`).join('')}</ul>`
@@ -7521,7 +7622,7 @@
                     </div>
                     <div class="movimentacao-meta">
                         <span><strong>Descrição:</strong> ${item.descricao}</span>
-                        <span><strong>Responsável:</strong> ${responsavelTexto}</span>
+                        <span class="mov-assinatura-bloco"><strong>Assinatura:</strong> ${assinaturaHtml}</span>
                     </div>
                     ${itensHtml}
                 `;
@@ -7568,6 +7669,12 @@
                     mostrarErro('Descreva o que foi conferido para registrar a conferência.');
                     return;
                 }
+                const assinaturaMov = obterAssinaturaMovimentacao();
+                if (!assinaturaMov.base64) {
+                    mostrarErro('Colha a assinatura do responsável para registrar a movimentação.');
+                    elementos.movSignatureField?.classList.add('invalid');
+                    return;
+                }
                 const dados = {
                     armarioId: identificadores?.idPlanilha || '',
                     numeroArmario: identificadores?.numeroArmario || '',
@@ -7577,7 +7684,9 @@
                     responsavel: responsavelRegistro,
                     data: elementos.movData.value,
                     hora: elementos.movHora.value,
-                    itens: itensMovimentados
+                    itens: itensMovimentados,
+                    assinaturaBase64: assinaturaMov.dataUrl || '',
+                    assinaturaMime: assinaturaMov.mime || 'image/png'
                 };
                 const resultado = await callGoogleScript('salvarMovimentacao', dados);
                 if (resultado.success) {
@@ -7589,6 +7698,8 @@
                         elementos.movObservacao.value = '';
                     }
                     limparItensMovimentacaoFormulario();
+                    limparAssinaturaMovimentacao(true);
+                    inicializarCanvasAssinatura();
                     const padraoLocal = obterDataHoraLocalPadrao();
                     elementos.movData.value = padraoLocal.data;
                     elementos.movHora.value = padraoLocal.hora;

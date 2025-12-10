@@ -970,6 +970,17 @@
                                     <label>Responsável pelo registro</label>
                                     <div class="form-static highlight" id="mov-responsavel-info">Será preenchido automaticamente com seu usuário.</div>
                                 </div>
+                                <div class="form-group wizard-field" id="mov-signature-field">
+                                    <label class="wizard-required" for="mov-signature-canvas">Assinatura do responsável</label>
+                                    <div class="wizard-signature-area mov-signature-area">
+                                        <canvas id="mov-signature-canvas" class="wizard-signature-canvas" aria-label="Área para assinatura da movimentação"></canvas>
+                                        <div class="wizard-signature-actions">
+                                            <button type="button" class="btn btn-secondary" id="mov-signature-clear">Limpar assinatura</button>
+                                        </div>
+                                        <div class="wizard-signature-hint">Toda movimentação exige a assinatura do responsável pelo registro.</div>
+                                    </div>
+                                    <div class="wizard-error">Colha a assinatura para registrar a movimentação.</div>
+                                </div>
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="mov-data">Data</label>
