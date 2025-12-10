@@ -7005,41 +7005,59 @@
             const botaoRemover = document.createElement('button');
             botaoRemover.type = 'button';
             botaoRemover.className = 'icon-btn';
-            botaoRemover.title = 'Remover 1 volume desta saída';
+            botaoRemover.title = 'Definir a quantidade a retirar';
             botaoRemover.innerHTML = '<i class="fas fa-trash" aria-hidden="true"></i>';
             botaoRemover.addEventListener('click', async () => {
                 const quantidadeTotal = Number(linha.dataset.quantidade) || 0;
                 const removerAtual = Number(linha.dataset.removerQuantidade) || 0;
-                const restantes = quantidadeTotal - removerAtual;
 
                 if (quantidadeTotal <= 0) return;
-
-                if (restantes <= 0) {
-                    linha.dataset.removerQuantidade = '0';
-                    atualizarIndicadorRemocao(linha);
-                    return;
-                }
 
                 const confirmacao = await Swal.fire({
                     target: elementos.movimentacaoModal?.querySelector('.modal-content') || elementos.movimentacaoModal || document.body,
                     backdrop: false,
                     heightAuto: false,
                     zIndex: 2101,
-                    title: 'Confirmar retirada de 1 volume?',
-                    text: `Ainda há ${restantes} volume(s) disponível(is) deste item.`,
-                    icon: 'question',
-                    confirmButtonText: 'Remover volume',
+                    title: 'Definir quantidade para retirar',
+                    html: `<p class="swal-helper-text">Disponível: <strong>${quantidadeTotal}</strong> volume(s).</p>`,
+                    input: 'number',
+                    inputLabel: 'Quantidade que sairá',
+                    inputAttributes: {
+                        min: 1,
+                        max: quantidadeTotal,
+                        step: 1
+                    },
+                    inputValue: removerAtual > 0 ? removerAtual : 1,
+                    confirmButtonText: 'Aplicar retirada',
                     cancelButtonText: 'Cancelar',
-                    showCancelButton: true
+                    denyButtonText: 'Limpar seleção',
+                    showDenyButton: true,
+                    showCancelButton: true,
+                    preConfirm: (valor) => {
+                        const numero = Number(valor);
+                        if (!Number.isFinite(numero) || numero <= 0) {
+                            Swal.showValidationMessage('Informe um número maior que zero.');
+                            return false;
+                        }
+                        if (numero > quantidadeTotal) {
+                            Swal.showValidationMessage(`Máximo disponível: ${quantidadeTotal}.`);
+                            return false;
+                        }
+                        return numero;
+                    }
                 });
 
                 if (confirmacao.isConfirmed) {
-                    const novoValor = Math.min(quantidadeTotal, removerAtual + 1);
+                    const novoValor = Number(confirmacao.value);
                     linha.dataset.removerQuantidade = String(novoValor);
                     atualizarIndicadorRemocao(linha);
                     botaoRemover.title = novoValor >= quantidadeTotal
-                        ? 'Clique para desfazer a retirada deste item'
-                        : 'Remover mais um volume deste item';
+                        ? 'Clique para limpar a retirada deste item'
+                        : 'Clique para ajustar a quantidade retirada';
+                } else if (confirmacao.isDenied) {
+                    linha.dataset.removerQuantidade = '0';
+                    atualizarIndicadorRemocao(linha);
+                    botaoRemover.title = 'Definir a quantidade a retirar';
                 }
             });
             acoesWrapper.appendChild(botaoRemover);
@@ -7235,8 +7253,8 @@
                 saida: {
                     label: 'Observações da saída (opcional)',
                     placeholder: 'Use se precisar contextualizar a retirada.',
-                    helper: 'Remova apenas o que será retirado. Sem edição de quantidade ou descrição.',
-                    pill: 'Saída sem edição'
+                    helper: 'Defina a quantidade que sairá em cada item pelo ícone de lixeira.',
+                    pill: 'Saída com controle de quantidade'
                 },
                 conferencia: {
                     label: 'Descrição da conferência (obrigatória)',
