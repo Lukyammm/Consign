@@ -648,6 +648,7 @@
         function fecharSidebarMobile() {
             if (!mobileNavQuery.matches) return;
             elementos.appShell.classList.remove('nav-open');
+            document.body.classList.remove('nav-open');
             if (elementos.sidebarToggle) {
                 elementos.sidebarToggle.setAttribute('aria-expanded', 'false');
             }
@@ -655,6 +656,7 @@
         function alternarSidebarMobile() {
             if (!mobileNavQuery.matches) return;
             const aberta = elementos.appShell.classList.toggle('nav-open');
+            document.body.classList.toggle('nav-open', aberta);
             if (elementos.sidebarToggle) {
                 elementos.sidebarToggle.setAttribute('aria-expanded', aberta ? 'true' : 'false');
             }
@@ -663,6 +665,7 @@
             const estaEmMobile = evento.matches;
             if (!estaEmMobile) {
                 elementos.appShell.classList.remove('nav-open');
+                document.body.classList.remove('nav-open');
                 if (elementos.sidebarToggle) {
                     elementos.sidebarToggle.setAttribute('aria-expanded', 'false');
                 }
