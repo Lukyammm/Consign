@@ -6709,7 +6709,13 @@
             const canvas = elementos.movSignatureCanvas;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.restore();
             movAssinaturaDesenhada = false;
             movDesenhandoAssinatura = false;
             movAssinaturaImagemAtual = '';
