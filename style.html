@@ -3030,13 +3030,17 @@
         }
         .mov-theme-entrada .modal-content,
         .modal-content.mov-theme-entrada {
-            background: linear-gradient(180deg, color-mix(in srgb, #1ba97a 8%, transparent), var(--surface-color));
-            border-color: color-mix(in srgb, #1ba97a 45%, var(--border-color));
+            background: radial-gradient(circle at 15% 20%, rgba(15, 143, 101, 0.12), transparent 32%),
+                linear-gradient(180deg, #f8fbf9 0%, #eef7f2 100%);
+            border-color: color-mix(in srgb, #0f8f65 55%, var(--border-color));
+            box-shadow: 0 18px 40px rgba(15, 143, 101, 0.18);
         }
         .mov-theme-saida .modal-content,
         .modal-content.mov-theme-saida {
-            background: linear-gradient(180deg, color-mix(in srgb, #d64545 8%, transparent), var(--surface-color));
-            border-color: color-mix(in srgb, #d64545 45%, var(--border-color));
+            background: radial-gradient(circle at 20% 18%, rgba(10, 110, 90, 0.12), transparent 34%),
+                linear-gradient(180deg, #f7fbfa 0%, #eaf4f1 100%);
+            border-color: color-mix(in srgb, #0a6e5a 60%, var(--border-color));
+            box-shadow: 0 18px 40px rgba(10, 110, 90, 0.16);
         }
         .movimentacao-item-row {
             display: grid;
@@ -3353,12 +3357,15 @@
             padding: 14px 28px;
             border-radius: 16px;
             letter-spacing: 0.01em;
-            box-shadow: 0 18px 34px color-mix(in srgb, var(--primary-color) 42%, transparent);
+            background: linear-gradient(135deg, #4f8df5 0%, #2f6fe4 100%);
+            border: 1px solid color-mix(in srgb, #2f6fe4 60%, white 40%);
+            color: #f8fbff;
+            box-shadow: 0 16px 36px rgba(47, 111, 228, 0.28);
         }
         .btn-cta-mov:hover,
         .btn-cta-mov:focus-visible {
             transform: translateY(-1px);
-            box-shadow: 0 22px 40px color-mix(in srgb, var(--primary-dark) 32%, transparent);
+            box-shadow: 0 20px 44px rgba(47, 111, 228, 0.36), 0 0 0 3px rgba(47, 111, 228, 0.18);
             outline: none;
         }
         .btn.btn-disabled {
@@ -3412,9 +3419,18 @@
             to { transform: translateY(-50%) rotate(360deg); }
         }
         .btn-primary {
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg,
+                    color-mix(in srgb, var(--primary-color) 12%, #7fb1ff 18%),
+                    color-mix(in srgb, var(--primary-color) 92%, var(--primary-dark) 8%));
             color: white;
-            box-shadow: 0 12px 24px color-mix(in srgb, var(--primary-color) 45%, transparent);
+            border: 1px solid color-mix(in srgb, var(--primary-color) 70%, white 30%);
+            box-shadow: 0 14px 28px color-mix(in srgb, var(--primary-color) 40%, transparent);
+        }
+        .btn-primary.btn-cta-mov {
+            background: linear-gradient(135deg, #4f8df5 0%, #2f6fe4 100%);
+            border-color: color-mix(in srgb, #2f6fe4 62%, white 38%);
+            color: #f8fbff;
+            box-shadow: 0 16px 36px rgba(47, 111, 228, 0.28);
         }
         .status-label {
             display: inline-flex;
@@ -3590,9 +3606,18 @@
             color: color-mix(in srgb, var(--muted-color) 85%, black 15%);
             margin-top: 2px;
         }
-        .btn-primary:hover {
-            background-color: color-mix(in srgb, var(--primary-color) 85%, var(--primary-dark) 15%);
-            box-shadow: 0 18px 32px color-mix(in srgb, var(--primary-color) 35%, transparent);
+        .btn-primary:hover,
+        .btn-primary:focus-visible {
+            background: linear-gradient(135deg,
+                    color-mix(in srgb, var(--primary-color) 10%, #8abcff 22%),
+                    color-mix(in srgb, var(--primary-dark) 25%, var(--primary-color) 75%));
+            box-shadow: 0 18px 36px color-mix(in srgb, var(--primary-color) 42%, transparent),
+                0 0 0 3px color-mix(in srgb, var(--primary-color) 28%, white 72%);
+        }
+        .btn-primary.btn-cta-mov:hover,
+        .btn-primary.btn-cta-mov:focus-visible {
+            background: linear-gradient(135deg, #5c9afc 0%, #2d63db 100%);
+            box-shadow: 0 20px 44px rgba(47, 111, 228, 0.36), 0 0 0 3px rgba(47, 111, 228, 0.18);
         }
         .btn-secondary {
             background-color: color-mix(in srgb, var(--dark-color) 65%, white 35%);
