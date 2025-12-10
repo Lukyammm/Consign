@@ -1953,7 +1953,7 @@
                 if (elementos.notificationBadge) {
                     elementos.notificationBadge.textContent = estado.notificacoes.length;
                 }
-                atualizarPainelNotificacoes();
+                renderizarPainelNotificacoes();
                 return true;
             }
             return false;
@@ -8106,14 +8106,20 @@
             }
         }
         // Atualizar painel de notificações
-        function atualizarPainelNotificacoes() {
+        function renderizarPainelNotificacoes() {
+            if (!elementos.notificationPanel) {
+                return;
+            }
             const notificationList = elementos.notificationPanel.querySelector('.notification-list');
+            if (!notificationList) {
+                return;
+            }
             notificationList.innerHTML = '';
-           
+
             estado.notificacoes.forEach(notificacao => {
                 const item = document.createElement('div');
                 item.className = 'notification-item';
-               
+
                 item.innerHTML = `
                     <div class="notification-icon ${notificacao.tipo}">
                         <i class="fas ${notificacao.tipo === 'danger' ? 'fa-exclamation' : 'fa-clock'}"></i>
@@ -8123,7 +8129,7 @@
                         <div class="notification-time">${notificacao.tempo}</div>
                     </div>
                 `;
-               
+
                 notificationList.appendChild(item);
             });
         }
