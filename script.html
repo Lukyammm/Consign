@@ -7021,6 +7021,10 @@
                 }
 
                 const confirmacao = await Swal.fire({
+                    target: elementos.movimentacaoModal?.querySelector('.modal-content') || elementos.movimentacaoModal || document.body,
+                    backdrop: false,
+                    heightAuto: false,
+                    zIndex: 2101,
                     title: 'Confirmar retirada de 1 volume?',
                     text: `Ainda há ${restantes} volume(s) disponível(is) deste item.`,
                     icon: 'question',
@@ -7313,6 +7317,10 @@
                 </div>
             `;
             const resultado = await Swal.fire({
+                target: elementos.movimentacaoModal?.querySelector('.modal-content') || elementos.movimentacaoModal || document.body,
+                backdrop: false,
+                heightAuto: false,
+                zIndex: 2101,
                 title: 'Registrar saída de item não cadastrado',
                 html,
                 focusConfirm: false,
