@@ -2618,13 +2618,18 @@
             background: color-mix(in srgb, var(--primary-color) 12%, transparent);
         }
         .wizard-signature-canvas {
-            width: 837%;
+            width: 100%;
             height: 150px;
+            min-height: 150px;
             background: #fff;
             border: 1px solid color-mix(in srgb, var(--primary-color) 35%, transparent);
             border-radius: 10px;
             cursor: crosshair;
             touch-action: none;
+        }
+        .mov-signature-area .wizard-signature-canvas {
+            height: 220px;
+            min-height: 220px;
         }
         .final-signature-dialog .wizard-signature-area {
             padding: 14px;
