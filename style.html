@@ -78,6 +78,10 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
+        body.nav-open {
+            overflow: hidden;
+            touch-action: none;
+        }
         html, body, .app-shell, .main-content, #pages-container, .page {
             width: 100%;
             max-width: 100%;
@@ -300,10 +304,11 @@
         }
         .header-selectors {
             display: flex;
-            align-items: center;
+            align-items: stretch;
             gap: 10px;
-            flex-wrap: nowrap;
-            flex: 0 0 auto;
+            flex-wrap: wrap;
+            flex: 1 1 420px;
+            justify-content: flex-end;
             min-width: 0;
         }
         .selector-group {
@@ -409,6 +414,8 @@
             font-size: 1rem;
             font-weight: 700;
             color: var(--dark-color);
+            line-height: 1.2;
+            word-break: break-word;
         }
         .selector-trigger-description {
             font-size: 0.75rem;
@@ -3908,8 +3915,7 @@
             .sidebar-backdrop {
                 position: fixed;
                 inset: 0;
-                background: rgba(0,0,0,0.35);
-                backdrop-filter: blur(2px);
+                background: rgba(0,0,0,0.45);
                 opacity: 0;
                 pointer-events: none;
                 transition: opacity 0.25s ease;
@@ -3929,8 +3935,21 @@
                 opacity: 1;
                 pointer-events: auto;
             }
+            body.nav-open .main-content {
+                overflow: hidden;
+            }
         }
         @media (max-width: 768px) {
+            .selector-trigger {
+                align-items: flex-start;
+            }
+            .selector-trigger-description {
+                white-space: normal;
+                line-height: 1.25;
+            }
+            .selector-control {
+                padding: 12px;
+            }
             .filters {
                 flex-direction: column;
                 align-items: stretch;
