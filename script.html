@@ -551,15 +551,11 @@
             movimentacoesList: document.getElementById('movimentacoes-list'),
             movimentacaoForm: document.getElementById('movimentacao-form'),
             movimentacaoModalTitle: document.getElementById('movimentacao-modal-title'),
-            movConferenciaDialog: document.getElementById('mov-conferencia-dialog'),
-            movConferenciaFechar: document.getElementById('mov-conferencia-fechar'),
-            movConferenciaItem: document.getElementById('mov-conferencia-item'),
-            movConferenciaTexto: document.getElementById('mov-conferencia-texto'),
-            movConferenciaSalvar: document.getElementById('mov-conferencia-salvar'),
-            movConferenciaCancelar: document.getElementById('mov-conferencia-cancelar'),
             movTipo: document.getElementById('mov-tipo'),
             movTabs: document.querySelectorAll('.mov-tab'),
             movTabPanels: document.querySelectorAll('.mov-tab-panel'),
+            movTabPlaceholder: document.getElementById('mov-tab-placeholder'),
+            movFlowContent: document.getElementById('mov-flow-content'),
             movItensList: document.getElementById('mov-itens-list'),
             movItensLabel: document.getElementById('mov-itens-label'),
             movItensHelper: document.getElementById('mov-itens-helper'),
@@ -1360,12 +1356,45 @@
         let movimentacaoInventarioAtual = [];
         let movimentacaoVolumesBase = [];
         let movimentacoesRegistradas = [];
-        let linhaConferenciaAtual = null;
         let termoAssinaturaDesenhada = false;
         let termoDesenhandoAssinatura = false;
         let movAssinaturaDesenhada = false;
         let movDesenhandoAssinatura = false;
         let movAssinaturaImagemAtual = '';
+        let audioContexto = null;
+        function obterAudioContexto() {
+            if (audioContexto) return audioContexto;
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return null;
+            audioContexto = new AudioCtx();
+            return audioContexto;
+        }
+        function reproduzirTom(frequencia = 520, duracao = 0.18, ganhoInicial = 0.08) {
+            const ctx = obterAudioContexto();
+            if (!ctx) return;
+            const agora = ctx.currentTime;
+            const oscilador = ctx.createOscillator();
+            const ganho = ctx.createGain();
+            oscilador.type = 'sine';
+            oscilador.frequency.value = frequencia;
+            ganho.gain.value = ganhoInicial;
+            oscilador.connect(ganho);
+            ganho.connect(ctx.destination);
+            oscilador.start(agora);
+            ganho.gain.exponentialRampToValueAtTime(0.0001, agora + duracao);
+            oscilador.stop(agora + duracao + 0.05);
+        }
+        function reproduzirSomMovimentacao(tipo) {
+            const tipoNormalizado = normalizarTexto(tipo);
+            if (tipoNormalizado === 'entrada') {
+                reproduzirTom(680, 0.16, 0.07);
+            } else if (tipoNormalizado === 'saida') {
+                reproduzirTom(360, 0.18, 0.07);
+            } else if (tipoNormalizado === 'sucesso') {
+                reproduzirTom(520, 0.12, 0.06);
+                setTimeout(() => reproduzirTom(720, 0.12, 0.05), 90);
+            }
+        }
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
             atualizarOpcoesSetorTermo();
@@ -2564,19 +2593,9 @@
                 tab.addEventListener('click', () => ativarAbaMovimentacao(tab.dataset.movTab));
             });
             elementos.movEntradaAdicionar?.addEventListener('click', adicionarItemEntradaRapido);
+            elementos.movEntradaDescricao?.addEventListener('blur', adicionarItemEntradaAoPerderFoco);
             elementos.movSaidaPreencher?.addEventListener('click', () => preencherItensMovimentacaoAPartirInventario('saida'));
             elementos.movSaidaAddPersonalizado?.addEventListener('click', adicionarItemSaidaNaoCadastrado);
-            elementos.movConferenciaFechar?.addEventListener('click', fecharDialogoConferencia);
-            elementos.movConferenciaSalvar?.addEventListener('click', salvarDialogoConferencia);
-            elementos.movConferenciaCancelar?.addEventListener('click', fecharDialogoConferencia);
-            elementos.movConferenciaDialog?.addEventListener('click', evento => {
-                if (evento.target === elementos.movConferenciaDialog) {
-                    fecharDialogoConferencia();
-                }
-            });
-            elementos.movConferenciaTexto?.addEventListener('input', () => {
-                elementos.movConferenciaDialog?.classList.remove('erro');
-            });
             if (elementos.impressaoReservaClose) {
                 elementos.impressaoReservaClose.addEventListener('click', () => fecharModalImpressaoReserva());
             }
@@ -7179,87 +7198,13 @@
                 linha.classList.remove('marcado-remocao');
             }
         }
-        function registrarObservacaoConferencia(linha) {
-            const descricaoBase = linha?.dataset?.descricao || 'Item';
-            const observacaoAtual = linha?.dataset?.observacao || '';
-            if (!elementos.movConferenciaDialog) return;
-
-            linhaConferenciaAtual = linha;
-            elementos.movConferenciaDialog.classList.remove('erro');
-            elementos.movConferenciaDialog.setAttribute('aria-hidden', 'false');
-            elementos.movConferenciaDialog.classList.add('aberto');
-            if (elementos.movConferenciaItem) {
-                elementos.movConferenciaItem.textContent = descricaoBase;
-            }
-            if (elementos.movConferenciaTexto) {
-                elementos.movConferenciaTexto.value = observacaoAtual;
-                elementos.movConferenciaTexto.focus();
-            }
-        }
-        function salvarDialogoConferencia() {
-            const texto = elementos.movConferenciaTexto?.value?.trim();
-            if (!linhaConferenciaAtual || !elementos.movConferenciaDialog) {
-                fecharDialogoConferencia();
-                return;
-            }
-            if (!texto) {
-                elementos.movConferenciaDialog.classList.add('erro');
-                elementos.movConferenciaTexto?.focus();
-                return;
-            }
-
-            linhaConferenciaAtual.dataset.observacao = texto;
-            const display = linhaConferenciaAtual.querySelector('.mov-item-display');
-            display?.setAttribute('data-observacao', texto);
-            if (display) {
-                let badge = display.querySelector('.mov-item-flag.observacao');
-                if (!badge) {
-                    badge = document.createElement('span');
-                    badge.className = 'mov-item-flag observacao';
-                    display.appendChild(badge);
-                }
-                badge.textContent = texto || 'Observação registrada';
-            }
-            fecharDialogoConferencia();
-        }
-        function fecharDialogoConferencia() {
-            if (elementos.movConferenciaDialog) {
-                elementos.movConferenciaDialog.classList.remove('aberto');
-                elementos.movConferenciaDialog.classList.remove('erro');
-                elementos.movConferenciaDialog.setAttribute('aria-hidden', 'true');
-            }
-            linhaConferenciaAtual = null;
-        }
-        function criarLinhaConferencia(item = {}) {
-            if (!elementos.movItensList) return null;
-            const linha = document.createElement('div');
-            linha.className = 'movimentacao-item-row readonly';
-            linha.dataset.quantidade = item.quantidade || 0;
-            linha.dataset.descricao = item.descricao || '';
-
-            const corpo = document.createElement('div');
-            corpo.className = 'mov-item-display';
-            const titulo = document.createElement('div');
-            titulo.innerHTML = `<strong>${Number(item.quantidade) || 0}x</strong> ${item.descricao || 'Item sem descrição'}`;
-            corpo.appendChild(titulo);
-
-            const acoesWrapper = document.createElement('div');
-            acoesWrapper.className = 'mov-item-actions';
-            const botaoVer = document.createElement('button');
-            botaoVer.type = 'button';
-            botaoVer.className = 'icon-btn';
-            botaoVer.title = 'Visualizar conferência';
-            botaoVer.innerHTML = '<i class="fas fa-eye" aria-hidden="true"></i>';
-            botaoVer.addEventListener('click', () => registrarObservacaoConferencia(linha));
-            acoesWrapper.appendChild(botaoVer);
-
-            linha.appendChild(corpo);
-            linha.appendChild(acoesWrapper);
-            elementos.movItensList.appendChild(linha);
-            return linha;
-        }
         function preencherItensMovimentacaoAPartirInventario(tipo) {
             const tipoNormalizado = normalizarTexto(tipo);
+            if (!tipoNormalizado) {
+                limparItensMovimentacaoFormulario();
+                return;
+            }
+
             limparItensMovimentacaoFormulario();
             const itensReferencia = (movimentacaoInventarioAtual && movimentacaoInventarioAtual.length)
                 ? movimentacaoInventarioAtual
@@ -7284,8 +7229,6 @@
             itensReferencia.forEach(item => {
                 if (tipoNormalizado === 'saida') {
                     criarLinhaSaida(item, 'registrado');
-                } else if (tipoNormalizado === 'conferencia') {
-                    criarLinhaConferencia(item);
                 }
             });
         }
@@ -7313,19 +7256,6 @@
                     .filter(item => item.quantidade > 0 && item.descricao);
             }
 
-            if (tipo === 'conferencia') {
-                return linhas.map(linha => {
-                    const quantidade = Number(linha.dataset.quantidade);
-                    const descricaoBase = linha.dataset.descricao || '';
-                    const observacao = linha.dataset.observacao || '';
-                    const descricao = observacao || descricaoBase;
-                    return {
-                        quantidade: Number.isFinite(quantidade) ? quantidade : 0,
-                        descricao
-                    };
-                }).filter(item => item.quantidade > 0 && item.descricao);
-            }
-
             return linhas.map(linha => {
                 const qtd = Number(linha.querySelector('input[type="number"]')?.value);
                 const descricao = linha.querySelector('input[type="text"]')?.value.trim() || '';
@@ -7349,25 +7279,22 @@
                     placeholder: 'Use se precisar contextualizar a retirada.',
                     helper: 'Defina a quantidade que sairá em cada item pelo ícone de lixeira.',
                     pill: 'Saída com controle de quantidade'
-                },
-                conferencia: {
-                    label: 'Descrição da conferência (obrigatória)',
-                    placeholder: 'Descreva o que foi verificado nesta conferência.',
-                    helper: 'Clique no ícone de visualização para registrar observações por item.',
-                    pill: 'Conferência registrada'
                 }
             };
 
-            const contexto = descricaoPorTipo[tipoNormalizado] || descricaoPorTipo.entrada;
+            const contexto = descricaoPorTipo[tipoNormalizado] || {
+                label: 'Observações da movimentação (opcional)',
+                placeholder: 'Selecione entrada ou saída para habilitar os campos.',
+                helper: 'Selecione o tipo de movimentação para carregar os itens.',
+                pill: 'Movimentação'
+            };
             if (elementos.movObservacaoLabel) {
                 elementos.movObservacaoLabel.textContent = contexto.label;
             }
             if (elementos.movObservacao) {
                 elementos.movObservacao.placeholder = contexto.placeholder;
-                elementos.movObservacao.required = tipoNormalizado === 'conferencia';
-                if (tipoNormalizado !== 'conferencia') {
-                    elementos.movObservacao.removeAttribute('aria-required');
-                }
+                elementos.movObservacao.required = false;
+                elementos.movObservacao.removeAttribute('aria-required');
             }
             if (elementos.movItensHelper) {
                 elementos.movItensHelper.textContent = contexto.helper;
@@ -7376,8 +7303,36 @@
                 elementos.movItensPills.textContent = contexto.pill;
             }
         }
-        function ativarAbaMovimentacao(tipo = 'entrada') {
-            const tipoNormalizado = normalizarTexto(tipo) || 'entrada';
+        function ativarAbaMovimentacao(tipo = '') {
+            const tipoNormalizado = normalizarTexto(tipo);
+            const modal = elementos.movimentacaoModal;
+            const modalContent = modal?.querySelector('.modal-content');
+            const temaClasse = tipoNormalizado === 'saida' ? 'mov-theme-saida'
+                : tipoNormalizado === 'entrada'
+                    ? 'mov-theme-entrada'
+                    : '';
+            modal?.classList.remove('mov-theme-entrada', 'mov-theme-saida');
+            modalContent?.classList.remove('mov-theme-entrada', 'mov-theme-saida');
+            if (temaClasse) {
+                modal?.classList.add(temaClasse);
+                modalContent?.classList.add(temaClasse);
+            }
+
+            if (!tipoNormalizado) {
+                if (elementos.movTipo) elementos.movTipo.value = '';
+                elementos.movTabs?.forEach(tab => {
+                    tab.classList.remove('active');
+                    tab.setAttribute('aria-selected', 'false');
+                });
+                elementos.movTabPanels?.forEach(painel => painel.classList.remove('active'));
+                elementos.movTabPlaceholder?.classList.remove('hidden');
+                elementos.movFlowContent?.classList.add('hidden');
+                if (elementos.movItensList) {
+                    elementos.movItensList.innerHTML = '';
+                }
+                atualizarContextoMovimentacao('');
+                return;
+            }
             if (elementos.movTipo) {
                 elementos.movTipo.value = tipoNormalizado;
             }
@@ -7389,11 +7344,14 @@
             elementos.movTabPanels?.forEach(painel => {
                 painel.classList.toggle('active', painel.dataset.movPanel === tipoNormalizado);
             });
+            elementos.movTabPlaceholder?.classList.add('hidden');
+            elementos.movFlowContent?.classList.remove('hidden');
             atualizarContextoMovimentacao(tipoNormalizado);
-            if (tipoNormalizado !== 'conferencia' && elementos.movObservacao) {
+            if (elementos.movObservacao) {
                 elementos.movObservacao.value = '';
             }
             preencherItensMovimentacaoAPartirInventario(tipoNormalizado);
+            reproduzirSomMovimentacao(tipoNormalizado);
         }
         function adicionarItemEntradaRapido() {
             const quantidade = Number(elementos.movEntradaQuantidade?.value);
@@ -7416,6 +7374,15 @@
             elementos.movEntradaQuantidade.value = '';
             elementos.movEntradaDescricao.value = '';
             elementos.movEntradaQuantidade.focus();
+        }
+        function adicionarItemEntradaAoPerderFoco() {
+            const tipoAtual = normalizarTexto(elementos.movTipo?.value);
+            if (tipoAtual !== 'entrada') return;
+            const quantidade = Number(elementos.movEntradaQuantidade?.value);
+            const descricao = elementos.movEntradaDescricao?.value?.trim();
+            if (!descricao) return;
+            if (!Number.isFinite(quantidade) || quantidade <= 0) return;
+            adicionarItemEntradaRapido();
         }
         async function adicionarItemSaidaNaoCadastrado() {
             const html = `
@@ -7476,7 +7443,7 @@
             movimentacaoInventarioAtual = [];
             movimentacaoVolumesBase = [];
             movimentacoesRegistradas = [];
-            ativarAbaMovimentacao('entrada');
+            ativarAbaMovimentacao('');
             if (elementos.movimentacaoModal.style.display !== 'flex') {
                 travaRolagem.aplicar();
             }
@@ -7492,7 +7459,6 @@
             elementos.movimentacaoModal.style.display = 'none';
             movimentacaoArmarioAtual = null;
             limparAssinaturaMovimentacao(true);
-            fecharDialogoConferencia();
         }
         function mostrarLoadingMovimentacoes() {
             if (!elementos.movimentacoesList) return;
@@ -7506,8 +7472,7 @@
         function formatarTituloMovimento(tipo) {
             const mapa = {
                 entrada: 'Entrada de pertences',
-                saida: 'Saída de pertences',
-                conferencia: 'Conferência'
+                saida: 'Saída de pertences'
             };
             return mapa[tipo] || tipo;
         }
@@ -7660,15 +7625,7 @@
                     mostrarErro('Informe os itens movimentados com quantidade e descrição.');
                     return;
                 }
-                if (tipoSelecionado === 'conferencia' && !itensMovimentados.length) {
-                    mostrarErro('Adicione ao menos um item conferido para registrar.');
-                    return;
-                }
                 const observacaoMov = elementos.movObservacao?.value?.trim() || '';
-                if (tipoSelecionado === 'conferencia' && !observacaoMov) {
-                    mostrarErro('Descreva o que foi conferido para registrar a conferência.');
-                    return;
-                }
                 const assinaturaMov = obterAssinaturaMovimentacao();
                 if (!assinaturaMov.base64) {
                     mostrarErro('Colha a assinatura do responsável para registrar a movimentação.');
@@ -7692,6 +7649,7 @@
                 if (resultado.success) {
                     await renderizarMovimentacoes(movimentacaoArmarioAtual);
                     mostrarSucesso('Movimentação registrada com sucesso');
+                    reproduzirSomMovimentacao('sucesso');
                     elementos.movimentacaoForm.reset();
                     elementos.movTipo.value = tipoSelecionado;
                     if (elementos.movObservacao) {
