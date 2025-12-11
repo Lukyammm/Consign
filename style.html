@@ -3930,7 +3930,7 @@
                 transform: translateX(-100%);
                 box-shadow: 0 10px 30px rgba(0,0,0,0.35);
             }
-            .sidebar-backdrop {
+        .sidebar-backdrop {
                 position: fixed;
                 inset: 0;
                 background: rgba(0,0,0,0.45);
@@ -3938,6 +3938,7 @@
                 pointer-events: none;
                 transition: opacity 0.25s ease;
                 z-index: calc(var(--z-modal-overlay) - 10);
+                display: none;
             }
             .main-content {
                 margin-left: 0;
@@ -3952,6 +3953,7 @@
             .app-shell.nav-open .sidebar-backdrop {
                 opacity: 1;
                 pointer-events: auto;
+                display: block;
             }
             body.nav-open .main-content {
                 overflow: hidden;
