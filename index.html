@@ -76,19 +76,23 @@
         <!-- Main Content -->
         <div class="main-content">
         <!-- Header -->
-        <div class="header">
-            <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menu de navegação" aria-expanded="false">
-                <i class="fas fa-bars" aria-hidden="true"></i>
-            </button>
-            <div class="header-title">
-                <h1>Dashboard</h1>
-            </div>
-            <div class="header-actions">
-                <div class="header-selectors compact">
-                    <div class="selector-group compact">
-                        <label for="profile-select" class="sr-only">Perfil</label>
-                        <div class="selector-control compact" data-selector>
-                            <button type="button" class="selector-trigger" id="profile-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Perfil">
+            <div class="header">
+                <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menu de navegação" aria-expanded="false">
+                    <i class="fas fa-bars" aria-hidden="true"></i>
+                </button>
+                <div class="header-title">
+                    <h1>Dashboard</h1>
+                </div>
+                <div class="header-actions">
+                    <div class="header-greeting" id="header-user-greeting" aria-live="polite">
+                        <span class="greeting-label">Olá,</span>
+                        <span class="greeting-name" id="header-user-greeting-name">Usuário</span>
+                    </div>
+                    <div class="header-selectors compact">
+                        <div class="selector-group compact">
+                            <label for="profile-select" class="sr-only">Perfil</label>
+                            <div class="selector-control compact" data-selector>
+                                <button type="button" class="selector-trigger" id="profile-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Perfil">
                                 <i class="fas fa-users selector-icon" aria-hidden="true"></i>
                                 <div class="selector-trigger-text">
                                     <span class="selector-trigger-label">Perfil geral</span>

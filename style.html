@@ -302,6 +302,32 @@
             flex: 1 1 auto;
             min-width: 0;
         }
+        .header-greeting {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 12%, white 88%), white);
+            border: 1px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+            color: var(--dark-color);
+            font-weight: 600;
+            min-width: 0;
+        }
+        .greeting-label {
+            color: var(--muted-color);
+            font-weight: 500;
+        }
+        .greeting-name {
+            color: var(--primary-dark);
+            font-size: 1rem;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 200px;
+            display: inline-block;
+        }
         .header-selectors {
             display: flex;
             align-items: stretch;

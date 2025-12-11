@@ -119,10 +119,30 @@
                 label: 'Raposa',
                 url: 'https://api.dicebear.com/7.x/lorelei-neutral/png?seed=Raposa&backgroundColor=fee2e2'
             },
-            {
+            { 
                 id: 'avatar-robotica',
                 label: 'Robótica',
                 url: 'https://api.dicebear.com/7.x/bottts/png?seed=Robotica&backgroundColor=dbebff'
+            },
+            {
+                id: 'avatar-equipe',
+                label: 'Equipe',
+                url: 'https://api.dicebear.com/7.x/avataaars-neutral/png?seed=Equipe&backgroundColor=ecfeff'
+            },
+            {
+                id: 'avatar-guardia',
+                label: 'Guardiã',
+                url: 'https://api.dicebear.com/7.x/adventurer/png?seed=Guardia&backgroundColor=f1f5f9'
+            },
+            {
+                id: 'avatar-clinico',
+                label: 'Clínico',
+                url: 'https://api.dicebear.com/7.x/pixel-art/png?seed=Clinico&backgroundColor=e0f2fe'
+            },
+            {
+                id: 'avatar-analista',
+                label: 'Analista',
+                url: 'https://api.dicebear.com/7.x/micah/png?seed=Analista&backgroundColor=fef3c7'
             }
         ];
         let armazenamentoLocalDisponivel;
@@ -535,6 +555,8 @@
             headerUserAvatar: document.getElementById('header-user-avatar'),
             headerUserName: document.getElementById('header-user-name'),
             headerUserRole: document.getElementById('header-user-role'),
+            headerUserGreeting: document.getElementById('header-user-greeting'),
+            headerUserGreetingName: document.getElementById('header-user-greeting-name'),
             avatarModal: document.getElementById('avatar-modal'),
             avatarModalBackdrop: document.getElementById('avatar-modal-backdrop'),
             avatarModalClose: document.getElementById('avatar-modal-close'),
@@ -1216,6 +1238,22 @@
             const unica = partes[0];
             return unica.slice(0, Math.min(2, unica.length)).toUpperCase();
         }
+        function obterNomeSaudacao(nome) {
+            const texto = (nome || '').toString().trim();
+            if (!texto) return 'Usuário';
+            const partes = texto.split(/\s+/).filter(Boolean);
+            const conectores = new Set(['de', 'do', 'da', 'dos', 'das']);
+            const primeiro = partes[0];
+            let segundo = '';
+            for (let i = 1; i < partes.length; i += 1) {
+                const atual = partes[i];
+                if (!conectores.has(atual.toLowerCase())) {
+                    segundo = atual;
+                    break;
+                }
+            }
+            return segundo ? `${primeiro} ${segundo}` : primeiro;
+        }
         function normalizarListaSetores(setores) {
             const lista = Array.isArray(setores) ? setores : [];
             const vistos = new Set();
@@ -1340,13 +1378,20 @@
                 elementos.headerUserAvatar.style.backgroundImage = '';
                 elementos.headerUserAvatar.classList.remove('has-image');
                 elementos.headerUserProfile?.setAttribute('aria-label', 'Perfil do usuário');
+                if (elementos.headerUserGreetingName) {
+                    elementos.headerUserGreetingName.textContent = 'Visitante';
+                }
                 atualizarResponsavelMovimentacaoInfo();
                 return;
             }
             const nomeLimpo = (usuario.nome || 'Usuário').toString().trim();
+            const saudacao = obterNomeSaudacao(nomeLimpo);
             elementos.headerUserName.textContent = nomeLimpo;
             elementos.headerUserRole.textContent = perfilAtualEhAdmin() ? 'Administrador' : 'Usuário';
             elementos.headerUserProfile?.setAttribute('aria-label', `Perfil do usuário ${nomeLimpo} (${elementos.headerUserRole.textContent})`);
+            if (elementos.headerUserGreetingName) {
+                elementos.headerUserGreetingName.textContent = saudacao;
+            }
             const avatarUrl = usuario.avatarUrl ? usuario.avatarUrl.toString().trim() : '';
             if (avatarUrl) {
                 elementos.headerUserAvatar.style.backgroundImage = `url("${avatarUrl.replace(/"/g, '\\"')}")`;
