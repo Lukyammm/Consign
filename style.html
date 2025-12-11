@@ -3929,15 +3929,16 @@
             .sidebar {
                 transform: translateX(-100%);
                 box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+                z-index: var(--z-overlay);
             }
-        .sidebar-backdrop {
+            .sidebar-backdrop {
                 position: fixed;
                 inset: 0;
                 background: rgba(0,0,0,0.45);
                 opacity: 0;
                 pointer-events: none;
                 transition: opacity 0.25s ease;
-                z-index: calc(var(--z-modal-overlay) - 10);
+                z-index: calc(var(--z-overlay) - 1);
                 display: none;
             }
             .main-content {
