@@ -3900,6 +3900,24 @@
                 z-index: var(--z-dropdown);
             }
         }
+        @media (max-width: 1280px) and (min-width: 1025px) {
+            .selector-control .selector-dropdown {
+                left: calc(var(--sidebar-width) + 16px);
+                right: 16px;
+                width: auto;
+                max-width: calc(100vw - var(--sidebar-width) - 32px);
+                min-width: min(320px, calc(100vw - var(--sidebar-width) - 32px));
+                transform: translateY(8px);
+            }
+            .selector-control.open .selector-dropdown {
+                transform: translateY(16px);
+            }
+            .selector-control .selector-dropdown::before,
+            .selector-control .selector-dropdown::after {
+                left: 32px;
+                transform: none;
+            }
+        }
         @media (max-width: 1024px) {
             body {
                 display: block;
