@@ -4081,16 +4081,21 @@
                 width: 100%;
             }
             .header-selectors.compact {
-                flex-direction: column;
-                align-items: stretch;
-                width: 100%;
-                gap: 10px;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+                width: auto;
+                gap: 8px;
             }
             .selector-group.compact {
-                width: 100%;
+                width: auto;
+                flex: 0 0 auto;
             }
             .selector-control.compact {
-                width: 100%;
+                width: 44px;
+                height: 44px;
+                padding: 8px;
             }
             .selector-control.compact .selector-trigger-text,
             .selector-control.compact .selector-arrow {
@@ -4185,6 +4190,8 @@
             }
             .header {
                 align-items: flex-start;
+                padding: 10px 0 8px;
+                margin-bottom: 12px;
             }
             .header-actions {
                 gap: 10px;
@@ -4198,6 +4205,8 @@
                 align-items: flex-start;
             }
             .cards-hero {
+                margin-top: 0;
+                margin-bottom: 18px;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 12px;
                 overflow-x: hidden;
