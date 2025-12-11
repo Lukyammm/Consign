@@ -4204,6 +4204,12 @@
             .header-selectors {
                 align-items: flex-start;
             }
+            .header-selectors.compact {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+                width: auto;
+            }
             .cards-hero {
                 margin-top: 0;
                 margin-bottom: 18px;
@@ -4240,6 +4246,15 @@
                 left: 12px;
                 right: 12px;
                 width: auto;
+            }
+            .selector-control.compact {
+                width: 42px;
+                height: 42px;
+                padding: 8px;
+            }
+            .selector-control.compact .selector-trigger-text,
+            .selector-control.compact .selector-arrow {
+                display: none;
             }
             .contingencia-actions {
                 flex-direction: column;
