@@ -222,6 +222,45 @@
                 console.warn('Não foi possível limpar a sessão do usuário:', erro);
             }
         }
+        async function lerArquivoImagem(arquivo, maxLargura = 1280, qualidade = 0.72) {
+            if (!arquivo) return null;
+            const mimeEntrada = arquivo.type || 'image/jpeg';
+            const mimeSaida = mimeEntrada.includes('png') ? mimeEntrada : 'image/jpeg';
+            const bufferBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(arquivo);
+            });
+            const dataUrl = typeof bufferBase64 === 'string' ? bufferBase64 : '';
+            if (!dataUrl) return null;
+            const imagem = await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = dataUrl;
+            });
+            const canvas = document.createElement('canvas');
+            const proporcao = imagem.width > maxLargura ? maxLargura / imagem.width : 1;
+            const larguraDestino = Math.max(1, Math.round(imagem.width * proporcao));
+            const alturaDestino = Math.max(1, Math.round(imagem.height * proporcao));
+            canvas.width = larguraDestino;
+            canvas.height = alturaDestino;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imagem, 0, 0, larguraDestino, alturaDestino);
+            const dataUrlCompacta = canvas.toDataURL(mimeSaida, qualidade);
+            const base64 = dataUrlCompacta.split(',')[1];
+            return { base64, mime: mimeSaida, dataUrl: dataUrlCompacta, nome: arquivo.name };
+        }
+        async function lerArquivosDeInput(input) {
+            if (!input || !input.files || !input.files.length) return [];
+            const resultados = [];
+            for (const file of Array.from(input.files)) {
+                const imagem = await lerArquivoImagem(file);
+                if (imagem) resultados.push(imagem);
+            }
+            return resultados;
+        }
         function persistirSessaoAtual() {
             if (estado.autenticado && estado.usuarioAutenticado) {
                 const usuarioAtual = {
@@ -616,6 +655,9 @@
             movObservacao: document.getElementById('mov-observacao'),
             movObservacaoLabel: document.getElementById('mov-observacao-label'),
             movObservacaoGroup: document.getElementById('mov-observacao-group'),
+            movFotosGroup: document.getElementById('mov-fotos-group'),
+            movFotos: document.getElementById('mov-fotos'),
+            movFotosPreview: document.getElementById('mov-fotos-preview'),
             movResponsavelInfo: document.getElementById('mov-responsavel-info'),
             movSignatureCanvas: document.getElementById('mov-signature-canvas'),
             movSignatureClear: document.getElementById('mov-signature-clear'),
@@ -1429,6 +1471,7 @@
         const termoSteps = Array.from(document.querySelectorAll('#termo-form .wizard-step'));
         let termoPassoAtual = 0;
         let termoArmarioAtual = null;
+        let termoTipoAtual = '';
         let termoPreCadastro = null;
         let termoCadastroArmario = null;
         let movimentacaoArmarioAtual = null;
@@ -1436,6 +1479,7 @@
         let movimentacaoInventarioAtual = [];
         let movimentacaoVolumesBase = [];
         let movimentacoesRegistradas = [];
+        let movimentacaoFotosSelecionadas = [];
         let termoAssinaturaDesenhada = false;
         let termoDesenhandoAssinatura = false;
         let movAssinaturaDesenhada = false;
@@ -2720,6 +2764,12 @@
             elementos.movEntradaDescricao?.addEventListener('blur', adicionarItemEntradaAoPerderFoco);
             elementos.movSaidaPreencher?.addEventListener('click', () => preencherItensMovimentacaoAPartirInventario('saida'));
             elementos.movSaidaAddPersonalizado?.addEventListener('click', adicionarItemSaidaNaoCadastrado);
+            if (elementos.movFotos) {
+                elementos.movFotos.addEventListener('change', async () => {
+                    movimentacaoFotosSelecionadas = await lerArquivosDeInput(elementos.movFotos);
+                    renderizarPreviewMovFotos();
+                });
+            }
             if (elementos.impressaoReservaClose) {
                 elementos.impressaoReservaClose.addEventListener('click', () => fecharModalImpressaoReserva());
             }
@@ -6491,6 +6541,7 @@
             }
             if (!armario) return;
             const identificadores = montarIdentificadoresArmario(armario);
+            termoTipoAtual = normalizarTexto(identificadores?.tipo || armario.tipo || '');
             ajustarObrigatoriedadeCamposPaciente(identificadores?.tipo || armario.tipo || '');
             termoArmarioAtual = id;
             termoPassoAtual = 0;
@@ -6635,6 +6686,70 @@
             if (dados.descricao) {
                 inputDesc.value = dados.descricao;
             }
+            const colFoto = document.createElement('div');
+            colFoto.className = 'wizard-volume-col volume-photo-col';
+            const labelFoto = document.createElement('label');
+            labelFoto.textContent = 'Foto do volume (opcional)';
+            const inputFoto = document.createElement('input');
+            inputFoto.type = 'file';
+            inputFoto.accept = 'image/*';
+            inputFoto.capture = 'environment';
+            inputFoto.className = 'wizard-input termo-volume-foto';
+            const previewFoto = document.createElement('div');
+            previewFoto.className = 'volume-photo-preview';
+            const previewImg = document.createElement('img');
+            previewImg.alt = 'Pré-visualização do volume';
+            previewImg.loading = 'lazy';
+            previewFoto.appendChild(previewImg);
+            const previewInfo = document.createElement('small');
+            previewInfo.className = 'helper-text';
+            previewInfo.textContent = 'Use a câmera para registrar a bolsa deste item.';
+            colFoto.appendChild(labelFoto);
+            colFoto.appendChild(inputFoto);
+            colFoto.appendChild(previewFoto);
+            colFoto.appendChild(previewInfo);
+
+            if (termoTipoAtual !== 'acompanhante') {
+                colFoto.style.display = 'none';
+            }
+
+            const atualizarPreviewFoto = (dadosFoto) => {
+                if (dadosFoto && (dadosFoto.dataUrl || dadosFoto.url)) {
+                    previewImg.src = dadosFoto.dataUrl || dadosFoto.url;
+                    previewFoto.classList.add('has-image');
+                } else {
+                    previewImg.removeAttribute('src');
+                    previewFoto.classList.remove('has-image');
+                }
+            };
+
+            if (dados.foto && (dados.foto.url || dados.foto.dataUrl)) {
+                item.dataset.fotoUrl = dados.foto.url || '';
+                item.dataset.fotoMime = dados.foto.mime || 'image/jpeg';
+                item.dataset.fotoId = dados.foto.id || '';
+                item.dataset.fotoNome = dados.foto.nome || '';
+                atualizarPreviewFoto(dados.foto);
+            }
+
+            inputFoto.addEventListener('change', async () => {
+                const arquivos = await lerArquivosDeInput(inputFoto);
+                if (!arquivos.length) {
+                    item.dataset.fotoBase64 = '';
+                    item.dataset.fotoMime = '';
+                    item.dataset.fotoNome = '';
+                    item.dataset.fotoUrl = '';
+                    item.dataset.fotoId = '';
+                    atualizarPreviewFoto(null);
+                    return;
+                }
+                const imagem = arquivos[0];
+                item.dataset.fotoBase64 = imagem.base64;
+                item.dataset.fotoMime = imagem.mime;
+                item.dataset.fotoNome = imagem.nome || 'volume.jpg';
+                item.dataset.fotoUrl = '';
+                item.dataset.fotoId = '';
+                atualizarPreviewFoto(imagem);
+            });
             const actions = document.createElement('div');
             actions.className = 'wizard-volume-actions';
             const remover = document.createElement('button');
@@ -6648,6 +6763,7 @@
             colDesc.appendChild(inputDesc);
             grid.appendChild(colQtd);
             grid.appendChild(colDesc);
+            grid.appendChild(colFoto);
             grid.appendChild(actions);
             item.appendChild(grid);
             return item;
@@ -6693,9 +6809,17 @@
                 const quantidadeValor = item.querySelector('.termo-volume-qty')?.value || '';
                 const descricaoValor = item.querySelector('.termo-volume-desc')?.value.trim() || '';
                 const quantidade = quantidadeValor ? parseInt(quantidadeValor, 10) : 0;
+                const foto = {
+                    base64: item.dataset.fotoBase64 || '',
+                    mime: item.dataset.fotoMime || '',
+                    url: item.dataset.fotoUrl || '',
+                    id: item.dataset.fotoId || '',
+                    nome: item.dataset.fotoNome || ''
+                };
                 return {
                     quantidade: Number.isNaN(quantidade) ? 0 : quantidade,
-                    descricao: descricaoValor
+                    descricao: descricaoValor,
+                    foto
                 };
             });
         }
@@ -6932,6 +7056,7 @@
             termoArmarioAtual = null;
             termoPreCadastro = null;
             termoCadastroArmario = null;
+            termoTipoAtual = '';
             mostrarPassoTermo(0);
             elementos.termoForm.reset();
             elementos.termoForm.querySelectorAll('.wizard-field').forEach(field => field.classList.remove('invalid'));
@@ -7191,6 +7316,20 @@
             if (elementos.movItensList) {
                 elementos.movItensList.innerHTML = '';
             }
+        }
+        function renderizarPreviewMovFotos() {
+            if (!elementos.movFotosPreview) return;
+            elementos.movFotosPreview.innerHTML = '';
+            if (!Array.isArray(movimentacaoFotosSelecionadas) || !movimentacaoFotosSelecionadas.length) {
+                return;
+            }
+            movimentacaoFotosSelecionadas.forEach(foto => {
+                const img = document.createElement('img');
+                img.src = foto.dataUrl || foto.url;
+                img.alt = foto.nome || 'Foto da movimentação';
+                img.loading = 'lazy';
+                elementos.movFotosPreview.appendChild(img);
+            });
         }
         function criarLinhaEntrada(item = {}) {
             if (!elementos.movItensList) return null;
@@ -7590,6 +7729,10 @@
         async function abrirMovimentacoes(id) {
             const armario = obterArmarioPorId(id);
             if (!armario) return;
+            const tipoArmario = normalizarTexto(armario.tipo || '');
+            if (elementos.movFotosGroup) {
+                elementos.movFotosGroup.style.display = tipoArmario === 'acompanhante' ? '' : 'none';
+            }
             movimentacaoArmarioAtual = id;
             elementos.movimentacaoModalTitle.textContent = `Movimentações - Armário ${armario.numero}`;
             elementos.movimentacaoForm.reset();
@@ -7605,6 +7748,11 @@
             movimentacaoInventarioAtual = [];
             movimentacaoVolumesBase = [];
             movimentacoesRegistradas = [];
+            movimentacaoFotosSelecionadas = [];
+            if (elementos.movFotos) {
+                elementos.movFotos.value = '';
+            }
+            renderizarPreviewMovFotos();
             ativarAbaMovimentacao('');
             if (elementos.movimentacaoModal.style.display !== 'flex') {
                 travaRolagem.aplicar();
@@ -7622,6 +7770,8 @@
             }
             elementos.movimentacaoModal.style.display = 'none';
             movimentacaoArmarioAtual = null;
+            movimentacaoFotosSelecionadas = [];
+            renderizarPreviewMovFotos();
             limparAssinaturaMovimentacao(true);
         }
         function mostrarLoadingMovimentacoes() {
@@ -7803,11 +7953,18 @@
                     tipoArmario: identificadores?.tipo || '',
                     descricao: observacaoMov,
                     responsavel: responsavelRegistro,
+                    paciente: armario.nomePaciente || armario.paciente || '',
+                    prontuario: armario.prontuario || '',
                     data: elementos.movData.value,
                     hora: elementos.movHora.value,
                     itens: itensMovimentados,
                     assinaturaBase64: assinaturaMov.dataUrl || '',
-                    assinaturaMime: assinaturaMov.mime || 'image/png'
+                    assinaturaMime: assinaturaMov.mime || 'image/png',
+                    fotos: movimentacaoFotosSelecionadas.map(foto => ({
+                        base64: foto.base64 || '',
+                        mime: foto.mime || 'image/jpeg',
+                        nome: foto.nome || ''
+                    }))
                 };
                 const resultado = await callGoogleScript('salvarMovimentacao', dados);
                 if (resultado.success) {
@@ -7819,6 +7976,11 @@
                     if (elementos.movObservacao) {
                         elementos.movObservacao.value = '';
                     }
+                    movimentacaoFotosSelecionadas = [];
+                    if (elementos.movFotos) {
+                        elementos.movFotos.value = '';
+                    }
+                    renderizarPreviewMovFotos();
                     limparItensMovimentacaoFormulario();
                     limparAssinaturaMovimentacao(true);
                     inicializarCanvasAssinatura();
@@ -8099,6 +8261,31 @@
                 return;
             }
 
+            let fotosSaidaCapturadas = [];
+            const capturaFotos = await Swal.fire({
+                title: 'Registrar foto dos volumes na saída',
+                html: `
+                    <div class="info-box" style="text-align:left; margin-bottom:8px;">Use a câmera para registrar os pertences que estão saindo. As imagens serão compactadas antes de salvar.</div>
+                    <input type="file" id="liberacao-fotos-saida" accept="image/*" capture="environment" multiple class="swal2-input" style="height:auto;" />
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Continuar',
+                cancelButtonText: 'Cancelar',
+                focusConfirm: false,
+                preConfirm: async () => {
+                    const input = Swal.getPopup().querySelector('#liberacao-fotos-saida');
+                    if (!input) return [];
+                    const imagens = await lerArquivosDeInput(input);
+                    return imagens;
+                }
+            });
+            if (capturaFotos.isDismissed) {
+                return;
+            }
+            if (Array.isArray(capturaFotos.value)) {
+                fotosSaidaCapturadas = capturaFotos.value;
+            }
+
             const acompanhante = termoDados?.acompanhante || armario.nomeVisitante || '-';
             const assinaturaFinal = await coletarAssinaturaEncerramento(acompanhante);
             if (!assinaturaFinal || !assinaturaFinal.base64) {
@@ -8191,7 +8378,12 @@
                     assinaturaMimeFinal: assinaturaFinal.mime,
                     confirmacao,
                     usuarioResponsavel,
-                    tipo: identificadores?.tipo || ''
+                    tipo: identificadores?.tipo || '',
+                    fotosSaida: fotosSaidaCapturadas.map(foto => ({
+                        base64: foto.base64 || '',
+                        mime: foto.mime || 'image/jpeg',
+                        nome: foto.nome || ''
+                    }))
                 });
 
                 if (!resultadoFinalizacao.success) {
