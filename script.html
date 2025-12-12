@@ -2289,9 +2289,14 @@
                 }
             };
         }
-        async function atualizarDadosPosOperacao(mensagemCarregamento = 'Atualizando informações...', posAtualizacaoLocal) {
+        async function aguardarRapido(tempo = 250) {
+            return new Promise(resolve => setTimeout(resolve, tempo));
+        }
+        async function atualizarDadosPosOperacao(mensagemCarregamento = 'Atualizando informações...', posAtualizacaoLocal, opcoes = {}) {
+            const { modoRapido = false, timeoutRapido = 1200 } = opcoes || {};
             const finalizarOverlay = mostrarOverlayCarregamento(mensagemCarregamento);
-            try {
+
+            const executarAtualizacao = async () => {
                 const [resultadoArmarios, resultadoEstatisticas] = await Promise.allSettled([
                     carregarArmarios({ forcarAtualizacao: true }),
                     carregarEstatisticas()
@@ -2321,6 +2326,24 @@
                 } catch (erroCarregarTabelas) {
                     console.error('Erro ao recarregar dados das tabelas após operação:', erroCarregarTabelas);
                 }
+            };
+
+            if (modoRapido) {
+                const tarefaAtualizacao = executarAtualizacao().catch(erro => {
+                    console.error('Erro ao atualizar dados após operação:', erro);
+                });
+                await Promise.race([
+                    tarefaAtualizacao,
+                    aguardarRapido(timeoutRapido)
+                ]);
+                finalizarOverlay();
+                return tarefaAtualizacao;
+            }
+
+            try {
+                await executarAtualizacao();
+            } catch (erro) {
+                console.error('Erro ao atualizar dados após operação:', erro);
             } finally {
                 finalizarOverlay();
             }
@@ -7069,7 +7092,10 @@
             if (resultado.success) {
                 const dadosImpressao = montarDadosImpressaoReserva(armarioAtual, dadosTermo, identificadores);
                 fecharTermoModal();
-                await atualizarDadosPosOperacao('Atualizando informações do armário...');
+                await atualizarDadosPosOperacao('Atualizando informações do armário...', null, {
+                    modoRapido: true,
+                    timeoutRapido: 1200
+                });
                 mostrarSucesso('Etapa inicial do termo registrada. Finalize o termo ao encerrar o armário.');
                 if (deveGerarImpressaoReserva(identificadores?.tipo || armarioAtual.tipo || '')) {
                     abrirModalImpressaoReserva(dadosImpressao);
@@ -8647,6 +8673,9 @@
                 await atualizarDadosPosOperacao('Atualizando status do armário...', () => {
                     garantirArmarioLiberadoLocal(id, metodo, confirmacao);
                     atualizarResumoDashboardLocal();
+                }, {
+                    modoRapido: true,
+                    timeoutRapido: 1500
                 });
                 mostrarSucesso(mensagemSucesso);
             } catch (erro) {
