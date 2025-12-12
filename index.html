@@ -525,7 +525,7 @@
                     <div class="table-header">
                         <div>
                             <h3>Logs do Sistema</h3>
-                            <p class="table-subtitle">Filtre por período, usuário ou palavra-chave.</p>
+                            <p class="table-subtitle">Filtre por período, usuário, prontuário ou palavra-chave.</p>
                         </div>
                         <div class="table-header-controls">
                             <div class="filter-group">
@@ -544,6 +544,10 @@
                                 <label for="logs-busca">Palavra-chave</label>
                                 <input type="text" id="logs-busca" placeholder="Ação ou detalhes do log">
                             </div>
+                            <div class="filter-group">
+                                <label for="logs-prontuario">Prontuário</label>
+                                <input type="text" id="logs-prontuario" placeholder="Número do prontuário">
+                            </div>
                             <button type="button" class="btn btn-secondary" id="logs-btn-limpar">
                                 <i class="fas fa-eraser"></i> Limpar filtros
                             </button>
@@ -557,6 +561,7 @@
                                     <th>Usuário</th>
                                     <th>Ação</th>
                                     <th>Detalhes</th>
+                                    <th>Prontuário</th>
                                 </tr>
                             </thead>
                             <tbody>
