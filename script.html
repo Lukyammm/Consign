@@ -3929,6 +3929,7 @@
             return estado.armarios
                 .filter(armario => normalizarTexto(armario.tipo) === 'acompanhante')
                 .filter(armario => normalizarTexto(armario.status) === 'livre')
+                .filter(armario => normalizarTexto(armario.unidade) === 'nac eletiva')
                 .filter(armario => !armarioEhContingencia(armario))
                 .filter(armario => usuarioPodeVerUnidade(armario.unidade))
                 .filter(armario => {
@@ -5140,6 +5141,25 @@
                     </div>
                 `,
                 focusConfirm: false,
+                didOpen: () => {
+                    const popup = Swal.getPopup();
+                    if (!popup) return;
+                    const select = popup.querySelector('#destino-contingencia');
+                    const caret = popup.querySelector('.modal-transfer-caret');
+                    if (select && caret) {
+                        const abrirSelect = () => {
+                            select.focus();
+                            select.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                        };
+                        caret.addEventListener('click', abrirSelect);
+                        caret.addEventListener('keydown', event => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                abrirSelect();
+                            }
+                        });
+                    }
+                },
                 showCancelButton: true,
                 confirmButtonText: 'Mover',
                 cancelButtonText: 'Cancelar',
