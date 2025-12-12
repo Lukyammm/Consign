@@ -68,6 +68,7 @@ Este manual foi pensado para quem não é técnico. Ele explica, em linguagem di
   2. Dados do acompanhante responsável (nome, telefone, documento e endereço).
   3. Revisão e assinatura: confirme as informações, gere e salve o termo.
 - Após salvo, o status muda para aplicado e o PDF fica disponível para consulta.
+- As fotos anexadas (volumes, movimentações e entrega) ficam registradas na aba "Registro de Imagens" da planilha, permitindo consultar depois pelo botão **Registros em imagens**.
 
 ## 12. Cadastros administrativos
 - **Cadastro de Armários:** cria ou edita armários, definindo número, tipo (visitante ou acompanhante), unidade, localização e status.

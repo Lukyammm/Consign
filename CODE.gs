@@ -1335,7 +1335,11 @@ function handlePost(e) {
       case 'getMovimentacoes':
         return ContentService.createTextOutput(JSON.stringify(getMovimentacoes(e.parameter)))
           .setMimeType(ContentService.MimeType.JSON);
-      
+
+      case 'getRegistrosImagens':
+        return ContentService.createTextOutput(JSON.stringify(getRegistrosImagens(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
       case 'salvarMovimentacao':
         return ContentService.createTextOutput(JSON.stringify(salvarMovimentacao(e.parameter)))
           .setMimeType(ContentService.MimeType.JSON);
@@ -4116,6 +4120,22 @@ function salvarTermoCompleto(dadosTermo) {
         }
       }
 
+      if (volumeAtual.fotoUrl) {
+        registrarRegistroImagem({
+          armarioId: dadosTermo.armarioId,
+          numeroArmario: numeroArmarioOficial,
+          tipo: 'termo',
+          contexto: 'Aplicação do termo',
+          titulo: volumeAtual.descricao ? 'Volume ' + (indice + 1) + ' - ' + volumeAtual.descricao : 'Volume ' + (indice + 1),
+          detalhe: 'Quantidade: ' + (volumeAtual.quantidade || '-'),
+          responsavel: dadosTermo.acompanhante || dadosTermo.paciente || '',
+          dataHora: aplicadoEm,
+          fotoUrl: volumeAtual.fotoUrl,
+          fotoId: volumeAtual.fotoId || '',
+          fotoNome: volumeAtual.fotoNome || ''
+        });
+      }
+
       return volumeAtual;
     });
 
@@ -4703,6 +4723,22 @@ function finalizarTermo(dados) {
           assinaturas.fotoEntregaNome = arquivoSaida.nome;
         }
       }
+
+      if (assinaturas.fotoEntregaUrl) {
+        registrarRegistroImagem({
+          armarioId: armarioId,
+          numeroArmario: numeroInformado || termoEncontrado.numeroArmario,
+          tipo: 'entrega',
+          contexto: 'Finalização do termo',
+          titulo: 'Entrega do termo',
+          detalhe: '',
+          responsavel: termoEncontrado.acompanhante || termoEncontrado.paciente || '',
+          dataHora: finalizacaoIso,
+          fotoUrl: assinaturas.fotoEntregaUrl,
+          fotoId: assinaturas.fotoEntregaId || '',
+          fotoNome: assinaturas.fotoEntregaNome || ''
+        });
+      }
     }
 
     var dadosPDF = {
@@ -5257,6 +5293,257 @@ function garantirEstruturaMovimentacoes(sheet) {
   };
 }
 
+function garantirEstruturaRegistroImagens(sheet) {
+  var totalColunasMinimas = 12;
+  var colunaFotoUrl = 10;
+  var colunaFotoId = 11;
+  var colunaFotoNome = 12;
+
+  if (!sheet) {
+    return {
+      totalColunas: totalColunasMinimas,
+      colunaFotoUrl: colunaFotoUrl,
+      colunaFotoId: colunaFotoId,
+      colunaFotoNome: colunaFotoNome
+    };
+  }
+
+  var cabecalhos = ['ID', 'Armário ID', 'Número Armário', 'Tipo', 'Contexto', 'Título', 'Detalhe', 'Responsável', 'Data/Hora', 'Foto URL', 'Foto ID', 'Foto Nome'];
+  var totalColunas = sheet.getLastColumn();
+  if (totalColunas < totalColunasMinimas) {
+    sheet.insertColumnsAfter(totalColunas, totalColunasMinimas - totalColunas);
+    totalColunas = sheet.getLastColumn();
+  }
+
+  var linhaCabecalho = sheet.getRange(1, 1, 1, Math.max(totalColunas, totalColunasMinimas)).getValues()[0];
+  for (var i = 0; i < cabecalhos.length; i++) {
+    if (!linhaCabecalho[i]) {
+      sheet.getRange(1, i + 1).setValue(cabecalhos[i]);
+    }
+  }
+
+  return {
+    totalColunas: Math.max(totalColunas, totalColunasMinimas),
+    colunaFotoUrl: colunaFotoUrl,
+    colunaFotoId: colunaFotoId,
+    colunaFotoNome: colunaFotoNome
+  };
+}
+
+function registrarRegistroImagem(registro) {
+  try {
+    if (!registro || !registro.fotoUrl) {
+      return;
+    }
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Registro de Imagens');
+    if (!sheet) {
+      sheet = ss.insertSheet('Registro de Imagens');
+    }
+
+    var estrutura = garantirEstruturaRegistroImagens(sheet);
+    var ultimaLinha = sheet.getLastRow();
+    var urlNormalizada = registro.fotoUrl.toString().trim();
+    var totalRegistros = Math.max(ultimaLinha - 1, 0);
+
+    if (totalRegistros > 0) {
+      var urlsExistentes = sheet.getRange(2, estrutura.colunaFotoUrl, totalRegistros, 1).getValues().flat();
+      var possuiUrl = urlsExistentes.some(function(valor) {
+        return valor && valor.toString().trim() === urlNormalizada;
+      });
+      if (possuiUrl) {
+        return;
+      }
+    }
+
+    var novoId = ultimaLinha > 1
+      ? Math.max.apply(null, sheet.getRange(2, 1, ultimaLinha - 1, 1).getValues().flat().map(function(valor) {
+          var numero = Number(valor);
+          return Number.isFinite(numero) ? numero : 0;
+        })) + 1
+      : 1;
+
+    var dataHoraRegistro = registro.dataHora || obterDataHoraAtualFormatada().dataHoraIso;
+    var novaLinha = new Array(estrutura.totalColunas).fill('');
+    novaLinha[0] = novoId;
+    novaLinha[1] = registro.armarioId || '';
+    novaLinha[2] = registro.numeroArmario || '';
+    novaLinha[3] = registro.tipo || '';
+    novaLinha[4] = registro.contexto || '';
+    novaLinha[5] = registro.titulo || '';
+    novaLinha[6] = registro.detalhe || '';
+    novaLinha[7] = registro.responsavel || '';
+    novaLinha[8] = dataHoraRegistro;
+    novaLinha[estrutura.colunaFotoUrl - 1] = urlNormalizada;
+    novaLinha[estrutura.colunaFotoId - 1] = registro.fotoId || '';
+    novaLinha[estrutura.colunaFotoNome - 1] = registro.fotoNome || '';
+
+    sheet.getRange(ultimaLinha + 1, 1, 1, estrutura.totalColunas).setValues([novaLinha]);
+  } catch (erroRegistroImagem) {
+    registrarLog('ERRO_IMAGEM', 'Falha ao registrar imagem: ' + erroRegistroImagem.toString());
+  }
+}
+
+function construirRegistrosImagensLegado(dados) {
+  var imagens = [];
+  var parametros = dados || {};
+
+  try {
+    var termoResposta = getTermo({
+      armarioId: parametros.armarioId,
+      numeroArmario: parametros.numeroArmario,
+      incluirFinalizados: true
+    });
+
+    if (termoResposta && termoResposta.success && termoResposta.data) {
+      var termo = termoResposta.data;
+      var volumes = Array.isArray(termo.volumes) ? termo.volumes : [];
+      var aplicadoEm = termo.aplicadoEm ? converterParaDataHoraIso(termo.aplicadoEm, '') : '';
+      volumes.forEach(function(volume, indice) {
+        if (!volume.fotoUrl) return;
+        imagens.push({
+          tipo: 'termo',
+          contexto: 'Aplicação do termo',
+          titulo: volume.descricao ? 'Volume ' + (indice + 1) + ' - ' + volume.descricao : 'Volume ' + (indice + 1),
+          detalhe: 'Quantidade: ' + (volume.quantidade || '-'),
+          responsavel: termo.acompanhante || termo.paciente || '',
+          dataHora: aplicadoEm,
+          fotoUrl: volume.fotoUrl,
+          fotoId: volume.fotoId || '',
+          fotoNome: volume.fotoNome || ''
+        });
+      });
+
+      if (termo.assinaturas && termo.assinaturas.fotoEntregaUrl) {
+        imagens.push({
+          tipo: 'entrega',
+          contexto: 'Finalização do termo',
+          titulo: 'Entrega do termo',
+          detalhe: '',
+          responsavel: termo.acompanhante || termo.paciente || '',
+          dataHora: termo.assinaturas.finalizadoEm || '',
+          fotoUrl: termo.assinaturas.fotoEntregaUrl,
+          fotoId: termo.assinaturas.fotoEntregaId || '',
+          fotoNome: termo.assinaturas.fotoEntregaNome || ''
+        });
+      }
+    }
+  } catch (erroTermoImagem) {
+    registrarLog('AVISO_IMAGEM', 'Erro ao coletar imagens do termo: ' + erroTermoImagem.toString());
+  }
+
+  try {
+    var movResposta = getMovimentacoes({
+      armarioId: parametros.armarioId,
+      numeroArmario: parametros.numeroArmario,
+      incluirFinalizados: true
+    });
+
+    if (movResposta && movResposta.success && Array.isArray(movResposta.data)) {
+      movResposta.data.forEach(function(mov) {
+        if (!mov.fotoUrl) return;
+        var itensMov = [];
+        if (Array.isArray(mov.itens)) {
+          itensMov = mov.itens;
+        } else if (mov.itens && typeof mov.itens === 'string') {
+          try {
+            var itensParseados = JSON.parse(mov.itens);
+            if (Array.isArray(itensParseados)) {
+              itensMov = itensParseados;
+            }
+          } catch (erroItensMov) {
+            itensMov = [];
+          }
+        }
+        var descricaoItens = itensMov.length
+          ? 'Itens: ' + itensMov.map(function(item) { return Number(item.quantidade) + 'x ' + item.descricao; }).join('; ')
+          : '';
+        var dataHora = mov.data && mov.hora
+          ? mov.data + ' ' + mov.hora
+          : mov.dataHoraRegistro || '';
+
+        imagens.push({
+          tipo: 'movimentacao',
+          contexto: formatarTituloMovimento(normalizarTextoBasico(mov.tipo)) || 'Movimentação',
+          titulo: mov.descricao || 'Registro da movimentação',
+          detalhe: descricaoItens,
+          responsavel: mov.responsavel || '',
+          dataHora: dataHora,
+          fotoUrl: mov.fotoUrl,
+          fotoId: mov.fotoId || '',
+          fotoNome: mov.fotoNome || ''
+        });
+      });
+    }
+  } catch (erroMovImagem) {
+    registrarLog('AVISO_IMAGEM', 'Erro ao coletar imagens de movimentações: ' + erroMovImagem.toString());
+  }
+
+  return imagens;
+}
+
+function getRegistrosImagens(dados) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Registro de Imagens');
+    var registros = [];
+    var numeroFiltro = normalizarNumeroArmario(dados && dados.numeroArmario ? dados.numeroArmario : '');
+    var armarioIdTexto = dados && dados.armarioId !== null && dados.armarioId !== undefined ? dados.armarioId.toString().trim() : '';
+
+    if (sheet && sheet.getLastRow() >= 2) {
+      var estrutura = garantirEstruturaRegistroImagens(sheet);
+      var totalLinhas = sheet.getLastRow() - 1;
+      var valores = sheet.getRange(2, 1, totalLinhas, estrutura.totalColunas).getValues();
+
+      valores.forEach(function(linha) {
+        var numeroLinha = normalizarNumeroArmario(linha[2]);
+        if (armarioIdTexto && String(linha[1]).trim() !== armarioIdTexto) {
+          return;
+        }
+        if (!armarioIdTexto && numeroFiltro && numeroLinha !== numeroFiltro) {
+          return;
+        }
+
+        var url = linha[estrutura.colunaFotoUrl - 1];
+        if (!url) {
+          return;
+        }
+
+        registros.push({
+          id: linha[0],
+          armarioId: linha[1],
+          numeroArmario: linha[2],
+          tipo: linha[3],
+          contexto: linha[4],
+          titulo: linha[5],
+          detalhe: linha[6],
+          responsavel: linha[7],
+          dataHora: linha[8],
+          fotoUrl: url,
+          fotoId: linha[estrutura.colunaFotoId - 1] || '',
+          fotoNome: linha[estrutura.colunaFotoNome - 1] || ''
+        });
+      });
+    }
+
+    if (!registros.length) {
+      registros = construirRegistrosImagensLegado({ armarioId: armarioIdTexto, numeroArmario: numeroFiltro });
+    }
+
+    registros.sort(function(a, b) {
+      var dataA = a.dataHora ? a.dataHora.toString() : '';
+      var dataB = b.dataHora ? b.dataHora.toString() : '';
+      return dataB.localeCompare(dataA);
+    });
+
+    return { success: true, data: registros };
+  } catch (erroRegistros) {
+    registrarLog('ERRO_IMAGEM', 'Erro ao buscar registros de imagens: ' + erroRegistros.toString());
+    return { success: false, error: erroRegistros.toString() };
+  }
+}
+
 function garantirEstruturaHistorico(sheet) {
   if (!sheet) {
     return 13;
@@ -5275,6 +5562,18 @@ function garantirEstruturaHistorico(sheet) {
     sheet.getRange(1, 15).setValue('Observações');
   }
   return Math.max(totalColunas, minimoColunas);
+}
+
+function formatarTituloMovimento(tipo) {
+  var mapa = {
+    entrada: 'Entrada de pertences',
+    saida: 'Saída de pertences',
+    'saída': 'Saída de pertences',
+    conferencia: 'Conferência',
+    'conferência': 'Conferência'
+  };
+  var chave = normalizarTextoBasico(tipo);
+  return mapa[chave] || tipo || '';
 }
 
 function garantirColunaVisitaEstendida(sheet, estrutura) {
@@ -5364,12 +5663,13 @@ function getMovimentacoes(dados) {
   var tipoInformado = dados && dados.tipo ? normalizarTextoBasico(dados.tipo) : '';
   var tiposMovimentacaoValidos = ['entrada', 'saida', 'saída', 'conferencia', 'conferência'];
   var deveFiltrarPorTipoMovimentacao = tiposMovimentacaoValidos.indexOf(tipoInformado) !== -1;
+  var incluirFinalizados = converterParaBoolean(dados && dados.incluirFinalizados);
   var possuiIdentificacao = armarioIdTexto || numeroInformado;
   var chaveIdentificacao = armarioIdTexto
-    ? [armarioIdTexto, numeroInformado, tipoInformado].join('|')
+    ? [armarioIdTexto, numeroInformado, tipoInformado, incluirFinalizados ? 'finalizados' : 'ativos'].join('|')
     : numeroInformado
-      ? ['numero', numeroInformado, tipoInformado].join('|')
-      : 'todos';
+      ? ['numero', numeroInformado, tipoInformado, incluirFinalizados ? 'finalizados' : 'ativos'].join('|')
+      : incluirFinalizados ? 'todos_finalizados' : 'todos';
   var chaveCache = montarChaveCache('movimentacoes', chaveIdentificacao);
 
   return executarComCache(chaveCache, CACHE_TTL_MOVIMENTACOES, function() {
@@ -5449,7 +5749,7 @@ function getMovimentacoes(dados) {
         var linhaDados = sheet.getRange(linhasFiltradas[j], 1, 1, largura).getValues()[0];
         var statusLinha = colunaStatus ? linhaDados[colunaStatus - 1] : '';
         var statusNormalizado = normalizarTextoBasico(statusLinha);
-        if (statusNormalizado === 'finalizado') {
+        if (!incluirFinalizados && statusNormalizado === 'finalizado') {
           continue;
         }
 
@@ -5724,6 +6024,22 @@ function salvarMovimentacao(dados) {
   }
 
   var fotoIdValor = fotoUrl ? (fotoId || '') : '';
+
+  if (fotoUrl) {
+    registrarRegistroImagem({
+      armarioId: dados.armarioId,
+      numeroArmario: numeroArmario,
+      tipo: 'movimentacao',
+      contexto: formatarTituloMovimento(tipoNormalizado) || 'Movimentação',
+      titulo: dados.descricao || 'Registro da movimentação',
+      detalhe: itensNormalizados.length ? 'Itens: ' + itensNormalizados.map(function(item) { return Number(item.quantidade) + 'x ' + item.descricao; }).join('; ') : '',
+      responsavel: dados.responsavel || '',
+      dataHora: registroMovimento,
+      fotoUrl: fotoUrl,
+      fotoId: fotoIdValor,
+      fotoNome: ''
+    });
+  }
 
   var novaLinha = new Array(larguraMovimentacao).fill('');
   novaLinha[0] = novoId;
