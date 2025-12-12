@@ -5488,6 +5488,7 @@ function getRegistrosImagens(dados) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('Registro de Imagens');
     var registros = [];
+    var possuiRegistrosArmario = false;
     var numeroFiltro = normalizarNumeroArmario(dados && dados.numeroArmario ? dados.numeroArmario : '');
     var armarioIdTexto = dados && dados.armarioId !== null && dados.armarioId !== undefined ? dados.armarioId.toString().trim() : '';
 
@@ -5504,6 +5505,8 @@ function getRegistrosImagens(dados) {
         if (!armarioIdTexto && numeroFiltro && numeroLinha !== numeroFiltro) {
           return;
         }
+
+        possuiRegistrosArmario = true;
 
         var url = linha[estrutura.colunaFotoUrl - 1];
         if (!url) {
@@ -5529,6 +5532,15 @@ function getRegistrosImagens(dados) {
 
     if (!registros.length) {
       registros = construirRegistrosImagensLegado({ armarioId: armarioIdTexto, numeroArmario: numeroFiltro });
+    }
+
+    if (!possuiRegistrosArmario && registros.length) {
+      try {
+        registros.forEach(function(item) { registrarRegistroImagem(item); });
+        sheet = ss.getSheetByName('Registro de Imagens');
+      } catch (erroPersistencia) {
+        registrarLog('AVISO_IMAGEM', 'Falha ao persistir registros de imagens recuperados: ' + erroPersistencia.toString());
+      }
     }
 
     registros.sort(function(a, b) {

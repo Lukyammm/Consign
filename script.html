@@ -7977,123 +7977,30 @@
             }
 
             Swal.close();
-
-            const estiloGaleria = `
-                <style>
-                    .galeria-imagens-grid {
-                        display: grid;
-                        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-                        gap: 16px;
-                        margin-top: 12px;
-                    }
-                    .galeria-imagem-card {
-                        background: #0f172a;
-                        border: 1px solid #1f2937;
-                        border-radius: 12px;
-                        overflow: hidden;
-                        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-                        display: flex;
-                        flex-direction: column;
-                    }
-                    .galeria-imagem-thumb {
-                        position: relative;
-                        padding-top: 62%;
-                        background: linear-gradient(135deg, #1e293b, #0f172a);
-                    }
-                    .galeria-imagem-thumb img {
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        object-fit: cover;
-                    }
-                    .galeria-badge {
-                        position: absolute;
-                        top: 10px;
-                        left: 10px;
-                        background: rgba(15, 118, 110, 0.9);
-                        color: #fff;
-                        padding: 6px 10px;
-                        border-radius: 999px;
-                        font-size: 12px;
-                        font-weight: 600;
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 6px;
-                    }
-                    .galeria-badge i {
-                        font-size: 12px;
-                    }
-                    .galeria-imagem-conteudo {
-                        padding: 14px 16px 16px;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 6px;
-                    }
-                    .galeria-imagem-contexto {
-                        color: #94a3b8;
-                        font-size: 12px;
-                        letter-spacing: 0.01em;
-                        text-transform: uppercase;
-                        font-weight: 700;
-                    }
-                    .galeria-imagem-titulo {
-                        font-size: 16px;
-                        font-weight: 700;
-                        color: #e2e8f0;
-                        margin: 0;
-                    }
-                    .galeria-imagem-detalhe {
-                        font-size: 13px;
-                        color: #cbd5e1;
-                        margin: 0;
-                    }
-                    .galeria-imagem-meta {
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 8px;
-                        color: #94a3b8;
-                        font-size: 12px;
-                    }
-                    .galeria-imagem-meta span {
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 6px;
-                        background: #1e293b;
-                        padding: 6px 10px;
-                        border-radius: 10px;
-                    }
-                    .galeria-imagens-vazia {
-                        text-align: center;
-                        padding: 24px;
-                        color: #94a3b8;
-                    }
-                </style>
-            `;
-
+            const resumo = `<div class="registro-imagens-resumo"><span>Armário <strong>${armario.numero || '-'}</strong></span><span>${imagens.length} registro(s)</span></div>`;
             const conteudoImagens = imagens.length
-                ? `<div class="galeria-imagens-grid">${imagens.map(item => `
-                        <div class="galeria-imagem-card">
-                            <div class="galeria-imagem-thumb">
-                                <img src="${item.url}" alt="${item.titulo}">
-                                <span class="galeria-badge"><i class="fas ${item.tipo === 'termo' ? 'fa-file-signature' : 'fa-box-open'}"></i> ${item.contexto}</span>
+                ? `<div class="registro-imagens-grid">${imagens.map(item => `
+                        <article class="registro-imagem-card">
+                            <div class="registro-imagem-thumb">
+                                <img src="${item.url}" alt="${item.titulo}" loading="lazy">
                             </div>
-                            <div class="galeria-imagem-conteudo">
-                                <div class="galeria-imagem-contexto">${item.dataHora || '-'}</div>
-                                <p class="galeria-imagem-titulo">${item.titulo}</p>
-                                ${item.detalhe ? `<p class="galeria-imagem-detalhe">${item.detalhe}</p>` : ''}
-                                <div class="galeria-imagem-meta">
+                            <div class="registro-imagem-info">
+                                <p class="registro-imagem-contexto">${item.contexto || ''}</p>
+                                <h4 class="registro-imagem-titulo">${item.titulo}</h4>
+                                ${item.detalhe ? `<p class="registro-imagem-detalhe">${item.detalhe}</p>` : ''}
+                                <div class="registro-imagem-meta">
+                                    ${item.dataHora ? `<span><i class="fas fa-clock"></i> ${item.dataHora}</span>` : ''}
                                     ${item.responsavel ? `<span><i class="fas fa-user"></i> ${item.responsavel}</span>` : ''}
                                 </div>
+                                <a class="registro-imagem-link" href="${item.url}" target="_blank" rel="noopener">Abrir original</a>
                             </div>
-                        </div>
+                        </article>
                     `).join('')}</div>`
-                : '<div class="galeria-imagens-vazia">Nenhum registro em imagem encontrado para este armário.</div>';
+                : '<div class="registro-imagens-vazia">Nenhum registro em imagem encontrado para este armário.</div>';
 
             await Swal.fire({
-                title: `Registros em imagens - Armário ${armario.numero}`,
-                html: `${estiloGaleria}${conteudoImagens}`,
+                title: 'Registros em imagens',
+                html: `<div class="modal-registro-imagens">${resumo}${conteudoImagens}</div>`,
                 width: 960,
                 confirmButtonText: 'Fechar',
                 focusConfirm: false
