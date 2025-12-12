@@ -1567,9 +1567,20 @@
         }
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
-            atualizarOpcoesSetorTermo();
-            atualizarResponsavelMovimentacaoInfo();
-            inicializarLogin();
+            try {
+                atualizarOpcoesSetorTermo();
+                atualizarResponsavelMovimentacaoInfo();
+                inicializarLogin();
+            } catch (erro) {
+                console.error('Erro ao iniciar a aplicação:', erro);
+                if (elementos.appShell) {
+                    elementos.appShell.classList.add('hidden');
+                }
+                if (elementos.loginContainer) {
+                    elementos.loginContainer.classList.remove('hidden');
+                }
+                mostrarErro('Falha ao carregar a interface. Atualize a página ou tente novamente.');
+            }
         });
         function aguardar(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
