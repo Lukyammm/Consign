@@ -7783,7 +7783,12 @@
             movEntradaDescricaoUltimoValor = '';
             elementos.movEntradaQuantidade.focus();
         }
-        function adicionarItemEntradaAoPerderFoco() {
+        function adicionarItemEntradaAoPerderFoco(evento) {
+            const proximoFoco = evento?.relatedTarget;
+            if (proximoFoco && (proximoFoco.id === 'mov-entrada-adicionar'
+                || proximoFoco.closest?.('#mov-entrada-adicionar'))) {
+                return;
+            }
             const tipoAtual = normalizarTexto(elementos.movTipo?.value);
             if (tipoAtual !== 'entrada') return;
             const quantidade = Number(elementos.movEntradaQuantidade?.value);
