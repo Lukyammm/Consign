@@ -90,10 +90,6 @@
                 }
             }
         };
-        const FOTO_CONFIG_PADRAO = {
-            maxLado: 1600,
-            qualidade: 0.82
-        };
         const SESSAO_TTL_MS = 1000 * 60 * 60 * 8; // 8 horas
         const AVATAR_OPTIONS = [
             {
@@ -150,92 +146,6 @@
             }
         ];
         let armazenamentoLocalDisponivel;
-        function lerArquivoComoDataUrl(arquivo) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(reader.error);
-                reader.readAsDataURL(arquivo);
-            });
-        }
-        async function comprimirImagemParaUpload(arquivo, config = FOTO_CONFIG_PADRAO) {
-            const dataUrl = await lerArquivoComoDataUrl(arquivo);
-            const imagem = await new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => resolve(img);
-                img.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
-                img.src = dataUrl;
-            });
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const proporcao = imagem.width / imagem.height;
-            let largura = imagem.width;
-            let altura = imagem.height;
-
-            const maxLado = config?.maxLado || FOTO_CONFIG_PADRAO.maxLado;
-            if (largura > altura && largura > maxLado) {
-                largura = maxLado;
-                altura = Math.round(largura / proporcao);
-            } else if (altura > maxLado) {
-                altura = maxLado;
-                largura = Math.round(altura * proporcao);
-            }
-
-            canvas.width = largura;
-            canvas.height = altura;
-            ctx.drawImage(imagem, 0, 0, largura, altura);
-
-            const qualidade = config?.qualidade || FOTO_CONFIG_PADRAO.qualidade;
-            const mime = arquivo.type && arquivo.type.startsWith('image/') ? arquivo.type : 'image/jpeg';
-            const dataUrlCompactado = canvas.toDataURL(mime, qualidade);
-
-            return {
-                base64: dataUrlCompactado,
-                mime: mime,
-                nome: arquivo.name || 'foto-volume'
-            };
-        }
-        function definirDadosFotoElemento(elemento, dados) {
-            if (!elemento) return;
-            if (!dados) {
-                delete elemento.dataset.fotoJson;
-                return;
-            }
-            const payload = {
-                fotoBase64: dados.base64 || dados.fotoBase64 || '',
-                fotoMime: dados.mime || dados.fotoMime || '',
-                fotoNome: dados.nome || dados.fotoNome || ''
-            };
-            if (dados.fotoId) {
-                payload.fotoId = dados.fotoId;
-                payload.fotoUrl = dados.fotoUrl;
-                payload.fotoNome = dados.fotoNome || dados.nome;
-                payload.fotoPastaId = dados.fotoPastaId;
-            }
-            elemento.dataset.fotoJson = JSON.stringify(payload);
-        }
-        function obterDadosFotoElemento(elemento) {
-            if (!elemento || !elemento.dataset.fotoJson) return null;
-            try {
-                return JSON.parse(elemento.dataset.fotoJson);
-            } catch (erro) {
-                return null;
-            }
-        }
-        function atualizarPreviewFoto(container, dadosFoto) {
-            if (!container) return;
-            const preview = container.querySelector('.photo-upload-preview');
-            if (!preview) return;
-            if (dadosFoto && (dadosFoto.base64 || dadosFoto.fotoUrl)) {
-                const src = dadosFoto.base64 || dadosFoto.fotoUrl;
-                preview.innerHTML = `<img src="${src}" alt="Pré-visualização do volume" loading="lazy">`;
-                container.classList.add('has-photo');
-            } else {
-                preview.innerHTML = '<span class="photo-upload-placeholder"><i class="fas fa-camera"></i> Anexar foto</span>';
-                container.classList.remove('has-photo');
-            }
-        }
         function removerRascunhoChave(chave) {
             const storage = obterArmazenamentoLocal();
             if (!storage) return;
@@ -1567,20 +1477,9 @@
         }
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
-            try {
-                atualizarOpcoesSetorTermo();
-                atualizarResponsavelMovimentacaoInfo();
-                inicializarLogin();
-            } catch (erro) {
-                console.error('Erro ao iniciar a aplicação:', erro);
-                if (elementos.appShell) {
-                    elementos.appShell.classList.add('hidden');
-                }
-                if (elementos.loginContainer) {
-                    elementos.loginContainer.classList.remove('hidden');
-                }
-                mostrarErro('Falha ao carregar a interface. Atualize a página ou tente novamente.');
-            }
+            atualizarOpcoesSetorTermo();
+            atualizarResponsavelMovimentacaoInfo();
+            inicializarLogin();
         });
         function aguardar(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
@@ -6751,67 +6650,6 @@
             grid.appendChild(colDesc);
             grid.appendChild(actions);
             item.appendChild(grid);
-            const fotoWrapper = document.createElement('div');
-            fotoWrapper.className = 'wizard-volume-photo';
-            const labelFoto = document.createElement('label');
-            labelFoto.textContent = 'Foto do volume';
-            const uploadCard = document.createElement('div');
-            uploadCard.className = 'photo-upload-card';
-            const preview = document.createElement('div');
-            preview.className = 'photo-upload-preview';
-            preview.innerHTML = '<span class="photo-upload-placeholder"><i class="fas fa-camera"></i> Anexar foto</span>';
-            const uploadActions = document.createElement('div');
-            uploadActions.className = 'photo-upload-actions';
-            const botaoUpload = document.createElement('label');
-            botaoUpload.className = 'btn btn-ghost photo-upload-btn';
-            botaoUpload.innerHTML = '<i class="fas fa-camera"></i> Tirar/Anexar foto';
-            const inputFoto = document.createElement('input');
-            inputFoto.type = 'file';
-            inputFoto.accept = 'image/*';
-            inputFoto.capture = 'environment';
-            inputFoto.className = 'sr-only';
-            botaoUpload.appendChild(inputFoto);
-            const limparFoto = document.createElement('button');
-            limparFoto.type = 'button';
-            limparFoto.className = 'btn btn-link photo-upload-clear';
-            limparFoto.textContent = 'Remover foto';
-            uploadActions.appendChild(botaoUpload);
-            uploadActions.appendChild(limparFoto);
-            uploadCard.appendChild(preview);
-            uploadCard.appendChild(uploadActions);
-            fotoWrapper.appendChild(labelFoto);
-            fotoWrapper.appendChild(uploadCard);
-            item.appendChild(fotoWrapper);
-
-            if (dados && (dados.fotoUrl || dados.fotoBase64 || dados.fotoId)) {
-                definirDadosFotoElemento(item, dados);
-                atualizarPreviewFoto(uploadCard, dados);
-            }
-
-            inputFoto.addEventListener('change', async (evento) => {
-                const arquivo = evento.target.files?.[0];
-                if (!arquivo) return;
-                try {
-                    botaoUpload.classList.add('is-loading');
-                    const foto = await comprimirImagemParaUpload(arquivo);
-                    definirDadosFotoElemento(item, foto);
-                    atualizarPreviewFoto(uploadCard, foto);
-                    salvarRascunhoTermo();
-                } catch (erro) {
-                    console.error('Erro ao processar imagem do volume:', erro);
-                    mostrarErro('Não foi possível processar a foto. Tente novamente.');
-                } finally {
-                    botaoUpload.classList.remove('is-loading');
-                }
-            });
-
-            limparFoto.addEventListener('click', () => {
-                definirDadosFotoElemento(item, null);
-                atualizarPreviewFoto(uploadCard, null);
-                inputFoto.value = '';
-                salvarRascunhoTermo();
-            });
-
             return item;
         }
         function adicionarVolumeTermo(dados = {}) {
@@ -6855,25 +6693,10 @@
                 const quantidadeValor = item.querySelector('.termo-volume-qty')?.value || '';
                 const descricaoValor = item.querySelector('.termo-volume-desc')?.value.trim() || '';
                 const quantidade = quantidadeValor ? parseInt(quantidadeValor, 10) : 0;
-                const dadosFoto = obterDadosFotoElemento(item);
-                const volume = {
+                return {
                     quantidade: Number.isNaN(quantidade) ? 0 : quantidade,
                     descricao: descricaoValor
                 };
-                if (dadosFoto) {
-                    if (dadosFoto.fotoBase64) {
-                        volume.fotoBase64 = dadosFoto.fotoBase64;
-                        volume.fotoMime = dadosFoto.fotoMime || 'image/jpeg';
-                        volume.fotoNome = dadosFoto.fotoNome || '';
-                    }
-                    if (dadosFoto.fotoId) {
-                        volume.fotoId = dadosFoto.fotoId;
-                        volume.fotoUrl = dadosFoto.fotoUrl;
-                        volume.fotoNome = dadosFoto.fotoNome || volume.fotoNome;
-                        volume.fotoPastaId = dadosFoto.fotoPastaId;
-                    }
-                }
-                return volume;
             });
         }
         function validarVolumesTermo() {
@@ -7296,9 +7119,7 @@
                 const quantidadeNumero = Number(item.quantidade);
                 return {
                     quantidade: Number.isFinite(quantidadeNumero) ? quantidadeNumero : 0,
-                    descricao: item && item.descricao ? item.descricao.toString().trim() : '',
-                    fotoUrl: item?.fotoUrl || '',
-                    fotoId: item?.fotoId || ''
+                    descricao: item && item.descricao ? item.descricao.toString().trim() : ''
                 };
             }).filter(item => item.quantidade > 0 && item.descricao);
         }
@@ -7426,58 +7247,6 @@
             linha.appendChild(campoQuantidadeWrapper);
             linha.appendChild(campoDescricaoWrapper);
             linha.appendChild(acoesWrapper);
-            const fotoWrapper = document.createElement('div');
-            fotoWrapper.className = 'mov-item-photo photo-upload-card';
-            const preview = document.createElement('div');
-            preview.className = 'photo-upload-preview';
-            preview.innerHTML = '<span class="photo-upload-placeholder"><i class="fas fa-camera"></i> Foto do item</span>';
-            const botaoUpload = document.createElement('label');
-            botaoUpload.className = 'btn btn-ghost photo-upload-btn';
-            botaoUpload.innerHTML = '<i class="fas fa-camera"></i> Capturar';
-            const inputFoto = document.createElement('input');
-            inputFoto.type = 'file';
-            inputFoto.accept = 'image/*';
-            inputFoto.capture = 'environment';
-            inputFoto.className = 'sr-only';
-            botaoUpload.appendChild(inputFoto);
-            const limpar = document.createElement('button');
-            limpar.type = 'button';
-            limpar.className = 'btn btn-link photo-upload-clear';
-            limpar.textContent = 'Limpar foto';
-            const actionsFoto = document.createElement('div');
-            actionsFoto.className = 'photo-upload-actions';
-            actionsFoto.appendChild(botaoUpload);
-            actionsFoto.appendChild(limpar);
-            fotoWrapper.appendChild(preview);
-            fotoWrapper.appendChild(actionsFoto);
-            linha.appendChild(fotoWrapper);
-
-            if (item && (item.fotoUrl || item.fotoBase64)) {
-                definirDadosFotoElemento(linha, item);
-                atualizarPreviewFoto(fotoWrapper, item);
-            }
-
-            inputFoto.addEventListener('change', async (evento) => {
-                const arquivo = evento.target.files?.[0];
-                if (!arquivo) return;
-                try {
-                    botaoUpload.classList.add('is-loading');
-                    const foto = await comprimirImagemParaUpload(arquivo);
-                    definirDadosFotoElemento(linha, foto);
-                    atualizarPreviewFoto(fotoWrapper, foto);
-                } catch (erro) {
-                    console.error('Erro ao processar foto do item:', erro);
-                    mostrarErro('Falha ao processar a foto do item.');
-                } finally {
-                    botaoUpload.classList.remove('is-loading');
-                }
-            });
-
-            limpar.addEventListener('click', () => {
-                definirDadosFotoElemento(linha, null);
-                atualizarPreviewFoto(fotoWrapper, null);
-                inputFoto.value = '';
-            });
             elementos.movItensList.appendChild(linha);
             return linha;
         }
@@ -7571,58 +7340,6 @@
 
             linha.appendChild(corpo);
             linha.appendChild(acoesWrapper);
-            const fotoWrapper = document.createElement('div');
-            fotoWrapper.className = 'mov-item-photo photo-upload-card';
-            const preview = document.createElement('div');
-            preview.className = 'photo-upload-preview';
-            preview.innerHTML = '<span class="photo-upload-placeholder"><i class="fas fa-camera"></i> Foto da saída</span>';
-            const botaoUpload = document.createElement('label');
-            botaoUpload.className = 'btn btn-ghost photo-upload-btn';
-            botaoUpload.innerHTML = '<i class="fas fa-camera"></i> Registrar';
-            const inputFoto = document.createElement('input');
-            inputFoto.type = 'file';
-            inputFoto.accept = 'image/*';
-            inputFoto.capture = 'environment';
-            inputFoto.className = 'sr-only';
-            botaoUpload.appendChild(inputFoto);
-            const limpar = document.createElement('button');
-            limpar.type = 'button';
-            limpar.className = 'btn btn-link photo-upload-clear';
-            limpar.textContent = 'Limpar foto';
-            const actionsFoto = document.createElement('div');
-            actionsFoto.className = 'photo-upload-actions';
-            actionsFoto.appendChild(botaoUpload);
-            actionsFoto.appendChild(limpar);
-            fotoWrapper.appendChild(preview);
-            fotoWrapper.appendChild(actionsFoto);
-            linha.appendChild(fotoWrapper);
-
-            if (item && (item.fotoUrl || item.fotoBase64)) {
-                definirDadosFotoElemento(linha, item);
-                atualizarPreviewFoto(fotoWrapper, item);
-            }
-
-            inputFoto.addEventListener('change', async (evento) => {
-                const arquivo = evento.target.files?.[0];
-                if (!arquivo) return;
-                try {
-                    botaoUpload.classList.add('is-loading');
-                    const foto = await comprimirImagemParaUpload(arquivo);
-                    definirDadosFotoElemento(linha, foto);
-                    atualizarPreviewFoto(fotoWrapper, foto);
-                } catch (erro) {
-                    console.error('Erro ao processar foto da saída:', erro);
-                    mostrarErro('Não foi possível processar a foto.');
-                } finally {
-                    botaoUpload.classList.remove('is-loading');
-                }
-            });
-
-            limpar.addEventListener('click', () => {
-                definirDadosFotoElemento(linha, null);
-                atualizarPreviewFoto(fotoWrapper, null);
-                inputFoto.value = '';
-            });
             elementos.movItensList.appendChild(linha);
             return linha;
         }
@@ -7689,54 +7406,26 @@
                         const removerQuantidade = Number(linha.dataset.removerQuantidade);
                         const quantidade = Number(linha.dataset.quantidade);
                         const descricao = linha.dataset.descricao || '';
-                        const itemSaida = {
+                        return {
                             quantidade: Number.isFinite(removerQuantidade) && removerQuantidade > 0
                                 ? removerQuantidade
                                 : 0,
                             descricao,
                             totalDisponivel: Number.isFinite(quantidade) ? quantidade : 0
                         };
-                        const dadosFoto = obterDadosFotoElemento(linha);
-                        if (dadosFoto) {
-                            if (dadosFoto.fotoBase64) {
-                                itemSaida.fotoBase64 = dadosFoto.fotoBase64;
-                                itemSaida.fotoMime = dadosFoto.fotoMime || 'image/jpeg';
-                                itemSaida.fotoNome = dadosFoto.fotoNome || '';
-                            }
-                            if (dadosFoto.fotoId) {
-                                itemSaida.fotoId = dadosFoto.fotoId;
-                                itemSaida.fotoUrl = dadosFoto.fotoUrl;
-                                itemSaida.fotoNome = dadosFoto.fotoNome || itemSaida.fotoNome;
-                                itemSaida.fotoPastaId = dadosFoto.fotoPastaId;
-                            }
-                            }
-                        return itemSaida;
                     })
+                    .filter(item => item.quantidade > 0 && item.descricao)
+                    .map(item => ({ quantidade: item.quantidade, descricao: item.descricao }))
                     .filter(item => item.quantidade > 0 && item.descricao);
             }
 
             return linhas.map(linha => {
                 const qtd = Number(linha.querySelector('input[type="number"]')?.value);
                 const descricao = linha.querySelector('input[type="text"]')?.value.trim() || '';
-                const itemEntrada = {
+                return {
                     quantidade: Number.isFinite(qtd) ? qtd : 0,
                     descricao
                 };
-                const dadosFoto = obterDadosFotoElemento(linha);
-                if (dadosFoto) {
-                    if (dadosFoto.fotoBase64) {
-                        itemEntrada.fotoBase64 = dadosFoto.fotoBase64;
-                        itemEntrada.fotoMime = dadosFoto.fotoMime || 'image/jpeg';
-                        itemEntrada.fotoNome = dadosFoto.fotoNome || '';
-                    }
-                    if (dadosFoto.fotoId) {
-                        itemEntrada.fotoId = dadosFoto.fotoId;
-                        itemEntrada.fotoUrl = dadosFoto.fotoUrl;
-                        itemEntrada.fotoNome = dadosFoto.fotoNome || itemEntrada.fotoNome;
-                        itemEntrada.fotoPastaId = dadosFoto.fotoPastaId;
-                    }
-                }
-                return itemEntrada;
             }).filter(item => item.quantidade > 0 && item.descricao);
         }
         function atualizarContextoMovimentacao(tipo) {
