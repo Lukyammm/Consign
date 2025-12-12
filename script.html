@@ -7092,9 +7092,11 @@
             if (resultado.success) {
                 const dadosImpressao = montarDadosImpressaoReserva(armarioAtual, dadosTermo, identificadores);
                 fecharTermoModal();
-                await atualizarDadosPosOperacao('Atualizando informações do armário...', null, {
+                const atualizacaoRapida = atualizarDadosPosOperacao('Atualizando informações do armário...', null, {
                     modoRapido: true,
-                    timeoutRapido: 1200
+                    timeoutRapido: 600
+                }).catch(erro => {
+                    console.error('Erro ao atualizar dados após salvar termo:', erro);
                 });
                 mostrarSucesso('Etapa inicial do termo registrada. Finalize o termo ao encerrar o armário.');
                 if (deveGerarImpressaoReserva(identificadores?.tipo || armarioAtual.tipo || '')) {
