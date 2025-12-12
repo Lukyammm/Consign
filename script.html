@@ -4963,138 +4963,46 @@
                             ? '<br><small>Preencha o termo para ocupar este armário.</small>'
                             : '')
                     : '';
-                const dataRegistroFormatada = formatarDataComDiaSemana(armario.dataRegistro);
-                const statusChip = `<span class="armario-status-chip status-${armario.status}">${formatarStatusArmario(armario.status)}</span>`;
-                const horarioHtml = armario.visitaEstendida
-                    ? '<div class="info-value destaque">Visita estendida</div>'
-                    : (armario.horaPrevista
-                        ? `<div class="info-value">${armario.horaPrevista}</div><small class="info-hint">Previsão de saída</small>`
-                        : '<div class="info-value">-</div>');
-                const termoBloco = armario.tipo === 'acompanhante'
-                    ? `
-                        <div class="termo-card ${termoStatusNormalizado}">
-                            <div class="termo-card-header">
-                                <div class="termo-card-label">Termo de responsabilidade</div>
-                                <span class="termo-status">${termoStatusTexto}</span>
-                            </div>
-                            ${termoAviso ? `<p class="termo-card-hint">${termoAviso.replace('<br>', '')}</p>` : ''}
-                        </div>
-                    `
+                const termoHtml = armario.tipo === 'acompanhante'
+                    ? `<div class="info-box" style="margin-top:12px;">Termo de responsabilidade: <strong>${termoStatusTexto}</strong>${termoAviso}</div>`
                     : '';
-                const actionsHtml = `
-                    <div class="armario-actions">
-                        <button id="btn-imagens-armario" class="action-item">
-                            <span class="action-icon"><i class="fas fa-images"></i></span>
-                            <div class="action-text">
-                                <span class="action-title">Registros em imagens</span>
-                                <span class="action-desc">Consultar anexos do armário</span>
-                            </div>
-                            <span class="action-check"><i class="fas fa-chevron-right"></i></span>
-                        </button>
-                        ${armario.tipo === 'visitante'
-                            ? `
-                                <button id="btn-editar-horario" class="action-item">
-                                    <span class="action-icon"><i class="fas fa-clock"></i></span>
-                                    <div class="action-text">
-                                        <span class="action-title">Editar horário / visita</span>
-                                        <span class="action-desc">Ajustar saída ou visita estendida</span>
-                                    </div>
-                                    <span class="action-check"><i class="fas fa-chevron-right"></i></span>
-                                </button>
-                            `
-                            : ''}
-                        ${armario.tipo === 'acompanhante' && termoPendente
-                            ? `
-                                <button id="btn-aplicar-termo" class="action-item is-selected">
-                                    <span class="action-icon"><i class="fas fa-file-signature"></i></span>
-                                    <div class="action-text">
-                                        <span class="action-title">Aplicar termo</span>
-                                        <span class="action-desc">Solicitar assinatura para liberar uso</span>
-                                    </div>
-                                    <span class="action-check"><i class="fas fa-check-circle"></i></span>
-                                </button>
-                            `
-                            : ''}
-                        ${ehContingencia
-                            ? `
-                                <button id="btn-mover-contingencia" class="action-item">
-                                    <span class="action-icon"><i class="fas fa-exchange-alt"></i></span>
-                                    <div class="action-text">
-                                        <span class="action-title">Mover contingência</span>
-                                        <span class="action-desc">Transferir para armário livre</span>
-                                    </div>
-                                    <span class="action-check"><i class="fas fa-chevron-right"></i></span>
-                                </button>
-                            `
-                            : ''}
-                        ${armario.tipo === 'acompanhante' && dadosImpressaoArmario
-                            ? `
-                                <button id="btn-reimprimir-ticket" class="action-item">
-                                    <span class="action-icon"><i class="fas fa-print"></i></span>
-                                    <div class="action-text">
-                                        <span class="action-title">Reimprimir comprovante</span>
-                                        <span class="action-desc">Gerar novo ticket de reserva</span>
-                                    </div>
-                                    <span class="action-check"><i class="fas fa-chevron-right"></i></span>
-                                </button>
-                            `
-                            : ''}
-                    </div>
-                `;
-
+                const dataRegistroFormatada = formatarDataComDiaSemana(armario.dataRegistro);
+                const dataRegistroHtml = `<p><strong>Data:</strong> ${dataRegistroFormatada}</p>`;
+                const botoesApoio = `
+                    <div class="swal-extra-actions">
+                        <button id="btn-imagens-armario" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#475569;">Registros em imagens</button>
+                        ${armario.tipo === 'visitante' ? '<button id="btn-editar-horario" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#2c6e8f;">Editar horário/visita</button>' : ''}
+                    </div>`;
+                const moverContingenciaHtml = ehContingencia
+                    ? `<div class="swal-extra-actions" style="margin-top:8px;"><button id="btn-mover-contingencia" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#0f766e;">Mover para armário livre</button></div>`
+                    : '';
+                const reimpressaoHtml = armario.tipo === 'acompanhante'
+                    ? `<div class="swal-extra-actions" style="margin-top:8px;"><button id="btn-reimprimir-ticket" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#1f2937;">Reimprimir comprovante</button></div>`
+                    : '';
                 Swal.fire({
                     title: `Armário ${armario.numero}`,
                     html: `
-                        <div class="armario-modal-modern">
-                            <div class="armario-overview">
-                                <div class="armario-modal-header">
-                                    <div class="armario-header-text">
-                                        <p class="armario-header-label">Status atual</p>
-                                        ${statusChip}
-                                    </div>
-                                    <div class="armario-meta">
-                                        <span class="armario-meta-item"><i class="fas fa-calendar"></i>${dataRegistroFormatada}</span>
-                                        <span class="armario-meta-item"><i class="fas fa-clock"></i>${armario.horaInicio}</span>
-                                    </div>
-                                </div>
-                                <div class="armario-unit-card">
-                                    <div class="unit-label">Unidade</div>
-                                    <div class="unit-value">${armario.unidade || '-'}</div>
-                                </div>
-                                <div class="armario-info-grid">
-                                    <div class="info-block">
-                                        <p class="info-label">${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}</p>
-                                        <p class="info-value">${armario.nomeVisitante}</p>
-                                    </div>
-                                    <div class="info-block">
-                                        <p class="info-label">Paciente</p>
-                                        <p class="info-value">${armario.nomePaciente}</p>
-                                    </div>
-                                    <div class="info-block">
-                                        <p class="info-label">Prontuário</p>
-                                        <p class="info-value">${armario.prontuario || '-'}</p>
-                                    </div>
-                                    <div class="info-block">
-                                        <p class="info-label">Leito</p>
-                                        <p class="info-value">${armario.leito}</p>
-                                    </div>
-                                    <div class="info-block">
-                                        <p class="info-label">Volumes</p>
-                                        <p class="info-value">${formatarVolumeParaExibicao(armario.volumes)}</p>
-                                    </div>
-                                    <div class="info-block">
-                                        <p class="info-label">WhatsApp</p>
-                                        <p class="info-value">${armario.whatsapp || '-'}</p>
-                                    </div>
-                                    <div class="info-block">
-                                        <p class="info-label">Horário</p>
-                                        ${horarioHtml}
-                                    </div>
-                                </div>
-                                ${termoBloco}
-                            </div>
-                            ${actionsHtml}
-                        </div>
+                        <p><strong>Status:</strong> ${formatarStatusArmario(armario.status)}</p>
+                        <p class="armario-unidade">
+                            <span class="label">Unidade</span>
+                            <span class="value">${armario.unidade || '-'}</span>
+                        </p>
+                        <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
+                        <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
+                        <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
+                        <p><strong>Leito:</strong> ${armario.leito}</p>
+                        <p><strong>Volumes:</strong> ${formatarVolumeParaExibicao(armario.volumes)}</p>
+                        ${armario.whatsapp ? `<p><strong>WhatsApp:</strong> ${armario.whatsapp}</p>` : ''}
+                        <p><strong>Início:</strong> ${armario.horaInicio}</p>
+                        ${armario.visitaEstendida
+                            ? '<p><strong>Visita:</strong> Estendida</p>'
+                            : (armario.horaPrevista ? `<p><strong>Previsão de saída:</strong> ${armario.horaPrevista}</p>` : '')}
+                        ${dataRegistroHtml}
+                        ${termoHtml}
+                        ${botoesApoio}
+                        ${moverContingenciaHtml}
+                        ${reimpressaoHtml}
+                        ${armario.tipo === 'acompanhante' && termoPendente ? `<div style="margin-top:16px;"><button id="btn-aplicar-termo" class="swal2-confirm swal2-styled" style="background-color:#2c6e8f;">Aplicar termo agora</button></div>` : ''}
                     `,
                     icon: 'info',
                     showCancelButton: true,
