@@ -914,20 +914,20 @@
                                     <p class="helper-text">Selecione Entrada ou Saída para começar.</p>
                                 </div>
                                 <div class="mov-tab-panel" data-mov-panel="entrada">
-                                    <p class="helper-text">Informe quantidade e descrição usando a lista suspensa já usada no cadastro do termo.</p>
+                                    <p class="helper-text">Informe a quantidade e descreva o volume a ser movimentado.</p>
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="mov-entrada-quantidade">Quantidade de volume</label>
                                             <input type="number" min="1" step="1" id="mov-entrada-quantidade" class="form-control" placeholder="0" aria-describedby="mov-entrada-help">
                                         </div>
                                         <div class="form-group">
-                                            <label for="mov-entrada-descricao">Descrição (lista suspensa)</label>
-                                            <input type="text" list="termo-itens-sugestoes" id="mov-entrada-descricao" class="form-control" placeholder="Selecione ou digite a descrição">
+                                            <label for="mov-entrada-descricao">Descrição do volume</label>
+                                            <input type="text" list="termo-itens-sugestoes" id="mov-entrada-descricao" class="form-control" placeholder="Descreva ou selecione o volume">
                                         </div>
                                     </div>
                                     <div class="form-inline-actions">
                                         <button type="button" class="btn btn-secondary" id="mov-entrada-adicionar">Adicionar à entrada</button>
-                                        <span class="helper-text" id="mov-entrada-help">Descrição obrigatória e quantidade maior que zero.</span>
+                                        <span class="helper-text" id="mov-entrada-help">Informe a descrição do volume e quantidade maior que zero.</span>
                                     </div>
                                 </div>
                                 <div class="mov-tab-panel" data-mov-panel="saida">
@@ -966,16 +966,6 @@
                                         <div class="form-group">
                                             <label for="mov-hora">Hora</label>
                                             <input type="time" id="mov-hora" class="form-control" required>
-                                        </div>
-                                    </div>
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label class="wizard-required">Foto da movimentação</label>
-                                            <div class="photo-capture">
-                                                <button type="button" class="btn btn-ghost" id="mov-foto-trigger"><i class="fas fa-camera"></i> Capturar foto</button>
-                                                <input type="file" id="mov-foto-input" accept="image/*" capture="environment" class="sr-only">
-                                                <div class="helper-text pending" id="mov-foto-status">Nenhuma foto anexada.</div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
