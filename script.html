@@ -8553,53 +8553,36 @@
             const usuarioResponsavel = obterDescricaoResponsavelAtual();
 
             const progressoHtml = `
-                <div class="liberacao-progress" aria-label="Progresso da liberação do armário">
-                    <div class="liberacao-step is-active" data-step="termo">
+                <div class="liberacao-progress" aria-label="Concluindo e liberando armário">
+                    <div class="liberacao-step is-active" data-step="unificado">
                         <div class="liberacao-step-icon" aria-hidden="true">
                             <span class="liberacao-step-spinner"></span>
                             <i class="fas fa-check"></i>
                             <i class="fas fa-circle-exclamation"></i>
                         </div>
                         <div>
-                            <div class="liberacao-step-title">Finalizando termo</div>
-                            <div class="liberacao-step-subtitle">Registrando o encerramento com segurança.</div>
-                        </div>
-                    </div>
-                    <div class="liberacao-step" data-step="armario">
-                        <div class="liberacao-step-icon" aria-hidden="true">
-                            <span class="liberacao-step-spinner"></span>
-                            <i class="fas fa-check"></i>
-                            <i class="fas fa-circle-exclamation"></i>
-                        </div>
-                        <div>
-                            <div class="liberacao-step-title">Liberando armário</div>
-                            <div class="liberacao-step-subtitle">Atualizando a disponibilidade para o próximo uso.</div>
+                            <div class="liberacao-step-title">Encerrando e liberando armário</div>
+                            <div class="liberacao-step-subtitle">Atualizando status e registrando assinatura.</div>
                         </div>
                     </div>
                 </div>
             `;
 
-            const atualizarEtapa = (etapa, estado) => {
+            const atualizarEtapa = (estado) => {
                 const container = Swal.getHtmlContainer();
                 if (!container) return;
-                const elemento = container.querySelector(`[data-step="${etapa}"]`);
+                const elemento = container.querySelector('[data-step="unificado"]');
                 if (!elemento) return;
                 elemento.classList.remove('is-active', 'is-complete', 'is-error');
-                switch (estado) {
-                    case 'ativa':
-                        elemento.classList.add('is-active');
-                        break;
-                    case 'concluida':
-                        elemento.classList.add('is-complete');
-                        break;
-                    case 'erro':
-                        elemento.classList.add('is-error');
-                        break;
-                    default:
-                        break;
+                if (estado === 'ativa') {
+                    elemento.classList.add('is-active');
+                } else if (estado === 'concluida') {
+                    elemento.classList.add('is-complete');
+                } else if (estado === 'erro') {
+                    elemento.classList.add('is-error');
                 }
             };
-            const aguardarTransicao = (tempo = 10) => new Promise(resolve => setTimeout(resolve, tempo));
+            const aguardarTransicao = () => Promise.resolve();
 
             Swal.fire({
                 title: 'Concluindo a liberação do armário...',
@@ -8612,11 +8595,9 @@
                     if (container) {
                         container.setAttribute('aria-live', 'assertive');
                     }
-                    atualizarEtapa('termo', 'ativa');
+                    atualizarEtapa('ativa');
                 }
             });
-
-            let etapaAtual = 'termo';
 
             try {
                 const resultadoFinalizacao = await callGoogleScript('finalizarTermo', {
@@ -8640,7 +8621,7 @@
                         || erroSemAcento.includes('termo nao localizado');
 
                     if (!termoNaoEncontrado) {
-                        atualizarEtapa('termo', 'erro');
+                        atualizarEtapa('erro');
                         await aguardarTransicao();
                         Swal.close();
                         notificarErroPadrao(resultadoFinalizacao, 'Não foi possível finalizar o termo.');
@@ -8650,9 +8631,7 @@
                     mensagemSucesso = 'Armário liberado com sucesso. Termo não localizado para finalização.';
                 }
 
-                atualizarEtapa('termo', 'concluida');
-                etapaAtual = 'armario';
-                atualizarEtapa('armario', 'ativa');
+                atualizarEtapa('concluida');
 
                 const resultadoLiberacao = await callGoogleScript('liberarArmario', {
                     id: identificadores?.idPlanilha || '',
@@ -8661,15 +8640,13 @@
                 });
 
                 if (!resultadoLiberacao.success) {
-                    atualizarEtapa('armario', 'erro');
-                    await aguardarTransicao();
+                    atualizarEtapa('erro');
                     Swal.close();
                     notificarErroPadrao(resultadoLiberacao);
                     return;
                 }
 
-                atualizarEtapa('armario', 'concluida');
-                await aguardarTransicao();
+                atualizarEtapa('concluida');
                 Swal.close();
 
                 garantirArmarioLiberadoLocal(id, metodo, confirmacao);
@@ -8686,8 +8663,7 @@
                 await tarefaAtualizacao;
             } catch (erro) {
                 console.error('Erro ao liberar armário de acompanhante:', erro);
-                atualizarEtapa(etapaAtual, 'erro');
-                await aguardarTransicao();
+                atualizarEtapa('erro');
                 Swal.close();
                 mostrarErro('Não foi possível concluir a liberação. Tente novamente.');
             }
