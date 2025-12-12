@@ -1479,17 +1479,66 @@
                 setTimeout(() => reproduzirTom(720, 0.12, 0.05), 90);
             }
         }
-        function lerArquivoImagemComoBase64(arquivo) {
+        function lerArquivoImagemComoBase64(arquivo, limiteKb = 300) {
             return new Promise((resolve, reject) => {
                 if (!arquivo) {
                     reject(new Error('Arquivo inválido'));
                     return;
                 }
+
                 const reader = new FileReader();
-                reader.onload = () => {
-                    resolve({ base64: reader.result, mime: arquivo.type || 'image/jpeg' });
-                };
                 reader.onerror = () => reject(new Error('Falha ao ler a imagem.'));
+                reader.onload = () => {
+                    const imagem = new Image();
+                    imagem.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const contexto = canvas.getContext('2d');
+                        const maxLado = 1600;
+
+                        let { width, height } = imagem;
+                        if (Math.max(width, height) > maxLado) {
+                            const proporcao = maxLado / Math.max(width, height);
+                            width = Math.round(width * proporcao);
+                            height = Math.round(height * proporcao);
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        contexto.drawImage(imagem, 0, 0, width, height);
+
+                        const mimePadrao = 'image/jpeg';
+                        let qualidade = 0.9;
+                        let dataUrl = canvas.toDataURL(mimePadrao, qualidade);
+
+                        const calcularTamanhoKb = (dataUrlImagem) => {
+                            const base64 = dataUrlImagem.split(',')[1] || '';
+                            return Math.round((base64.length * 3) / 4 / 1024);
+                        };
+
+                        let tamanhoAtual = calcularTamanhoKb(dataUrl);
+                        let tentativas = 0;
+
+                        while (tamanhoAtual > limiteKb && tentativas < 8) {
+                            if (qualidade > 0.55) {
+                                qualidade -= 0.1;
+                            } else {
+                                const escala = 0.9;
+                                canvas.width = Math.round(canvas.width * escala);
+                                canvas.height = Math.round(canvas.height * escala);
+                                contexto.clearRect(0, 0, canvas.width, canvas.height);
+                                contexto.drawImage(imagem, 0, 0, canvas.width, canvas.height);
+                                qualidade = 0.85;
+                            }
+                            dataUrl = canvas.toDataURL(mimePadrao, qualidade);
+                            tamanhoAtual = calcularTamanhoKb(dataUrl);
+                            tentativas += 1;
+                        }
+
+                        resolve({ base64: dataUrl, mime: mimePadrao });
+                    };
+                    imagem.onerror = () => reject(new Error('Falha ao carregar a imagem.'));
+                    imagem.src = reader.result;
+                };
                 reader.readAsDataURL(arquivo);
             });
         }
