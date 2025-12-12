@@ -3975,7 +3975,9 @@
         .registro-imagem-thumb {
             position: relative;
             padding-top: 64%;
-            background: linear-gradient(135deg, color-mix(in srgb, var(--dark-color) 18%, transparent), color-mix(in srgb, var(--dark-color) 8%, transparent));
+            background: var(--bg-color);
+            border-bottom: 1px solid color-mix(in srgb, var(--dark-color) 6%, transparent);
+            overflow: hidden;
         }
         .registro-imagem-thumb img {
             position: absolute;
@@ -3983,6 +3985,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            background: var(--surface-color);
         }
         .registro-imagem-info {
             padding: 12px 14px 14px;

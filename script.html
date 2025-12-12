@@ -7898,15 +7898,6 @@
                 return;
             }
 
-            Swal.fire({
-                title: 'Carregando registros em imagens...',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
             let imagens = [];
             try {
                 const parametros = montarPayloadTermo(armario, { incluirFinalizados: true });
@@ -7972,11 +7963,9 @@
             } catch (erroGaleria) {
                 console.error('Erro ao carregar registros em imagens:', erroGaleria);
                 mostrarErro('Não foi possível carregar os registros em imagens.');
-                Swal.close();
                 return;
             }
 
-            Swal.close();
             const resumo = `<div class="registro-imagens-resumo"><span>Armário <strong>${armario.numero || '-'}</strong></span><span>${imagens.length} registro(s)</span></div>`;
             const conteudoImagens = imagens.length
                 ? `<div class="registro-imagens-grid">${imagens.map(item => `
