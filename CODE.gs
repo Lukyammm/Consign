@@ -5968,6 +5968,9 @@ function salvarMovimentacao(dados) {
   var fotoBase64 = (dados.fotoBase64 || '').toString().trim();
   var fotoMime = (dados.fotoMime || '').toString().trim() || 'image/jpeg';
   var fotoUrl = (dados.fotoUrl || '').toString().trim();
+  var fotoId = '';
+  var fotoNome = '';
+  var primeiraFotoItem = { base64: '', mime: '' };
 
   if (!assinaturaBase64) {
     return { success: false, error: 'A assinatura do responsável é obrigatória.' };
@@ -5994,21 +5997,29 @@ function salvarMovimentacao(dados) {
       }
     }
 
-    if (Array.isArray(itensInformados) && itensInformados.length) {
-      try {
-        itensNormalizados = itensInformados.map(function(item) {
-          var quantidadeNumero = Number(item.quantidade);
-          return {
-            quantidade: Number.isFinite(quantidadeNumero) ? quantidadeNumero : 0,
-            descricao: item && item.descricao ? item.descricao.toString() : ''
-          };
-        }).filter(function(item) {
-          return item.quantidade > 0 && item.descricao;
-        });
-      } catch (erroItens) {
-        itensNormalizados = [];
+      if (Array.isArray(itensInformados) && itensInformados.length) {
+        try {
+          itensNormalizados = itensInformados.map(function(item) {
+            var quantidadeNumero = Number(item.quantidade);
+            var fotoItemBase64 = item && item.fotoBase64 ? item.fotoBase64.toString().trim() : '';
+            var fotoItemMime = item && item.fotoMime ? item.fotoMime.toString().trim() : '';
+
+            if (!primeiraFotoItem.base64 && fotoItemBase64) {
+              primeiraFotoItem.base64 = fotoItemBase64;
+              primeiraFotoItem.mime = fotoItemMime || 'image/jpeg';
+            }
+
+            return {
+              quantidade: Number.isFinite(quantidadeNumero) ? quantidadeNumero : 0,
+              descricao: item && item.descricao ? item.descricao.toString() : ''
+            };
+          }).filter(function(item) {
+            return item.quantidade > 0 && item.descricao;
+          });
+        } catch (erroItens) {
+          itensNormalizados = [];
+        }
       }
-    }
 
     var volumeTotal = 0;
     if (itensNormalizados.length) {
@@ -6024,22 +6035,28 @@ function salvarMovimentacao(dados) {
       volumeTotal = volumeConsiderado;
     }
 
+  if (!fotoBase64 && primeiraFotoItem.base64) {
+    fotoBase64 = primeiraFotoItem.base64;
+    fotoMime = primeiraFotoItem.mime || fotoMime;
+  }
+
   if (!volumeTotal) {
     var volumeInformado = Number(dados.volume);
     volumeTotal = Number.isFinite(volumeInformado) && volumeInformado > 0 ? volumeInformado : 1;
   }
 
   if (fotoBase64) {
-    var nomeMov = gerarNomeArquivoEvidencia(tipoNormalizado === 'saida' || tipoNormalizado === 'saída' ? 'registro_mov_saida' : 'registro_mov_entrada', numeroArmario || dados.numeroArmario);
-    var arquivoMov = salvarImagemBase64EmPasta(fotoBase64, fotoMime, nomeMov, PASTA_DRIVE_FOTOS_ID);
-    if (arquivoMov) {
-      fotoUrl = arquivoMov.url;
-      fotoMime = arquivoMov.mime || fotoMime;
-      var fotoId = arquivoMov.id;
+      var nomeMov = gerarNomeArquivoEvidencia(tipoNormalizado === 'saida' || tipoNormalizado === 'saída' ? 'registro_mov_saida' : 'registro_mov_entrada', numeroArmario || dados.numeroArmario);
+      var arquivoMov = salvarImagemBase64EmPasta(fotoBase64, fotoMime, nomeMov, PASTA_DRIVE_FOTOS_ID);
+      if (arquivoMov) {
+        fotoUrl = arquivoMov.url;
+        fotoMime = arquivoMov.mime || fotoMime;
+        fotoId = arquivoMov.id;
+        fotoNome = arquivoMov.nome || '';
+      }
     }
-  }
 
-  var fotoIdValor = fotoUrl ? (fotoId || '') : '';
+    var fotoIdValor = fotoUrl ? (fotoId || '') : '';
 
   if (fotoUrl) {
     registrarRegistroImagem({
@@ -6053,7 +6070,7 @@ function salvarMovimentacao(dados) {
       dataHora: registroMovimento,
       fotoUrl: fotoUrl,
       fotoId: fotoIdValor,
-      fotoNome: ''
+      fotoNome: fotoNome
     });
   }
 
