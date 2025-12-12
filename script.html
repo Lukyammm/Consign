@@ -625,6 +625,9 @@
             movSignatureField: document.getElementById('mov-signature-field'),
             movData: document.getElementById('mov-data'),
             movHora: document.getElementById('mov-hora'),
+            movFotoInput: document.getElementById('mov-foto-input'),
+            movFotoTrigger: document.getElementById('mov-foto-trigger'),
+            movFotoStatus: document.getElementById('mov-foto-status'),
             btnNovaUnidade: document.getElementById('btn-nova-unidade'),
             tabelaUnidades: document.getElementById('tabela-unidades'),
             tabelaUnidadesBody: document.querySelector('#tabela-unidades tbody'),
@@ -1439,6 +1442,7 @@
         let movimentacaoInventarioAtual = [];
         let movimentacaoVolumesBase = [];
         let movimentacoesRegistradas = [];
+        let movFotoAtual = { base64: '', mime: '', url: '' };
         let termoAssinaturaDesenhada = false;
         let termoDesenhandoAssinatura = false;
         let movAssinaturaDesenhada = false;
@@ -1477,6 +1481,20 @@
                 reproduzirTom(520, 0.12, 0.06);
                 setTimeout(() => reproduzirTom(720, 0.12, 0.05), 90);
             }
+        }
+        function lerArquivoImagemComoBase64(arquivo) {
+            return new Promise((resolve, reject) => {
+                if (!arquivo) {
+                    reject(new Error('Arquivo inválido'));
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                    resolve({ base64: reader.result, mime: arquivo.type || 'image/jpeg' });
+                };
+                reader.onerror = () => reject(new Error('Falha ao ler a imagem.'));
+                reader.readAsDataURL(arquivo);
+            });
         }
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
@@ -2667,15 +2685,48 @@
             }
             if (elementos.termoVolumesList) {
                 elementos.termoVolumesList.addEventListener('click', evento => {
-                    const botao = evento.target.closest('.btn-remove-volume');
-                    if (!botao) return;
-                    const item = botao.closest('.wizard-volume-item');
-                    removerVolumeTermo(item);
-                    salvarRascunhoTermo();
+                    const botaoRemover = evento.target.closest('.btn-remove-volume');
+                    if (botaoRemover) {
+                        const item = botaoRemover.closest('.wizard-volume-item');
+                        removerVolumeTermo(item);
+                        salvarRascunhoTermo();
+                        return;
+                    }
+                    const botaoFoto = evento.target.closest('.btn-volume-photo');
+                    if (botaoFoto) {
+                        const item = botaoFoto.closest('.wizard-volume-item');
+                        const input = item?.querySelector('.termo-volume-photo-input');
+                        input?.click();
+                    }
                 });
                 elementos.termoVolumesList.addEventListener('input', () => {
                     elementos.termoVolumesField?.classList.remove('invalid');
                     salvarRascunhoTermo();
+                });
+                elementos.termoVolumesList.addEventListener('change', async evento => {
+                    const input = evento.target.closest('.termo-volume-photo-input');
+                    if (!input || !input.files?.length) return;
+                    const item = input.closest('.wizard-volume-item');
+                    const status = item?.querySelector('.volume-photo-status');
+                    try {
+                        const arquivo = input.files[0];
+                        const imagem = await lerArquivoImagemComoBase64(arquivo);
+                        if (item) {
+                            item.dataset.fotoBase64 = imagem.base64;
+                            item.dataset.fotoMime = imagem.mime;
+                            delete item.dataset.fotoUrl;
+                        }
+                        if (status) {
+                            status.textContent = 'Foto anexada para este volume.';
+                        }
+                        elementos.termoVolumesField?.classList.remove('invalid');
+                        salvarRascunhoTermo();
+                    } catch (erroFoto) {
+                        console.error('Erro ao processar foto do volume:', erroFoto);
+                        mostrarErro('Não foi possível carregar a foto do volume.');
+                    } finally {
+                        input.value = '';
+                    }
                 });
             }
             if (elementos.termoAssinaturaClear) {
@@ -2693,6 +2744,20 @@
             }
             if (elementos.movSignatureClear) {
                 elementos.movSignatureClear.addEventListener('click', () => limparAssinaturaMovimentacao());
+            }
+            if (elementos.movFotoTrigger && elementos.movFotoInput) {
+                elementos.movFotoTrigger.addEventListener('click', () => elementos.movFotoInput?.click());
+                elementos.movFotoInput.addEventListener('change', async evento => {
+                    if (!evento.target.files?.length) return;
+                    try {
+                        await processarFotoMovimentacao(evento.target.files[0]);
+                    } catch (erroFoto) {
+                        console.error('Erro ao processar foto da movimentação:', erroFoto);
+                        mostrarErro('Não foi possível carregar a foto da movimentação.');
+                    } finally {
+                        elementos.movFotoInput.value = '';
+                    }
+                });
             }
             if (elementos.movSignatureCanvas) {
                 elementos.movSignatureCanvas.addEventListener('pointerdown', iniciarAssinaturaMovimentacao);
@@ -6573,6 +6638,22 @@
                 field.classList.add('invalid');
             }
         }
+        function limparFotoMovimentacao() {
+            movFotoAtual = { base64: '', mime: '', url: '' };
+            if (elementos.movFotoStatus) {
+                elementos.movFotoStatus.textContent = 'Nenhuma foto anexada.';
+            }
+            if (elementos.movFotoInput) {
+                elementos.movFotoInput.value = '';
+            }
+        }
+        async function processarFotoMovimentacao(arquivo) {
+            const imagem = await lerArquivoImagemComoBase64(arquivo);
+            movFotoAtual = { base64: imagem.base64, mime: imagem.mime, url: '' };
+            if (elementos.movFotoStatus) {
+                elementos.movFotoStatus.textContent = 'Foto anexada para esta movimentação.';
+            }
+        }
         function validarPassoTermo(indice) {
             const step = termoSteps[indice];
             if (!step) return true;
@@ -6660,10 +6741,36 @@
             }
             const actions = document.createElement('div');
             actions.className = 'wizard-volume-actions';
+            const fotoWrapper = document.createElement('div');
+            fotoWrapper.className = 'wizard-volume-photo';
+            const fotoLabel = document.createElement('span');
+            fotoLabel.textContent = 'Foto do volume';
+            const fotoBotao = document.createElement('button');
+            fotoBotao.type = 'button';
+            fotoBotao.className = 'btn btn-ghost btn-volume-photo';
+            fotoBotao.innerHTML = '<i class="fas fa-camera"></i> Capturar foto';
+            const fotoInput = document.createElement('input');
+            fotoInput.type = 'file';
+            fotoInput.accept = 'image/*';
+            fotoInput.capture = 'environment';
+            fotoInput.className = 'sr-only termo-volume-photo-input';
+            const fotoStatus = document.createElement('span');
+            fotoStatus.className = 'volume-photo-status';
+            if (dados.fotoUrl) {
+                item.dataset.fotoUrl = dados.fotoUrl;
+                fotoStatus.textContent = 'Foto já salva para este volume.';
+            } else {
+                fotoStatus.textContent = 'Nenhuma foto anexada.';
+            }
+            fotoWrapper.appendChild(fotoLabel);
+            fotoWrapper.appendChild(fotoBotao);
+            fotoWrapper.appendChild(fotoInput);
+            fotoWrapper.appendChild(fotoStatus);
             const remover = document.createElement('button');
             remover.type = 'button';
             remover.className = 'btn btn-secondary btn-remove-volume';
             remover.textContent = 'Remover';
+            actions.appendChild(fotoWrapper);
             actions.appendChild(remover);
             colQtd.appendChild(labelQtd);
             colQtd.appendChild(inputQtd);
@@ -6718,14 +6825,17 @@
                 const quantidade = quantidadeValor ? parseInt(quantidadeValor, 10) : 0;
                 return {
                     quantidade: Number.isNaN(quantidade) ? 0 : quantidade,
-                    descricao: descricaoValor
+                    descricao: descricaoValor,
+                    fotoBase64: item.dataset.fotoBase64 || '',
+                    fotoMime: item.dataset.fotoMime || '',
+                    fotoUrl: item.dataset.fotoUrl || ''
                 };
             });
         }
         function validarVolumesTermo() {
             if (!elementos.termoVolumesField) return true;
             const volumes = obterVolumesTermo();
-            const todosValidos = volumes.length > 0 && volumes.every(volume => volume.quantidade > 0 && volume.descricao);
+            const todosValidos = volumes.length > 0 && volumes.every(volume => volume.quantidade > 0 && volume.descricao && (volume.fotoBase64 || volume.fotoUrl));
             if (!todosValidos) {
                 elementos.termoVolumesField.classList.add('invalid');
                 return false;
@@ -7058,12 +7168,22 @@
             let controlador = null;
             let botaoLimpar = null;
             let limparHandler = null;
+            let fotoEntrega = { base64: '', mime: '' };
 
             const resultado = await Swal.fire({
                 title: 'Assinatura de encerramento',
                 html: `
                     <div class="final-signature-dialog">
                         <p>Solicite que ${textoAssinante} assine abaixo para concluir o encerramento.</p>
+                        <div class="wizard-field" id="final-photo-field">
+                            <label class="wizard-required" for="final-photo-input">Foto da entrega</label>
+                            <div class="photo-capture">
+                                <button type="button" class="btn btn-ghost" id="final-photo-trigger"><i class="fas fa-camera"></i> Capturar foto</button>
+                                <input type="file" id="final-photo-input" accept="image/*" capture="environment" class="sr-only">
+                                <div class="helper-text" id="final-photo-status">Nenhuma foto anexada.</div>
+                            </div>
+                            <div class="wizard-error">Inclua a foto do que está sendo entregue.</div>
+                        </div>
                         <div class="wizard-field" id="final-signature-field">
                             <label class="wizard-required" for="final-signature-canvas">Assinatura do acompanhante</label>
                             <div class="wizard-signature-area">
@@ -7089,6 +7209,10 @@
                     const canvas = document.getElementById('final-signature-canvas');
                     const field = document.getElementById('final-signature-field');
                     botaoLimpar = document.getElementById('final-signature-clear');
+                    const fotoTrigger = document.getElementById('final-photo-trigger');
+                    const fotoInput = document.getElementById('final-photo-input');
+                    const fotoStatus = document.getElementById('final-photo-status');
+                    const fotoField = document.getElementById('final-photo-field');
                     const inicializar = () => {
                         if (!canvas) {
                             return;
@@ -7101,6 +7225,25 @@
                             };
                             botaoLimpar.addEventListener('click', limparHandler);
                         }
+                        if (fotoTrigger && fotoInput) {
+                            fotoTrigger.addEventListener('click', () => fotoInput.click());
+                            fotoInput.addEventListener('change', async evento => {
+                                if (!evento.target.files?.length) return;
+                                try {
+                                    const imagem = await lerArquivoImagemComoBase64(evento.target.files[0]);
+                                    fotoEntrega = { base64: imagem.base64, mime: imagem.mime };
+                                    if (fotoStatus) {
+                                        fotoStatus.textContent = 'Foto anexada para a entrega.';
+                                    }
+                                    fotoField?.classList.remove('invalid');
+                                } catch (erroFoto) {
+                                    console.error('Erro ao processar foto da entrega:', erroFoto);
+                                    Swal.showValidationMessage('Não foi possível carregar a foto da entrega.');
+                                } finally {
+                                    fotoInput.value = '';
+                                }
+                            });
+                        }
                     };
                     if (typeof requestAnimationFrame === 'function') {
                         requestAnimationFrame(inicializar);
@@ -7112,12 +7255,22 @@
                     if (botaoLimpar && limparHandler) {
                         botaoLimpar.removeEventListener('click', limparHandler);
                     }
+                    const fotoInput = document.getElementById('final-photo-input');
+                    if (fotoInput) {
+                        fotoInput.value = '';
+                    }
                     if (controlador) {
                         controlador.destruir();
                         controlador = null;
                     }
                 },
                 preConfirm: () => {
+                    const fotoField = document.getElementById('final-photo-field');
+                    if (!fotoEntrega.base64) {
+                        fotoField?.classList.add('invalid');
+                        Swal.showValidationMessage('Inclua a foto do que está sendo entregue.');
+                        return false;
+                    }
                     const field = document.getElementById('final-signature-field');
                     if (!controlador || !controlador.possuiAssinatura()) {
                         field?.classList.add('invalid');
@@ -7130,7 +7283,7 @@
                         Swal.showValidationMessage('A assinatura não pôde ser processada.');
                         return false;
                     }
-                    return imagem;
+                    return { assinatura: imagem, fotoBase64: fotoEntrega.base64, fotoMime: fotoEntrega.mime };
                 }
             });
 
@@ -7618,6 +7771,7 @@
             elementos.movimentacaoForm.reset();
             limparItensMovimentacaoFormulario();
             limparAssinaturaMovimentacao(true);
+            limparFotoMovimentacao();
             atualizarResponsavelMovimentacaoInfo();
             const padraoLocal = obterDataHoraLocalPadrao();
             elementos.movData.value = padraoLocal.data;
@@ -7819,6 +7973,10 @@
                     elementos.movSignatureField?.classList.add('invalid');
                     return;
                 }
+                if ((tipoSelecionado === 'entrada' || tipoSelecionado === 'saida') && !movFotoAtual.base64) {
+                    mostrarErro('Inclua a foto da movimentação para prosseguir.');
+                    return;
+                }
                 const dados = {
                     armarioId: identificadores?.idPlanilha || '',
                     numeroArmario: identificadores?.numeroArmario || '',
@@ -7830,7 +7988,10 @@
                     hora: elementos.movHora.value,
                     itens: itensMovimentados,
                     assinaturaBase64: assinaturaMov.dataUrl || '',
-                    assinaturaMime: assinaturaMov.mime || 'image/png'
+                    assinaturaMime: assinaturaMov.mime || 'image/png',
+                    fotoBase64: movFotoAtual.base64 || '',
+                    fotoMime: movFotoAtual.mime || 'image/jpeg',
+                    fotoUrl: movFotoAtual.url || ''
                 };
                 const resultado = await callGoogleScript('salvarMovimentacao', dados);
                 if (resultado.success) {
@@ -7845,6 +8006,7 @@
                     limparItensMovimentacaoFormulario();
                     limparAssinaturaMovimentacao(true);
                     inicializarCanvasAssinatura();
+                    limparFotoMovimentacao();
                     const padraoLocal = obterDataHoraLocalPadrao();
                     elementos.movData.value = padraoLocal.data;
                     elementos.movHora.value = padraoLocal.hora;
@@ -8124,7 +8286,7 @@
 
             const acompanhante = termoDados?.acompanhante || armario.nomeVisitante || '-';
             const assinaturaFinal = await coletarAssinaturaEncerramento(acompanhante);
-            if (!assinaturaFinal || !assinaturaFinal.base64) {
+            if (!assinaturaFinal || !assinaturaFinal.assinatura?.base64) {
                 await Swal.fire({
                     title: 'Liberação cancelada',
                     text: 'A assinatura de encerramento não foi coletada. O armário permanecerá ativo.',
@@ -8210,8 +8372,10 @@
                     armarioId: identificadores?.idPlanilha || '',
                     numeroArmario: identificadores?.numeroArmario || '',
                     metodo,
-                    assinaturaFinal: assinaturaFinal.base64,
-                    assinaturaMimeFinal: assinaturaFinal.mime,
+                    assinaturaFinal: assinaturaFinal.assinatura.base64,
+                    assinaturaMimeFinal: assinaturaFinal.assinatura.mime,
+                    fotoEntregaBase64: assinaturaFinal.fotoBase64,
+                    fotoEntregaMime: assinaturaFinal.fotoMime,
                     confirmacao,
                     usuarioResponsavel,
                     tipo: identificadores?.tipo || ''
