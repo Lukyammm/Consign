@@ -572,9 +572,6 @@ const PLANILHA_LIBERACAO_ABA = 'LIBERACAO';
 const PLANILHA_LIBERACAO_LINHA_CABECALHO = 10;
 const PLANILHA_LIBERACAO_COLUNA_DATA = 4; // Coluna D
 
-// Pasta raiz para salvar fotos de volumes e movimentações (Drive)
-const PASTA_FOTOS_VOLUMES_ID = '1XKZ6LApUh6RjBddeySCbPFdS6ncDS8DB';
-
 function montarChaveCache() {
   var partes = Array.prototype.slice.call(arguments).filter(function(parte) {
     return parte !== null && parte !== undefined && parte !== '';
@@ -3925,88 +3922,6 @@ function limparCacheTermos() {
   }
 }
 
-function processarFotoVolumeItem(item, contexto, habilitarFotos) {
-  var fotoFinal = { id: '', url: '', nome: '', mime: '' };
-  if (!habilitarFotos || !item) {
-    return fotoFinal;
-  }
-
-  var fotoOrigem = item.foto || {};
-  var base64 = fotoOrigem.base64 || '';
-  var mime = fotoOrigem.mime || 'image/jpeg';
-  var url = fotoOrigem.url || '';
-  var id = fotoOrigem.id || '';
-  var nome = fotoOrigem.nome || '';
-
-  if (!base64 && (url || id)) {
-    fotoFinal.url = url;
-    fotoFinal.id = id;
-    fotoFinal.nome = nome;
-    fotoFinal.mime = mime;
-    return fotoFinal;
-  }
-
-  var padraoPrefixo = /^data:([^;]+);base64,/i;
-  if (padraoPrefixo.test(base64)) {
-    var match = base64.match(padraoPrefixo);
-    if (match && match[1]) {
-      mime = match[1];
-    }
-    base64 = base64.replace(padraoPrefixo, '');
-  }
-
-  if (base64) {
-    var fotoSalva = salvarImagemVolumeDrive(base64, mime, contexto);
-    if (fotoSalva) {
-      fotoFinal.id = fotoSalva.id;
-      fotoFinal.url = fotoSalva.url;
-      fotoFinal.nome = fotoSalva.nome;
-      fotoFinal.mime = mime;
-    }
-  }
-
-  return fotoFinal;
-}
-
-function normalizarVolumeItem(item, contexto, habilitarFotos) {
-  var fotoNormalizada = processarFotoVolumeItem(item, contexto, habilitarFotos);
-  var quantidadeNumero = Number(item && item.quantidade);
-  return {
-    quantidade: Number.isFinite(quantidadeNumero) ? quantidadeNumero : 0,
-    descricao: item && item.descricao ? String(item.descricao) : '',
-    foto: fotoNormalizada
-  };
-}
-
-function processarListaFotos(fotosEntrada, contexto, habilitarFotos) {
-  if (!habilitarFotos) {
-    return [];
-  }
-
-  var lista = fotosEntrada;
-  if (typeof lista === 'string' && lista.trim()) {
-    try {
-      lista = JSON.parse(lista);
-    } catch (erroFotos) {
-      lista = [];
-    }
-  }
-
-  if (!Array.isArray(lista)) {
-    return [];
-  }
-
-  var fotosNormalizadas = [];
-  lista.forEach(function(item, idx) {
-    var fotoInfo = processarFotoVolumeItem({ foto: item }, contexto, true);
-    if (fotoInfo && (fotoInfo.id || fotoInfo.url)) {
-      fotosNormalizadas.push(Object.assign({ indice: idx }, fotoInfo));
-    }
-  });
-
-  return fotosNormalizadas;
-}
-
 function salvarTermoCompleto(dadosTermo) {
   try {
     var orientacoes = dadosTermo.orientacoes;
@@ -4032,13 +3947,15 @@ function salvarTermoCompleto(dadosTermo) {
     if (!Array.isArray(volumes)) {
       volumes = [];
     }
-
-    var habilitarFotosVolumes = normalizarTextoBasico(dadosTermo.tipo) === 'acompanhante';
     volumes = volumes.map(function(item) {
       if (typeof item === 'string') {
-        return normalizarVolumeItem({ quantidade: 0, descricao: item }, dadosTermo, habilitarFotosVolumes);
+        return { quantidade: 0, descricao: item };
       }
-      return normalizarVolumeItem(item || {}, dadosTermo, habilitarFotosVolumes);
+      var quantidadeNumero = Number(item.quantidade);
+      return {
+        quantidade: isNaN(quantidadeNumero) ? 0 : quantidadeNumero,
+        descricao: item && item.descricao ? String(item.descricao) : ''
+      };
     }).filter(function(item) {
       return item.quantidade > 0 && item.descricao;
     });
@@ -4327,8 +4244,7 @@ function normalizarAssinaturas(valor) {
     metodoFinal: '',
     cpfFinal: '',
     finalizadoEm: '',
-    responsavelFinalizacao: '',
-    fotosSaida: []
+    responsavelFinalizacao: ''
   };
 
   if (!valor) {
@@ -4346,7 +4262,6 @@ function normalizarAssinaturas(valor) {
       info.cpfFinal = json.cpfFinal || '';
       info.finalizadoEm = json.finalizadoEm || '';
       info.responsavelFinalizacao = json.responsavelFinalizacao || '';
-      info.fotosSaida = Array.isArray(json.fotosSaida) ? json.fotosSaida : [];
       return info;
     } catch (erro) {
       info.inicial = valor;
@@ -4363,7 +4278,6 @@ function normalizarAssinaturas(valor) {
     info.cpfFinal = valor.cpfFinal || '';
     info.finalizadoEm = valor.finalizadoEm || '';
     info.responsavelFinalizacao = valor.responsavelFinalizacao || '';
-    info.fotosSaida = Array.isArray(valor.fotosSaida) ? valor.fotosSaida : [];
   }
 
   if (!info.mimeInicial && info.inicial) {
@@ -4495,7 +4409,6 @@ function obterTermosRegistrados() {
       aplicadoEm: data[i][16],
       pdfUrl: data[i][17],
       assinaturas: assinaturas,
-      fotosSaida: assinaturas.fotosSaida || [],
       status: statusBruto,
       statusNormalizado: statusNormalizado,
       finalizado: finalizado,
@@ -4579,7 +4492,6 @@ function getTermo(dados) {
         assinaturaMimeInicial: assinaturas.mimeInicial || 'image/png',
         assinaturaMimeFinal: assinaturas.mimeFinal || 'image/png',
         assinaturas: assinaturas,
-        fotosSaida: assinaturas.fotosSaida || [],
         finalizadoEm: assinaturas.finalizadoEm,
         metodoFinal: assinaturas.metodoFinal,
         cpfConfirmacao: assinaturas.cpfFinal,
@@ -4722,12 +4634,6 @@ function finalizarTermo(dados) {
     if (assinaturas.final && assinaturas.final.length > 49000) {
       return { success: false, error: 'A assinatura de encerramento está muito grande. Peça para refazer utilizando traços menores.' };
     }
-    var fotosSaida = processarListaFotos(dados.fotosSaida, {
-      paciente: termoEncontrado.paciente,
-      prontuario: termoEncontrado.prontuario,
-      titulo: 'saida_armario_' + (termoEncontrado.numeroArmario || termoEncontrado.armarioId || '')
-    }, normalizarTextoBasico(tipoTermo) === 'acompanhante');
-    assinaturas.fotosSaida = fotosSaida;
     var responsavelFinalizacao = determinarResponsavelRegistro(dados.usuarioResponsavel);
     assinaturas.responsavelFinalizacao = responsavelFinalizacao;
 
@@ -4812,77 +4718,6 @@ function obterPastaSeguraDrive(pastaIdPreferida) {
   } catch (erroPadrao) {
     return DriveApp.getRootFolder();
   }
-}
-
-function obterOuCriarSubpasta(pastaPai, nome) {
-  var nomeSeguro = (nome || '').toString().trim();
-  if (!pastaPai || !nomeSeguro) {
-    return pastaPai || obterPastaSeguraDrive(PASTA_FOTOS_VOLUMES_ID);
-  }
-
-  var pastas = pastaPai.getFoldersByName(nomeSeguro);
-  if (pastas.hasNext()) {
-    return pastas.next();
-  }
-
-  return pastaPai.createFolder(nomeSeguro);
-}
-
-function obterPastaFotosBase() {
-  return obterPastaSeguraDrive(PASTA_FOTOS_VOLUMES_ID);
-}
-
-function obterPastaFotosMesSemana(dataReferencia) {
-  var base = obterPastaFotosBase();
-  var data = dataReferencia || new Date();
-  var meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  var nomeMes = meses[data.getMonth()] || 'Meses';
-  var semanaNumero = Math.ceil(data.getDate() / 7);
-  var nomeSemana = 'Semana ' + semanaNumero;
-
-  var pastaMes = obterOuCriarSubpasta(base, nomeMes);
-  return obterOuCriarSubpasta(pastaMes, nomeSemana);
-}
-
-function montarNomePacientePasta(paciente, prontuario) {
-  var nomePaciente = (paciente || 'Sem Paciente').toString().trim();
-  var prontuarioTexto = (prontuario || '').toString().trim();
-  var partes = [nomePaciente];
-  if (prontuarioTexto) {
-    partes.push('PRONT-' + prontuarioTexto);
-  }
-  var nomePasta = partes.join(' - ');
-  return nomePasta.replace(/[\\/:*?"<>|]/g, '_');
-}
-
-function salvarImagemVolumeDrive(imagemBase64, mime, contexto) {
-  if (!imagemBase64) {
-    return null;
-  }
-
-  var mimeSeguro = (mime || 'image/jpeg').toString();
-  var pastaDestino = obterPastaFotosMesSemana(new Date());
-
-  if (contexto && contexto.paciente) {
-    var pastaPaciente = obterOuCriarSubpasta(pastaDestino, montarNomePacientePasta(contexto.paciente, contexto.prontuario));
-    pastaDestino = pastaPaciente;
-  }
-
-  var titulo = contexto && contexto.titulo ? contexto.titulo.toString().trim() : 'volume';
-  var agora = obterDataHoraAtualFormatada();
-  var nomeArquivo = [titulo, agora.dataHoraIso].join('_').replace(/[^a-zA-Z0-9_\-]+/g, '_') + '.jpg';
-
-  var blob = Utilities.newBlob(Utilities.base64Decode(imagemBase64), mimeSeguro, nomeArquivo);
-  var arquivo = pastaDestino.createFile(blob).setName(nomeArquivo);
-  arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-  var id = arquivo.getId();
-  return {
-    id: id,
-    url: 'https://drive.google.com/uc?export=view&id=' + id,
-    nome: nomeArquivo,
-    pastaId: pastaDestino.getId()
-  };
 }
 
 function gerarESalvarTermoPDF(dadosTermo, opcoes) {
@@ -5269,7 +5104,6 @@ function garantirEstruturaMovimentacoes(sheet) {
   var colunaVolume = 12;
   var colunaAssinatura = 13;
   var colunaAssinaturaMime = 14;
-  var colunaFotos = 15;
 
   if (!sheet) {
     return {
@@ -5280,7 +5114,7 @@ function garantirEstruturaMovimentacoes(sheet) {
     };
   }
 
-  var minimoColunas = Math.max(colunaItens, colunaStatus, colunaVolume, colunaAssinaturaMime, colunaFotos);
+  var minimoColunas = Math.max(colunaItens, colunaStatus, colunaVolume, colunaAssinaturaMime);
   var totalColunas = sheet.getLastColumn();
   if (totalColunas < minimoColunas) {
     sheet.insertColumnsAfter(totalColunas, minimoColunas - totalColunas);
@@ -5303,9 +5137,6 @@ function garantirEstruturaMovimentacoes(sheet) {
   if (!cabecalhos[colunaAssinaturaMime - 1]) {
     sheet.getRange(1, colunaAssinaturaMime).setValue('Assinatura MIME');
   }
-  if (!cabecalhos[colunaFotos - 1]) {
-    sheet.getRange(1, colunaFotos).setValue('Fotos');
-  }
 
   return {
     colunaStatus: colunaStatus,
@@ -5313,7 +5144,6 @@ function garantirEstruturaMovimentacoes(sheet) {
     colunaVolume: colunaVolume,
     colunaAssinatura: colunaAssinatura,
     colunaAssinaturaMime: colunaAssinaturaMime,
-    colunaFotos: colunaFotos,
     ultimaColuna: Math.max(totalColunas, minimoColunas)
   };
 }
@@ -5416,7 +5246,6 @@ function getMovimentacoes(dados) {
   var colunaVolume = estruturaMov.colunaVolume;
   var colunaAssinatura = estruturaMov.colunaAssinatura;
   var colunaAssinaturaMime = estruturaMov.colunaAssinaturaMime;
-  var colunaFotos = estruturaMov.colunaFotos;
   var possuiArmario = dados && dados.armarioId !== undefined && dados.armarioId !== null && dados.armarioId !== '';
   var armarioId = possuiArmario ? dados.armarioId : null;
   var armarioIdTexto = possuiArmario && armarioId !== null && armarioId !== undefined ? armarioId.toString().trim() : '';
@@ -5444,7 +5273,7 @@ function getMovimentacoes(dados) {
       }
 
       var linhasEncontradas = [];
-      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens, colunaVolume, colunaAssinaturaMime, colunaFotos);
+      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens, colunaVolume, colunaAssinaturaMime);
       var intervaloIds = sheet.getRange(2, 2, totalLinhas, 1);
       var textoFinder = intervaloIds.createTextFinder(armarioIdTexto).useRegularExpression(false);
       var correspondencias = textoFinder.findAll();
@@ -5535,21 +5364,6 @@ function getMovimentacoes(dados) {
           itens = [{ quantidade: volumeItens, descricao: linhaDados[4].toString() }];
         }
 
-        var fotosValor = colunaFotos && colunaFotos <= linhaDados.length ? linhaDados[colunaFotos - 1] : [];
-        var fotosLista = [];
-        if (typeof fotosValor === 'string' && fotosValor.trim()) {
-          try {
-            var parsedFotos = JSON.parse(fotosValor);
-            if (Array.isArray(parsedFotos)) {
-              fotosLista = parsedFotos;
-            }
-          } catch (erroFotos) {
-            fotosLista = [];
-          }
-        } else if (Array.isArray(fotosValor)) {
-          fotosLista = fotosValor;
-        }
-
         movimentacoes.push({
           id: linhaDados[0],
           armarioId: linhaDados[1],
@@ -5565,9 +5379,8 @@ function getMovimentacoes(dados) {
           assinaturaMime: colunaAssinaturaMime && colunaAssinaturaMime <= linhaDados.length
             ? linhaDados[colunaAssinaturaMime - 1]
             : '',
-          itens: itens,
-          fotos: fotosLista
-        });
+          itens: itens
+  });
 }
 
 function getMovimentacoesResumo(dados) {
@@ -5672,19 +5485,17 @@ function salvarMovimentacao(dados) {
 
     var estruturaMov = garantirEstruturaMovimentacoes(sheet);
     var colunaStatus = estruturaMov.colunaStatus;
-  var colunaItens = estruturaMov.colunaItens;
-  var colunaVolume = estruturaMov.colunaVolume;
-  var colunaAssinatura = estruturaMov.colunaAssinatura;
-  var colunaAssinaturaMime = estruturaMov.colunaAssinaturaMime;
-  var colunaFotos = estruturaMov.colunaFotos;
-  var larguraMovimentacao = Math.max(
-    colunaItens,
-    estruturaMov.ultimaColuna,
-    sheet.getLastColumn(),
-    colunaVolume,
-    colunaAssinaturaMime,
-    colunaFotos
-  );
+    var colunaItens = estruturaMov.colunaItens;
+    var colunaVolume = estruturaMov.colunaVolume;
+    var colunaAssinatura = estruturaMov.colunaAssinatura;
+    var colunaAssinaturaMime = estruturaMov.colunaAssinaturaMime;
+    var larguraMovimentacao = Math.max(
+      colunaItens,
+      estruturaMov.ultimaColuna,
+      sheet.getLastColumn(),
+      colunaVolume,
+      colunaAssinaturaMime
+    );
 
     // Buscar número do armário
     var tipoArmarioNormalizado = normalizarTextoBasico(dados.tipoArmario);
@@ -5736,10 +5547,9 @@ function salvarMovimentacao(dados) {
       assinaturaBase64 = assinaturaBase64.replace(padraoPrefixo, '');
     }
 
-  var itensSerializados = '';
-  var itensNormalizados = [];
-  var itensInformados = dados.itens;
-  var fotosNormalizadas = [];
+    var itensSerializados = '';
+    var itensNormalizados = [];
+    var itensInformados = dados.itens;
 
     if (typeof itensInformados === 'string' && itensInformados) {
       try {
@@ -5779,21 +5589,14 @@ function salvarMovimentacao(dados) {
       volumeTotal = volumeConsiderado;
     }
 
-  if (!volumeTotal) {
-    var volumeInformado = Number(dados.volume);
-    volumeTotal = Number.isFinite(volumeInformado) && volumeInformado > 0 ? volumeInformado : 1;
-  }
+    if (!volumeTotal) {
+      var volumeInformado = Number(dados.volume);
+      volumeTotal = Number.isFinite(volumeInformado) && volumeInformado > 0 ? volumeInformado : 1;
+    }
 
-  var contextoFotos = {
-    paciente: dados.paciente || '',
-    prontuario: dados.prontuario || '',
-    titulo: 'mov_' + (dados.tipo || 'mov') + '_' + (numeroArmario || dados.armarioId || '')
-  };
-  fotosNormalizadas = processarListaFotos(dados.fotos, contextoFotos, normalizarTextoBasico(dados.tipoArmario) === 'acompanhante');
-
-  var novaLinha = new Array(larguraMovimentacao).fill('');
-  novaLinha[0] = novoId;
-  novaLinha[1] = dados.armarioId;
+    var novaLinha = new Array(larguraMovimentacao).fill('');
+    novaLinha[0] = novoId;
+    novaLinha[1] = dados.armarioId;
     novaLinha[2] = numeroArmario;
     novaLinha[3] = dados.tipo;
     novaLinha[4] = dados.descricao;
@@ -5811,12 +5614,9 @@ function salvarMovimentacao(dados) {
     if (colunaAssinatura) {
       novaLinha[colunaAssinatura - 1] = assinaturaBase64;
     }
-  if (colunaAssinaturaMime) {
-    novaLinha[colunaAssinaturaMime - 1] = assinaturaMime;
-  }
-  if (colunaFotos) {
-    novaLinha[colunaFotos - 1] = fotosNormalizadas.length ? JSON.stringify(fotosNormalizadas) : '';
-  }
+    if (colunaAssinaturaMime) {
+      novaLinha[colunaAssinaturaMime - 1] = assinaturaMime;
+    }
 
     sheet.getRange(lastRow + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
 
