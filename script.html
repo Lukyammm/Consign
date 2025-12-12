@@ -5118,17 +5118,37 @@
             const resultado = await Swal.fire({
                 title: 'Mover para armário livre',
                 html: `
-                    <div class="swal-form-group">
-                        <label for="destino-contingencia">Selecione o armário livre</label>
-                        <select id="destino-contingencia" class="swal2-select" style="width:100%;">
-                            ${optionsHtml}
-                        </select>
+                    <div class="modal-transfer">
+                        <div class="modal-transfer-header">
+                            <div class="modal-transfer-icon" aria-hidden="true"><i class="fas fa-exchange-alt"></i></div>
+                            <div class="modal-transfer-text">
+                                <p class="modal-transfer-title">Selecione um armário livre</p>
+                                <p class="modal-transfer-subtitle">Escolha um destino disponível para concluir a transferência.</p>
+                            </div>
+                        </div>
+                        <div class="swal-form-group modal-transfer-group">
+                            <label for="destino-contingencia" class="modal-transfer-label">Armário livre</label>
+                            <div class="modal-transfer-select">
+                                <i class="fas fa-warehouse" aria-hidden="true"></i>
+                                <select id="destino-contingencia" class="swal2-select modal-transfer-field" style="width:100%;">
+                                    ${optionsHtml}
+                                </select>
+                                <span class="modal-transfer-caret" aria-hidden="true"><i class="fas fa-angle-down"></i></span>
+                            </div>
+                            <p class="modal-transfer-hint">Somente armários livres aparecem nesta lista.</p>
+                        </div>
                     </div>
                 `,
                 focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'Mover',
                 cancelButtonText: 'Cancelar',
+                buttonsStyling: false,
+                customClass: {
+                    popup: 'modal-transfer-popup',
+                    confirmButton: 'modal-transfer-confirm',
+                    cancelButton: 'modal-transfer-cancel'
+                },
                 preConfirm: () => {
                     const select = Swal.getPopup().querySelector('#destino-contingencia');
                     const valor = select ? select.value : '';
