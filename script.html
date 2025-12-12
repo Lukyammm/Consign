@@ -8599,7 +8599,7 @@
                         break;
                 }
             };
-            const aguardarTransicao = (tempo = 25) => new Promise(resolve => setTimeout(resolve, tempo));
+            const aguardarTransicao = (tempo = 10) => new Promise(resolve => setTimeout(resolve, tempo));
 
             Swal.fire({
                 title: 'Concluindo a liberação do armário...',
@@ -8677,7 +8677,7 @@
                     atualizarResumoDashboardLocal();
                 }, {
                     modoRapido: true,
-                    timeoutRapido: 1500
+                    timeoutRapido: 600
                 });
                 mostrarSucesso(mensagemSucesso);
             } catch (erro) {
