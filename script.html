@@ -43,7 +43,8 @@
                 filtrosTermos: {
                     status: 'todos',
                     unidade: 'todas',
-                    busca: ''
+                    busca: '',
+                    prontuario: ''
                 },
                 autenticado: false,
                 usuarioAutenticado: null,
@@ -54,7 +55,8 @@
         const filtrosTermoPadrao = {
             status: 'todos',
             unidade: 'todas',
-            busca: ''
+            busca: '',
+            prontuario: ''
         };
         function obterEstadoLiberacao() {
             if (!estado.liberacao) {
@@ -591,6 +593,7 @@
             termoFiltroStatus: document.getElementById('termo-filtro-status'),
             termoFiltroUnidade: document.getElementById('termo-filtro-unidade'),
             termoFiltroBusca: document.getElementById('termo-filtro-busca'),
+            termoFiltroProntuario: document.getElementById('termo-filtro-prontuario'),
             termoFiltroLimpar: document.getElementById('termo-filtro-limpar'),
             movimentacaoModal: document.getElementById('movimentacao-modal'),
             movimentacaoModalClose: document.getElementById('movimentacao-modal-close'),
@@ -2790,6 +2793,12 @@
                     aplicarFiltrosTermosDebounced();
                 });
             }
+            if (elementos.termoFiltroProntuario) {
+                elementos.termoFiltroProntuario.addEventListener('input', () => {
+                    atualizarFiltrosTermo({ prontuario: elementos.termoFiltroProntuario.value || '' });
+                    aplicarFiltrosTermosDebounced();
+                });
+            }
             if (elementos.termoFiltroLimpar) {
                 elementos.termoFiltroLimpar.addEventListener('click', limparFiltrosTermos);
             }
@@ -3981,6 +3990,9 @@
             if (elementos.termoFiltroBusca && elementos.termoFiltroBusca.value !== filtros.busca) {
                 elementos.termoFiltroBusca.value = filtros.busca;
             }
+            if (elementos.termoFiltroProntuario && elementos.termoFiltroProntuario.value !== filtros.prontuario) {
+                elementos.termoFiltroProntuario.value = filtros.prontuario;
+            }
         }
         function atualizarFiltroUnidadeTermos() {
             if (!elementos.termoFiltroUnidade) return;
@@ -4066,6 +4078,11 @@
                         a.termoInfo?.acompanhante
                     ];
                     return camposBusca.some(campo => normalizarTextoBusca(campo).includes(buscaFiltro));
+                })
+                .filter(a => {
+                    if (!prontuarioFiltro) return true;
+                    const prontuario = normalizarTextoBusca(a.prontuario || a.termoInfo?.prontuario || '');
+                    return prontuario.includes(prontuarioFiltro);
                 })
                 .filter(a => {
                     const statusTermoNormalizado = normalizarTexto(a.termoStatus || a.termoInfo?.status);
