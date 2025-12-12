@@ -949,6 +949,12 @@
                                         <label for="mov-observacao" id="mov-observacao-label">Observações da movimentação</label>
                                         <textarea id="mov-observacao" class="form-control" rows="3" placeholder="Use apenas se precisar registrar detalhes"></textarea>
                                     </div>
+                                    <div class="form-group" id="mov-fotos-group">
+                                        <label for="mov-fotos">Fotos da movimentação (opcional)</label>
+                                        <input type="file" id="mov-fotos" class="form-control" accept="image/*" capture="environment" multiple>
+                                        <div class="mov-fotos-preview" id="mov-fotos-preview"></div>
+                                        <small class="helper-text">Anexe fotos dos volumes na entrada ou saída para rastreabilidade.</small>
+                                    </div>
                                     <div class="form-group">
                                         <label>Responsável pelo registro</label>
                                         <div class="form-static highlight" id="mov-responsavel-info">Será preenchido automaticamente com seu usuário.</div>
