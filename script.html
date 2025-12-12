@@ -7910,50 +7910,64 @@
             let imagens = [];
             try {
                 const parametros = montarPayloadTermo(armario, { incluirFinalizados: true });
-                const [movResposta, termoResposta] = await Promise.all([
-                    callGoogleScript('getMovimentacoes', parametros),
-                    callGoogleScript('getTermo', parametros)
-                ]);
+                const resposta = await callGoogleScript('getRegistrosImagens', parametros);
 
-                if (termoResposta && termoResposta.success && termoResposta.data) {
-                    const termo = termoResposta.data;
-                    const volumes = Array.isArray(termo.volumes) ? termo.volumes : [];
-                    const aplicadoEm = termo.aplicadoEm ? formatarDataHora(termo.aplicadoEm) : '-';
-                    volumes.forEach((volume, indice) => {
-                        if (!volume.fotoUrl) return;
-                        imagens.push({
-                            contexto: 'Aplicação do termo',
-                            tipo: 'termo',
-                            titulo: volume.descricao ? `Volume ${indice + 1} - ${volume.descricao}` : `Volume ${indice + 1}`,
-                            dataHora: aplicadoEm,
-                            detalhe: `Quantidade: ${volume.quantidade || '-'}`,
-                            responsavel: termo.acompanhante || termo.paciente || '',
-                            url: volume.fotoUrl
-                        });
-                    });
-                }
+                if (resposta && resposta.success && Array.isArray(resposta.data)) {
+                    imagens = resposta.data.map(item => ({
+                        contexto: item.contexto,
+                        tipo: item.tipo,
+                        titulo: item.titulo,
+                        dataHora: item.dataHora ? formatarDataHora(item.dataHora) : '-',
+                        detalhe: item.detalhe,
+                        responsavel: item.responsavel,
+                        url: item.fotoUrl
+                    }));
+                } else {
+                    const [movResposta, termoResposta] = await Promise.all([
+                        callGoogleScript('getMovimentacoes', parametros),
+                        callGoogleScript('getTermo', parametros)
+                    ]);
 
-                if (movResposta && movResposta.success && Array.isArray(movResposta.data)) {
-                    movResposta.data.forEach(mov => {
-                        if (!mov.fotoUrl) return;
-                        const tipoMov = formatarTituloMovimento(normalizarTexto(mov.tipo));
-                        const itensMov = normalizarListaItensMovimentacao(mov.itens);
-                        const descricaoItens = itensMov.length
-                            ? `Itens: ${itensMov.map(item => `${Number(item.quantidade)}x ${item.descricao}`).join('; ')}`
-                            : '';
-                        const dataHora = mov.data && mov.hora
-                            ? `${mov.data} ${mov.hora}`
-                            : formatarDataHora(mov.dataHoraRegistro || '');
-                        imagens.push({
-                            contexto: tipoMov || 'Movimentação',
-                            tipo: 'movimentacao',
-                            titulo: mov.descricao || 'Registro da movimentação',
-                            dataHora,
-                            detalhe: descricaoItens,
-                            responsavel: mov.responsavel || '',
-                            url: mov.fotoUrl
+                    if (termoResposta && termoResposta.success && termoResposta.data) {
+                        const termo = termoResposta.data;
+                        const volumes = Array.isArray(termo.volumes) ? termo.volumes : [];
+                        const aplicadoEm = termo.aplicadoEm ? formatarDataHora(termo.aplicadoEm) : '-';
+                        volumes.forEach((volume, indice) => {
+                            if (!volume.fotoUrl) return;
+                            imagens.push({
+                                contexto: 'Aplicação do termo',
+                                tipo: 'termo',
+                                titulo: volume.descricao ? `Volume ${indice + 1} - ${volume.descricao}` : `Volume ${indice + 1}`,
+                                dataHora: aplicadoEm,
+                                detalhe: `Quantidade: ${volume.quantidade || '-'}`,
+                                responsavel: termo.acompanhante || termo.paciente || '',
+                                url: volume.fotoUrl
+                            });
                         });
-                    });
+                    }
+
+                    if (movResposta && movResposta.success && Array.isArray(movResposta.data)) {
+                        movResposta.data.forEach(mov => {
+                            if (!mov.fotoUrl) return;
+                            const tipoMov = formatarTituloMovimento(normalizarTexto(mov.tipo));
+                            const itensMov = normalizarListaItensMovimentacao(mov.itens);
+                            const descricaoItens = itensMov.length
+                                ? `Itens: ${itensMov.map(item => `${Number(item.quantidade)}x ${item.descricao}`).join('; ')}`
+                                : '';
+                            const dataHora = mov.data && mov.hora
+                                ? `${mov.data} ${mov.hora}`
+                                : formatarDataHora(mov.dataHoraRegistro || '');
+                            imagens.push({
+                                contexto: tipoMov || 'Movimentação',
+                                tipo: 'movimentacao',
+                                titulo: mov.descricao || 'Registro da movimentação',
+                                dataHora,
+                                detalhe: descricaoItens,
+                                responsavel: mov.responsavel || '',
+                                url: mov.fotoUrl
+                            });
+                        });
+                    }
                 }
             } catch (erroGaleria) {
                 console.error('Erro ao carregar registros em imagens:', erroGaleria);
