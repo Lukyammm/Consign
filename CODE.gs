@@ -552,9 +552,6 @@ function resolverIdsUnidadesArmazenadas(unidadesValor, mapas) {
 const PASTA_DRIVE_ID = '1nYsGJJUIufxDYVvIanVXCbPx7YuBOYDP';
 const PASTA_DRIVE_TEMP_ID = '11M_fFDA9nrOqzIm6zMnaGjYMCQoE4XXs';
 
-// ID da pasta base para fotos de volumes (estrutura AAAA-MM/Semana X)
-const PASTA_FOTOS_BASE_ID = '1XKZ6LApUh6RjBddeySCbPFdS6ncDS8DB';
-
 // Configuração de cache para leitura dos termos
 const TERMOS_CACHE_KEY = 'termos_registrados_cache_v1';
 const TERMOS_CACHE_META_KEY = 'termos_registrados_cache_meta_v1';
@@ -3957,10 +3954,7 @@ function salvarTermoCompleto(dadosTermo) {
       var quantidadeNumero = Number(item.quantidade);
       return {
         quantidade: isNaN(quantidadeNumero) ? 0 : quantidadeNumero,
-        descricao: item && item.descricao ? String(item.descricao) : '',
-        fotoBase64: item && item.fotoBase64 ? String(item.fotoBase64) : (item && item.foto ? String(item.foto) : ''),
-        fotoMime: item && item.fotoMime ? String(item.fotoMime) : '',
-        fotoNome: item && item.fotoNome ? String(item.fotoNome) : ''
+        descricao: item && item.descricao ? String(item.descricao) : ''
       };
     }).filter(function(item) {
       return item.quantidade > 0 && item.descricao;
@@ -4045,32 +4039,6 @@ function salvarTermoCompleto(dadosTermo) {
     if (normalizarTextoBasico(statusTermo) !== 'finalizado') {
       statusTermo = 'Em andamento';
     }
-
-    var volumesProcessados = volumes.map(function(item, indice) {
-      var volumeFinal = { quantidade: item.quantidade, descricao: item.descricao };
-      if (item.fotoBase64) {
-        var fotoSalva = salvarImagemVolumeDrive({
-          base64: item.fotoBase64,
-          mime: item.fotoMime || 'image/jpeg',
-          dataReferencia: aplicadoEm || aplicadoEmAtual,
-          indice: indice,
-          fase: 'abertura',
-          numeroArmario: dadosTermo.numeroArmario,
-          pacienteId: dadosTermo.prontuario || dadosTermo.paciente || '',
-          acompanhanteId: dadosTermo.documento || dadosTermo.acompanhante || '',
-          termoId: termoId || ''
-        });
-        if (fotoSalva && fotoSalva.sucesso) {
-          volumeFinal.fotoId = fotoSalva.fileId;
-          volumeFinal.fotoUrl = fotoSalva.url;
-          volumeFinal.fotoNome = fotoSalva.nome;
-          volumeFinal.fotoPastaId = fotoSalva.pastaId;
-        }
-      }
-      return volumeFinal;
-    });
-
-    volumes = volumesProcessados;
 
     var assinaturasInfo = normalizarAssinaturas(valorAtualAssinatura);
     assinaturasInfo.inicial = dadosTermo.assinaturaBase64 || assinaturasInfo.inicial || '';
@@ -4787,112 +4755,6 @@ function gerarESalvarTermoPDF(dadosTermo, opcoes) {
   } catch (error) {
     console.error('Erro ao gerar PDF:', error);
     return { success: false, error: error.toString() };
-  }
-}
-
-function sanitizarNomeArquivoDrive(nome) {
-  if (!nome) {
-    return 'arquivo';
-  }
-  return nome
-    .toString()
-    .replace(/[\s]+/g, '_')
-    .replace(/[^a-zA-Z0-9._-]/g, '')
-    .replace(/_{2,}/g, '_')
-    .substring(0, 180) || 'arquivo';
-}
-
-function obterPastaFotosPorData(dataIso) {
-  var dataReferencia = dataIso ? new Date(dataIso) : new Date();
-  if (isNaN(dataReferencia.getTime())) {
-    dataReferencia = new Date();
-  }
-
-  var ano = dataReferencia.getFullYear();
-  var mes = (dataReferencia.getMonth() + 1).toString().padStart(2, '0');
-  var nomeMes = ano + '-' + mes;
-  var semana = Math.min(4, Math.ceil(dataReferencia.getDate() / 7));
-  var nomeSemana = 'Semana ' + semana;
-
-  var pastaBase = obterPastaSeguraDrive(PASTA_FOTOS_BASE_ID);
-  var pastaMes;
-  try {
-    var pastasMes = pastaBase.getFoldersByName(nomeMes);
-    pastaMes = pastasMes.hasNext() ? pastasMes.next() : pastaBase.createFolder(nomeMes);
-  } catch (erroMes) {
-    pastaMes = pastaBase.createFolder(nomeMes);
-  }
-
-  var pastaSemana;
-  try {
-    var pastasSemana = pastaMes.getFoldersByName(nomeSemana);
-    pastaSemana = pastasSemana.hasNext() ? pastasSemana.next() : pastaMes.createFolder(nomeSemana);
-  } catch (erroSemana) {
-    pastaSemana = pastaMes.createFolder(nomeSemana);
-  }
-
-  return pastaSemana;
-}
-
-function salvarImagemVolumeDrive(opcoes) {
-  try {
-    var dados = opcoes || {};
-    var base64 = dados.base64 || '';
-    var mime = dados.mime || 'image/jpeg';
-    var dataIso = dados.dataReferencia || '';
-    var indice = dados.indice || 0;
-    var fase = dados.fase || 'registro';
-    var numeroArmario = dados.numeroArmario || 'armario';
-    var pacienteId = dados.pacienteId || 'paciente';
-    var acompanhanteId = dados.acompanhanteId || 'acompanhante';
-    var termoId = dados.termoId || 'termo';
-
-    var padraoPrefixo = /^data:([^;]+);base64,/;
-    if (padraoPrefixo.test(base64)) {
-      var match = base64.match(padraoPrefixo);
-      if (match && match[1]) {
-        mime = match[1];
-      }
-      base64 = base64.replace(padraoPrefixo, '');
-    }
-
-    if (!base64) {
-      return { sucesso: false, erro: 'Imagem vazia' };
-    }
-
-    var blob;
-    try {
-      blob = Utilities.newBlob(Utilities.base64Decode(base64), mime || 'image/jpeg');
-    } catch (erroBlob) {
-      return { sucesso: false, erro: 'Não foi possível processar a imagem' };
-    }
-
-    var pastaDestino = obterPastaFotosPorData(dataIso);
-    var timestamp = Utilities.formatDate(new Date(), 'America/Sao_Paulo', "yyyyMMdd'T'HHmmssSSS");
-    var nomeArquivo = sanitizarNomeArquivoDrive([
-      timestamp,
-      pacienteId || 'paciente',
-      acompanhanteId || 'acompanhante',
-      termoId || 'termo',
-      numeroArmario || 'armario',
-      'vol-' + (indice + 1),
-      fase
-    ].join('__')) + '.jpg';
-
-    var arquivo = pastaDestino.createFile(blob).setName(nomeArquivo);
-    var fileId = arquivo.getId();
-    var urlVisualizacao = 'https://drive.google.com/file/d/' + fileId + '/preview';
-
-    return {
-      sucesso: true,
-      fileId: fileId,
-      url: urlVisualizacao,
-      nome: nomeArquivo,
-      pastaId: pastaDestino.getId()
-    };
-  } catch (erro) {
-    console.error('Erro ao salvar imagem do volume:', erro);
-    return { sucesso: false, erro: erro.toString() };
   }
 }
 
@@ -5703,10 +5565,7 @@ function salvarMovimentacao(dados) {
           var quantidadeNumero = Number(item.quantidade);
           return {
             quantidade: Number.isFinite(quantidadeNumero) ? quantidadeNumero : 0,
-            descricao: item && item.descricao ? item.descricao.toString() : '',
-            fotoBase64: item && item.fotoBase64 ? String(item.fotoBase64) : (item && item.foto ? String(item.foto) : ''),
-            fotoMime: item && item.fotoMime ? String(item.fotoMime) : '',
-            fotoNome: item && item.fotoNome ? String(item.fotoNome) : ''
+            descricao: item && item.descricao ? item.descricao.toString() : ''
           };
         }).filter(function(item) {
           return item.quantidade > 0 && item.descricao;
@@ -5715,30 +5574,6 @@ function salvarMovimentacao(dados) {
         itensNormalizados = [];
       }
     }
-
-    itensNormalizados = itensNormalizados.map(function(item, indice) {
-      var itemFinal = { quantidade: item.quantidade, descricao: item.descricao };
-      if (item.fotoBase64) {
-        var fotoMov = salvarImagemVolumeDrive({
-          base64: item.fotoBase64,
-          mime: item.fotoMime || 'image/jpeg',
-          dataReferencia: registroMovimento || dataMovimentacao,
-          indice: indice,
-          fase: tipoNormalizado || tipoArmarioNormalizado || 'movimentacao',
-          numeroArmario: numeroArmario,
-          pacienteId: dados.prontuario || dados.numeroArmario || '',
-          acompanhanteId: dados.documento || dados.responsavel || '',
-          termoId: dados.armarioId || ''
-        });
-        if (fotoMov && fotoMov.sucesso) {
-          itemFinal.fotoId = fotoMov.fileId;
-          itemFinal.fotoUrl = fotoMov.url;
-          itemFinal.fotoNome = fotoMov.nome;
-          itemFinal.fotoPastaId = fotoMov.pastaId;
-        }
-      }
-      return itemFinal;
-    });
 
     var volumeTotal = 0;
     if (itensNormalizados.length) {
