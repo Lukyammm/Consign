@@ -7390,7 +7390,7 @@
             statusEl.classList.toggle('attached', possuiFoto);
             statusEl.classList.toggle('pending', !possuiFoto);
         }
-        function criarControleFotoMovItem(linha) {
+        function criarControleFotoMovItem(linha, { visivelInicialmente = true } = {}) {
             const fotoWrapper = document.createElement('div');
             fotoWrapper.className = 'mov-item-photo';
             const botao = document.createElement('button');
@@ -7406,6 +7406,10 @@
             input.accept = 'image/*';
             input.capture = 'environment';
             input.className = 'sr-only mov-item-photo-input';
+            if (!visivelInicialmente) {
+                fotoWrapper.classList.add('is-hidden');
+                botao.disabled = true;
+            }
             const atualizarDataset = (base64, mime) => {
                 if (!linha) return;
                 if (base64 && mime) {
@@ -7506,7 +7510,7 @@
             linha.dataset.origem = origem;
             linha.dataset.removerQuantidade = '0';
 
-            const fotoControle = criarControleFotoMovItem(linha);
+            const fotoControle = criarControleFotoMovItem(linha, { visivelInicialmente: false });
             const corpo = document.createElement('div');
             corpo.className = 'mov-item-display';
             const titulo = document.createElement('div');
@@ -7590,11 +7594,16 @@
             linha.appendChild(corpo);
             linha.appendChild(acoesWrapper);
             elementos.movItensList.appendChild(linha);
+            atualizarIndicadorRemocao(linha);
             return linha;
         }
         function atualizarIndicadorRemocao(linha) {
             if (!linha) return;
             const indicador = linha.querySelector('.remocao-indicador');
+            const fotoWrapper = linha.querySelector('.mov-item-photo');
+            const fotoStatus = linha.querySelector('.mov-item-photo-status');
+            const fotoInput = linha.querySelector('.mov-item-photo-input');
+            const fotoBotao = linha.querySelector('.mov-item-photo-trigger');
             const quantidadeTotal = Number(linha.dataset.quantidade) || 0;
             const removerQuantidade = Number(linha.dataset.removerQuantidade) || 0;
 
@@ -7604,10 +7613,24 @@
                 indicador.textContent = `Remover ${removerQuantidade}/${quantidadeTotal}`;
                 indicador.classList.remove('hidden');
                 linha.classList.add('marcado-remocao');
+                fotoWrapper?.classList.remove('is-hidden');
+                if (fotoBotao) {
+                    fotoBotao.disabled = false;
+                }
             } else {
                 indicador.textContent = '';
                 indicador.classList.add('hidden');
                 linha.classList.remove('marcado-remocao');
+                fotoWrapper?.classList.add('is-hidden');
+                if (fotoBotao) {
+                    fotoBotao.disabled = true;
+                }
+                delete linha.dataset.fotoBase64;
+                delete linha.dataset.fotoMime;
+                if (fotoInput) {
+                    fotoInput.value = '';
+                }
+                atualizarStatusFotoMovItem(fotoStatus, false);
             }
         }
         function preencherItensMovimentacaoAPartirInventario(tipo) {
