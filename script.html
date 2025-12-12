@@ -1443,6 +1443,7 @@
         let movimentacaoVolumesBase = [];
         let movimentacoesRegistradas = [];
         let movFotoAtual = { base64: '', mime: '', url: '' };
+        let movEntradaDescricaoUltimoValor = '';
         let termoAssinaturaDesenhada = false;
         let termoDesenhandoAssinatura = false;
         let movAssinaturaDesenhada = false;
@@ -2787,6 +2788,8 @@
                 tab.addEventListener('click', () => ativarAbaMovimentacao(tab.dataset.movTab));
             });
             elementos.movEntradaAdicionar?.addEventListener('click', adicionarItemEntradaRapido);
+            elementos.movEntradaDescricao?.addEventListener('input', atualizarUltimaDescricaoEntrada);
+            elementos.movEntradaDescricao?.addEventListener('change', atualizarUltimaDescricaoEntrada);
             elementos.movEntradaDescricao?.addEventListener('blur', adicionarItemEntradaAoPerderFoco);
             elementos.movSaidaPreencher?.addEventListener('click', () => preencherItensMovimentacaoAPartirInventario('saida'));
             elementos.movSaidaAddPersonalizado?.addEventListener('click', adicionarItemSaidaNaoCadastrado);
@@ -7373,6 +7376,9 @@
 
             elementos.movItensResumoBody.innerHTML = partes.join('');
         }
+        function atualizarUltimaDescricaoEntrada() {
+            movEntradaDescricaoUltimoValor = elementos.movEntradaDescricao?.value?.trim() || '';
+        }
         function limparItensMovimentacaoFormulario() {
             if (elementos.movItensList) {
                 elementos.movItensList.innerHTML = '';
@@ -7744,6 +7750,7 @@
                 if (elementos.movItensList) {
                     elementos.movItensList.innerHTML = '';
                 }
+                movEntradaDescricaoUltimoValor = '';
                 atualizarContextoMovimentacao('');
                 return;
             }
@@ -7769,7 +7776,8 @@
         }
         function adicionarItemEntradaRapido() {
             const quantidade = Number(elementos.movEntradaQuantidade?.value);
-            const descricao = elementos.movEntradaDescricao?.value?.trim();
+            const descricaoCampo = elementos.movEntradaDescricao?.value?.trim();
+            const descricao = descricaoCampo || movEntradaDescricaoUltimoValor;
             if (!descricao) {
                 mostrarErro('Informe a descrição usando a lista suspensa.');
                 elementos.movEntradaDescricao?.focus();
@@ -7787,13 +7795,15 @@
             criarLinhaEntrada({ quantidade, descricao });
             elementos.movEntradaQuantidade.value = '';
             elementos.movEntradaDescricao.value = '';
+            movEntradaDescricaoUltimoValor = '';
             elementos.movEntradaQuantidade.focus();
         }
         function adicionarItemEntradaAoPerderFoco() {
             const tipoAtual = normalizarTexto(elementos.movTipo?.value);
             if (tipoAtual !== 'entrada') return;
             const quantidade = Number(elementos.movEntradaQuantidade?.value);
-            const descricao = elementos.movEntradaDescricao?.value?.trim();
+            const descricaoCampo = elementos.movEntradaDescricao?.value?.trim();
+            const descricao = descricaoCampo || movEntradaDescricaoUltimoValor;
             if (!descricao) return;
             if (!Number.isFinite(quantidade) || quantidade <= 0) return;
             adicionarItemEntradaRapido();
@@ -7847,6 +7857,7 @@
             limparItensMovimentacaoFormulario();
             limparAssinaturaMovimentacao(true);
             limparFotoMovimentacao();
+            movEntradaDescricaoUltimoValor = '';
             atualizarResponsavelMovimentacaoInfo();
             const padraoLocal = obterDataHoraLocalPadrao();
             elementos.movData.value = padraoLocal.data;
