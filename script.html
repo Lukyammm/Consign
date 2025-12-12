@@ -2718,6 +2718,8 @@
                         }
                         if (status) {
                             status.textContent = 'Foto anexada para este volume.';
+                            status.classList.add('attached');
+                            status.classList.remove('pending');
                         }
                         elementos.termoVolumesField?.classList.remove('invalid');
                         salvarRascunhoTermo();
@@ -6642,6 +6644,8 @@
             movFotoAtual = { base64: '', mime: '', url: '' };
             if (elementos.movFotoStatus) {
                 elementos.movFotoStatus.textContent = 'Nenhuma foto anexada.';
+                elementos.movFotoStatus.classList.remove('attached');
+                elementos.movFotoStatus.classList.add('pending');
             }
             if (elementos.movFotoInput) {
                 elementos.movFotoInput.value = '';
@@ -6652,6 +6656,8 @@
             movFotoAtual = { base64: imagem.base64, mime: imagem.mime, url: '' };
             if (elementos.movFotoStatus) {
                 elementos.movFotoStatus.textContent = 'Foto anexada para esta movimentação.';
+                elementos.movFotoStatus.classList.add('attached');
+                elementos.movFotoStatus.classList.remove('pending');
             }
         }
         function validarPassoTermo(indice) {
@@ -6715,6 +6721,33 @@
             item.className = 'wizard-volume-item';
             const grid = document.createElement('div');
             grid.className = 'wizard-volume-grid';
+            const fotoWrapper = document.createElement('div');
+            fotoWrapper.className = 'wizard-volume-photo';
+            const fotoBotao = document.createElement('button');
+            fotoBotao.type = 'button';
+            fotoBotao.className = 'btn btn-ghost btn-volume-photo';
+            fotoBotao.innerHTML = '<i class="fas fa-camera"></i>';
+            const fotoStatus = document.createElement('span');
+            fotoStatus.className = 'volume-photo-status';
+            const fotoInput = document.createElement('input');
+            fotoInput.type = 'file';
+            fotoInput.accept = 'image/*';
+            fotoInput.capture = 'environment';
+            fotoInput.className = 'sr-only termo-volume-photo-input';
+            const fotoLabel = document.createElement('span');
+            fotoLabel.textContent = 'Foto do volume';
+            if (dados.fotoUrl) {
+                item.dataset.fotoUrl = dados.fotoUrl;
+                fotoStatus.textContent = 'Foto já salva para este volume.';
+                fotoStatus.classList.add('attached');
+            } else {
+                fotoStatus.textContent = 'Foto pendente para este volume.';
+                fotoStatus.classList.add('pending');
+            }
+            fotoWrapper.appendChild(fotoBotao);
+            fotoWrapper.appendChild(fotoLabel);
+            fotoWrapper.appendChild(fotoInput);
+            fotoWrapper.appendChild(fotoStatus);
             const colQtd = document.createElement('div');
             colQtd.className = 'wizard-volume-col';
             const labelQtd = document.createElement('label');
@@ -6741,37 +6774,12 @@
             }
             const actions = document.createElement('div');
             actions.className = 'wizard-volume-actions';
-            const fotoWrapper = document.createElement('div');
-            fotoWrapper.className = 'wizard-volume-photo';
-            const fotoLabel = document.createElement('span');
-            fotoLabel.textContent = 'Foto do volume';
-            const fotoBotao = document.createElement('button');
-            fotoBotao.type = 'button';
-            fotoBotao.className = 'btn btn-ghost btn-volume-photo';
-            fotoBotao.innerHTML = '<i class="fas fa-camera"></i> Capturar foto';
-            const fotoInput = document.createElement('input');
-            fotoInput.type = 'file';
-            fotoInput.accept = 'image/*';
-            fotoInput.capture = 'environment';
-            fotoInput.className = 'sr-only termo-volume-photo-input';
-            const fotoStatus = document.createElement('span');
-            fotoStatus.className = 'volume-photo-status';
-            if (dados.fotoUrl) {
-                item.dataset.fotoUrl = dados.fotoUrl;
-                fotoStatus.textContent = 'Foto já salva para este volume.';
-            } else {
-                fotoStatus.textContent = 'Nenhuma foto anexada.';
-            }
-            fotoWrapper.appendChild(fotoLabel);
-            fotoWrapper.appendChild(fotoBotao);
-            fotoWrapper.appendChild(fotoInput);
-            fotoWrapper.appendChild(fotoStatus);
             const remover = document.createElement('button');
             remover.type = 'button';
             remover.className = 'btn btn-secondary btn-remove-volume';
             remover.textContent = 'Remover';
-            actions.appendChild(fotoWrapper);
             actions.appendChild(remover);
+            grid.appendChild(fotoWrapper);
             colQtd.appendChild(labelQtd);
             colQtd.appendChild(inputQtd);
             colDesc.appendChild(labelDesc);
@@ -7180,7 +7188,7 @@
                             <div class="photo-capture">
                                 <button type="button" class="btn btn-ghost" id="final-photo-trigger"><i class="fas fa-camera"></i> Capturar foto</button>
                                 <input type="file" id="final-photo-input" accept="image/*" capture="environment" class="sr-only">
-                                <div class="helper-text" id="final-photo-status">Nenhuma foto anexada.</div>
+                                <div class="helper-text pending" id="final-photo-status"><i class="fas fa-info-circle" aria-hidden="true"></i> Nenhuma foto anexada.</div>
                             </div>
                             <div class="wizard-error">Inclua a foto do que está sendo entregue.</div>
                         </div>
@@ -7234,6 +7242,8 @@
                                     fotoEntrega = { base64: imagem.base64, mime: imagem.mime };
                                     if (fotoStatus) {
                                         fotoStatus.textContent = 'Foto anexada para a entrega.';
+                                        fotoStatus.classList.add('attached');
+                                        fotoStatus.classList.remove('pending');
                                     }
                                     fotoField?.classList.remove('invalid');
                                 } catch (erroFoto) {
@@ -7368,12 +7378,66 @@
                 elementos.movItensList.innerHTML = '';
             }
         }
+        function atualizarStatusFotoMovItem(statusEl, possuiFoto) {
+            if (!statusEl) return;
+            statusEl.textContent = possuiFoto ? 'Foto anexada para este volume.' : 'Foto pendente para este volume.';
+            statusEl.classList.toggle('attached', possuiFoto);
+            statusEl.classList.toggle('pending', !possuiFoto);
+        }
+        function criarControleFotoMovItem(linha) {
+            const fotoWrapper = document.createElement('div');
+            fotoWrapper.className = 'mov-item-photo';
+            const botao = document.createElement('button');
+            botao.type = 'button';
+            botao.className = 'icon-btn mov-item-photo-trigger';
+            botao.innerHTML = '<i class="fas fa-camera" aria-hidden="true"></i>';
+            botao.title = 'Capturar foto do volume';
+            const status = document.createElement('span');
+            status.className = 'mov-item-photo-status pending';
+            status.textContent = 'Foto pendente para este volume.';
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';
+            input.className = 'sr-only mov-item-photo-input';
+            const atualizarDataset = (base64, mime) => {
+                if (!linha) return;
+                if (base64 && mime) {
+                    linha.dataset.fotoBase64 = base64;
+                    linha.dataset.fotoMime = mime;
+                } else {
+                    delete linha.dataset.fotoBase64;
+                    delete linha.dataset.fotoMime;
+                }
+            };
+            botao.addEventListener('click', () => input.click());
+            input.addEventListener('change', async (evento) => {
+                if (!evento.target.files?.length) return;
+                try {
+                    const imagem = await lerArquivoImagemComoBase64(evento.target.files[0]);
+                    atualizarDataset(imagem.base64, imagem.mime);
+                    atualizarStatusFotoMovItem(status, true);
+                } catch (erroFoto) {
+                    console.error('Erro ao processar foto do volume na movimentação:', erroFoto);
+                    atualizarDataset('', '');
+                    atualizarStatusFotoMovItem(status, false);
+                    mostrarErro('Não foi possível carregar a foto deste volume.');
+                } finally {
+                    input.value = '';
+                }
+            });
+            fotoWrapper.appendChild(botao);
+            fotoWrapper.appendChild(input);
+            fotoWrapper.appendChild(status);
+            return fotoWrapper;
+        }
         function criarLinhaEntrada(item = {}) {
             if (!elementos.movItensList) return null;
             const linha = document.createElement('div');
             linha.className = 'movimentacao-item-row';
             const idBase = `mov-item-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+            const fotoControle = criarControleFotoMovItem(linha);
             const campoQuantidade = document.createElement('input');
             campoQuantidade.type = 'number';
             campoQuantidade.min = '1';
@@ -7420,6 +7484,7 @@
             acoesWrapper.className = 'mov-item-actions';
             acoesWrapper.appendChild(botaoRemover);
 
+            linha.appendChild(fotoControle);
             linha.appendChild(campoQuantidadeWrapper);
             linha.appendChild(campoDescricaoWrapper);
             linha.appendChild(acoesWrapper);
@@ -7435,6 +7500,7 @@
             linha.dataset.origem = origem;
             linha.dataset.removerQuantidade = '0';
 
+            const fotoControle = criarControleFotoMovItem(linha);
             const corpo = document.createElement('div');
             corpo.className = 'mov-item-display';
             const titulo = document.createElement('div');
@@ -7514,6 +7580,7 @@
             });
             acoesWrapper.appendChild(botaoRemover);
 
+            linha.appendChild(fotoControle);
             linha.appendChild(corpo);
             linha.appendChild(acoesWrapper);
             elementos.movItensList.appendChild(linha);
@@ -7582,25 +7649,33 @@
                         const removerQuantidade = Number(linha.dataset.removerQuantidade);
                         const quantidade = Number(linha.dataset.quantidade);
                         const descricao = linha.dataset.descricao || '';
+                        const fotoBase64 = linha.dataset.fotoBase64 || '';
+                        const fotoMime = linha.dataset.fotoMime || '';
                         return {
                             quantidade: Number.isFinite(removerQuantidade) && removerQuantidade > 0
                                 ? removerQuantidade
                                 : 0,
                             descricao,
-                            totalDisponivel: Number.isFinite(quantidade) ? quantidade : 0
+                            totalDisponivel: Number.isFinite(quantidade) ? quantidade : 0,
+                            fotoBase64,
+                            fotoMime
                         };
                     })
                     .filter(item => item.quantidade > 0 && item.descricao)
-                    .map(item => ({ quantidade: item.quantidade, descricao: item.descricao }))
-                    .filter(item => item.quantidade > 0 && item.descricao);
+                    .map(item => ({ quantidade: item.quantidade, descricao: item.descricao, fotoBase64: item.fotoBase64, fotoMime: item.fotoMime }))
+                    .filter(item => item.quantidade > 0 && item.descricao && item.fotoBase64);
             }
 
             return linhas.map(linha => {
                 const qtd = Number(linha.querySelector('input[type="number"]')?.value);
                 const descricao = linha.querySelector('input[type="text"]')?.value.trim() || '';
+                const fotoBase64 = linha.dataset.fotoBase64 || '';
+                const fotoMime = linha.dataset.fotoMime || '';
                 return {
                     quantidade: Number.isFinite(qtd) ? qtd : 0,
-                    descricao
+                    descricao,
+                    fotoBase64,
+                    fotoMime
                 };
             }).filter(item => item.quantidade > 0 && item.descricao);
         }
@@ -7964,6 +8039,10 @@
                 }
                 if ((tipoSelecionado === 'entrada' || tipoSelecionado === 'saida') && !itensMovimentados.length) {
                     mostrarErro('Informe os itens movimentados com quantidade e descrição.');
+                    return;
+                }
+                if ((tipoSelecionado === 'entrada' || tipoSelecionado === 'saida') && itensMovimentados.some(item => !item.fotoBase64)) {
+                    mostrarErro('Inclua a foto de cada volume listado antes de prosseguir.');
                     return;
                 }
                 const observacaoMov = elementos.movObservacao?.value?.trim() || '';
