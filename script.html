@@ -8672,14 +8672,18 @@
                 await aguardarTransicao();
                 Swal.close();
 
-                await atualizarDadosPosOperacao('Atualizando status do armário...', () => {
-                    garantirArmarioLiberadoLocal(id, metodo, confirmacao);
-                    atualizarResumoDashboardLocal();
-                }, {
+                garantirArmarioLiberadoLocal(id, metodo, confirmacao);
+                atualizarResumoDashboardLocal();
+
+                const tarefaAtualizacao = atualizarDadosPosOperacao('Atualizando status do armário...', null, {
                     modoRapido: true,
-                    timeoutRapido: 600
+                    timeoutRapido: 350
+                }).catch(erroAtualizacao => {
+                    console.error('Erro ao atualizar dados pós-liberação:', erroAtualizacao);
                 });
+
                 mostrarSucesso(mensagemSucesso);
+                await tarefaAtualizacao;
             } catch (erro) {
                 console.error('Erro ao liberar armário de acompanhante:', erro);
                 atualizarEtapa(etapaAtual, 'erro');
