@@ -4024,7 +4024,7 @@
 
             const carregamentoId = ++estado.carregamentoTermosId;
             const tbody = elementos.tabelaTermosBody;
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:16px; color:#5b6b86;">Carregando termos...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:16px; color:#5b6b86;">Carregando termos...</td></tr>';
 
             if (recarregarArmarios || !estado.armariosCarregados) {
                 await carregarArmarios();
@@ -4032,7 +4032,7 @@
             if (estado.carregamentoTermosId !== carregamentoId) return;
 
             if (!estado.armariosCarregados) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:16px; color:#c0392b;">Erro ao carregar termos.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:16px; color:#c0392b;">Erro ao carregar termos.</td></tr>';
                 return;
             }
 
@@ -4042,7 +4042,9 @@
             const statusFiltro = normalizarTexto(filtros.status);
             const unidadeFiltro = normalizarTexto(filtros.unidade);
             const buscaFiltro = normalizarTextoBusca(filtros.busca);
-            const possuiFiltros = statusFiltro !== 'todos' || unidadeFiltro !== 'todas' || Boolean(buscaFiltro);
+            const possuiFiltros = statusFiltro !== 'todos'
+                || unidadeFiltro !== 'todas'
+                || Boolean(buscaFiltro);
 
             const armariosComTermo = estado.armarios
                 .filter(a => normalizarTexto(a.tipo) === 'acompanhante')
@@ -4096,7 +4098,7 @@
                 const mensagemVazia = possuiFiltros
                     ? 'Nenhum termo encontrado para os filtros selecionados.'
                     : 'Nenhum termo ativo ou pendente no momento.';
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:16px; color:#5b6b86;">${mensagemVazia}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:16px; color:#5b6b86;">${mensagemVazia}</td></tr>`;
                 return;
             }
 
@@ -4153,6 +4155,7 @@
                 const statusTermoNormalizado = normalizarTexto(armario.termoStatus);
                 const finalizado = statusTermoNormalizado === 'finalizado';
                 const emAndamento = statusTermoNormalizado === 'em andamento';
+                const prontuario = (armario.prontuario || termoInfo?.prontuario || '').toString().trim() || '-';
                 const chaveMovimentacao = obterChaveMovimentacaoArmario(armario);
                 const numMovimentacoes = movimentacoesPorArmario.get(chaveMovimentacao)
                     ?? (estado.movimentacoes[chaveMovimentacao]?.contagem || 0);
@@ -4187,6 +4190,7 @@
                         <td>${armario.numero}</td>
                         <td>${armario.nomeVisitante || '-'}</td>
                         <td>${armario.nomePaciente || '-'}</td>
+                        <td>${prontuario}</td>
                         <td><span class="status-label ${statusClasse}">${statusTexto}</span></td>
                         <td>${aplicadoEm}</td>
                         <td>${numMovimentacoes} registro(s)</td>
