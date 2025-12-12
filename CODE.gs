@@ -551,6 +551,7 @@ function resolverIdsUnidadesArmazenadas(unidadesValor, mapas) {
 // ID da pasta do Drive para salvar os PDFs - ATUALIZE COM SEU ID
 const PASTA_DRIVE_ID = '1nYsGJJUIufxDYVvIanVXCbPx7YuBOYDP';
 const PASTA_DRIVE_TEMP_ID = '11M_fFDA9nrOqzIm6zMnaGjYMCQoE4XXs';
+const PASTA_DRIVE_FOTOS_ID = '1XKZ6LApUh6RjBddeySCbPFdS6ncDS8DB';
 
 // Configuração de cache para leitura dos termos
 const TERMOS_CACHE_KEY = 'termos_registrados_cache_v1';
@@ -3954,7 +3955,10 @@ function salvarTermoCompleto(dadosTermo) {
       var quantidadeNumero = Number(item.quantidade);
       return {
         quantidade: isNaN(quantidadeNumero) ? 0 : quantidadeNumero,
-        descricao: item && item.descricao ? String(item.descricao) : ''
+        descricao: item && item.descricao ? String(item.descricao) : '',
+        fotoBase64: item && item.fotoBase64 ? String(item.fotoBase64) : '',
+        fotoMime: item && item.fotoMime ? String(item.fotoMime) : '',
+        fotoUrl: item && item.fotoUrl ? String(item.fotoUrl) : ''
       };
     }).filter(function(item) {
       return item.quantidade > 0 && item.descricao;
@@ -4094,6 +4098,31 @@ function salvarTermoCompleto(dadosTermo) {
     }
 
     dadosTermo.numeroArmario = numeroArmarioOficial;
+
+    volumes = volumes.map(function(item, indice) {
+      var volumeAtual = {
+        quantidade: item.quantidade,
+        descricao: item.descricao,
+        fotoUrl: item.fotoUrl || ''
+      };
+
+      if (item.fotoBase64) {
+        var nomeEvidencia = gerarNomeArquivoEvidencia('registro_entrada', numeroArmarioOficial) + '_v' + (indice + 1);
+        var arquivoFoto = salvarImagemBase64EmPasta(item.fotoBase64, item.fotoMime || 'image/jpeg', nomeEvidencia, PASTA_DRIVE_FOTOS_ID);
+        if (arquivoFoto) {
+          volumeAtual.fotoUrl = arquivoFoto.url;
+          volumeAtual.fotoId = arquivoFoto.id;
+          volumeAtual.fotoNome = arquivoFoto.nome;
+        }
+      }
+
+      return volumeAtual;
+    });
+
+    var fotosPendentes = volumes.some(function(item) { return !item.fotoUrl; });
+    if (fotosPendentes) {
+      return { success: false, error: 'Inclua a foto de cada volume antes de salvar o termo.' };
+    }
 
     var linhaDados = [
       termoId,
@@ -4244,7 +4273,10 @@ function normalizarAssinaturas(valor) {
     metodoFinal: '',
     cpfFinal: '',
     finalizadoEm: '',
-    responsavelFinalizacao: ''
+    responsavelFinalizacao: '',
+    fotoEntregaUrl: '',
+    fotoEntregaId: '',
+    fotoEntregaNome: ''
   };
 
   if (!valor) {
@@ -4262,6 +4294,9 @@ function normalizarAssinaturas(valor) {
       info.cpfFinal = json.cpfFinal || '';
       info.finalizadoEm = json.finalizadoEm || '';
       info.responsavelFinalizacao = json.responsavelFinalizacao || '';
+      info.fotoEntregaUrl = json.fotoEntregaUrl || '';
+      info.fotoEntregaId = json.fotoEntregaId || '';
+      info.fotoEntregaNome = json.fotoEntregaNome || '';
       return info;
     } catch (erro) {
       info.inicial = valor;
@@ -4278,6 +4313,9 @@ function normalizarAssinaturas(valor) {
     info.cpfFinal = valor.cpfFinal || '';
     info.finalizadoEm = valor.finalizadoEm || '';
     info.responsavelFinalizacao = valor.responsavelFinalizacao || '';
+    info.fotoEntregaUrl = valor.fotoEntregaUrl || '';
+    info.fotoEntregaId = valor.fotoEntregaId || '';
+    info.fotoEntregaNome = valor.fotoEntregaNome || '';
   }
 
   if (!info.mimeInicial && info.inicial) {
@@ -4541,6 +4579,8 @@ function finalizarTermo(dados) {
     var metodo = (dados.metodo || 'assinatura').toString();
     var confirmacao = dados.confirmacao || '';
     var assinaturaFinal = dados.assinaturaFinal || '';
+    var fotoEntregaBase64 = dados.fotoEntregaBase64 || '';
+    var fotoEntregaMime = dados.fotoEntregaMime || 'image/jpeg';
     var numeroInformado = normalizarNumeroArmario(dados.numeroArmario);
     var tipoTermo = dados && dados.tipo ? dados.tipo.toString() : '';
 
@@ -4647,6 +4687,24 @@ function finalizarTermo(dados) {
       registrarLog('AVISO_TERMO', 'Movimentações indisponíveis ao finalizar termo do armário ' + termoEncontrado.numeroArmario + ': ' + (movimentacoesResultado.error || 'dados inválidos'));
     }
 
+    var numeroParaRegistro = numeroInformado || termoEncontrado.numeroArmario || 'armario';
+
+    if (metodo === 'assinatura') {
+      if (!fotoEntregaBase64 && !assinaturas.fotoEntregaUrl) {
+        return { success: false, error: 'A foto da entrega é obrigatória para finalizar o termo.' };
+      }
+
+      if (fotoEntregaBase64) {
+        var nomeFotoSaida = gerarNomeArquivoEvidencia('registro_saida', numeroParaRegistro);
+        var arquivoSaida = salvarImagemBase64EmPasta(fotoEntregaBase64, fotoEntregaMime, nomeFotoSaida, PASTA_DRIVE_FOTOS_ID);
+        if (arquivoSaida) {
+          assinaturas.fotoEntregaUrl = arquivoSaida.url;
+          assinaturas.fotoEntregaId = arquivoSaida.id;
+          assinaturas.fotoEntregaNome = arquivoSaida.nome;
+        }
+      }
+    }
+
     var dadosPDF = {
       numeroArmario: termoEncontrado.numeroArmario,
       paciente: termoEncontrado.paciente,
@@ -4718,6 +4776,45 @@ function obterPastaSeguraDrive(pastaIdPreferida) {
   } catch (erroPadrao) {
     return DriveApp.getRootFolder();
   }
+}
+
+function gerarNomeArquivoEvidencia(prefixo, numeroArmario) {
+  var numero = numeroArmario || 'sem-numero';
+  var timestamp = Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'ddMMyyyy_HHmmss');
+  return prefixo + '_' + numero + '_' + timestamp;
+}
+
+function salvarImagemBase64EmPasta(base64, mimePadrao, nomeArquivo, pastaId) {
+  if (!base64) {
+    return null;
+  }
+
+  var mime = (mimePadrao || '').toString().trim() || 'image/jpeg';
+  var conteudoBase64 = base64;
+  var padrao = /^data:([^;]+);base64,/i;
+  var extensao = mime.indexOf('png') !== -1 ? '.png' : '.jpg';
+
+  if (padrao.test(base64)) {
+    var match = base64.match(padrao);
+    if (match && match[1]) {
+      mime = match[1];
+      extensao = mime.indexOf('png') !== -1 ? '.png' : extensao;
+    }
+    conteudoBase64 = base64.replace(padrao, '');
+  }
+
+  var pasta = obterPastaSeguraDrive(pastaId || PASTA_DRIVE_FOTOS_ID);
+  var blob = Utilities.newBlob(Utilities.base64Decode(conteudoBase64), mime, nomeArquivo + extensao);
+  var arquivo = pasta.createFile(blob).setName(nomeArquivo + extensao);
+  arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return {
+    id: arquivo.getId(),
+    url: 'https://drive.google.com/uc?export=view&id=' + arquivo.getId(),
+    nome: arquivo.getName(),
+    mime: mime,
+    pastaId: pasta.getId()
+  };
 }
 
 function gerarESalvarTermoPDF(dadosTermo, opcoes) {
@@ -5104,17 +5201,21 @@ function garantirEstruturaMovimentacoes(sheet) {
   var colunaVolume = 12;
   var colunaAssinatura = 13;
   var colunaAssinaturaMime = 14;
+  var colunaFotoUrl = 15;
+  var colunaFotoId = 16;
 
   if (!sheet) {
     return {
       colunaStatus: colunaStatus,
       colunaItens: colunaItens,
       colunaVolume: colunaVolume,
-      ultimaColuna: colunaVolume
+      colunaFotoUrl: colunaFotoUrl,
+      colunaFotoId: colunaFotoId,
+      ultimaColuna: colunaFotoId
     };
   }
 
-  var minimoColunas = Math.max(colunaItens, colunaStatus, colunaVolume, colunaAssinaturaMime);
+  var minimoColunas = Math.max(colunaItens, colunaStatus, colunaVolume, colunaAssinaturaMime, colunaFotoId);
   var totalColunas = sheet.getLastColumn();
   if (totalColunas < minimoColunas) {
     sheet.insertColumnsAfter(totalColunas, minimoColunas - totalColunas);
@@ -5137,6 +5238,12 @@ function garantirEstruturaMovimentacoes(sheet) {
   if (!cabecalhos[colunaAssinaturaMime - 1]) {
     sheet.getRange(1, colunaAssinaturaMime).setValue('Assinatura MIME');
   }
+  if (!cabecalhos[colunaFotoUrl - 1]) {
+    sheet.getRange(1, colunaFotoUrl).setValue('Foto URL');
+  }
+  if (!cabecalhos[colunaFotoId - 1]) {
+    sheet.getRange(1, colunaFotoId).setValue('Foto ID');
+  }
 
   return {
     colunaStatus: colunaStatus,
@@ -5144,6 +5251,8 @@ function garantirEstruturaMovimentacoes(sheet) {
     colunaVolume: colunaVolume,
     colunaAssinatura: colunaAssinatura,
     colunaAssinaturaMime: colunaAssinaturaMime,
+    colunaFotoUrl: colunaFotoUrl,
+    colunaFotoId: colunaFotoId,
     ultimaColuna: Math.max(totalColunas, minimoColunas)
   };
 }
@@ -5246,6 +5355,8 @@ function getMovimentacoes(dados) {
   var colunaVolume = estruturaMov.colunaVolume;
   var colunaAssinatura = estruturaMov.colunaAssinatura;
   var colunaAssinaturaMime = estruturaMov.colunaAssinaturaMime;
+  var colunaFotoUrl = estruturaMov.colunaFotoUrl;
+  var colunaFotoId = estruturaMov.colunaFotoId;
   var possuiArmario = dados && dados.armarioId !== undefined && dados.armarioId !== null && dados.armarioId !== '';
   var armarioId = possuiArmario ? dados.armarioId : null;
   var armarioIdTexto = possuiArmario && armarioId !== null && armarioId !== undefined ? armarioId.toString().trim() : '';
@@ -5273,7 +5384,7 @@ function getMovimentacoes(dados) {
       }
 
       var linhasEncontradas = [];
-      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens, colunaVolume, colunaAssinaturaMime);
+      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens, colunaVolume, colunaAssinaturaMime, colunaFotoId);
       var intervaloIds = sheet.getRange(2, 2, totalLinhas, 1);
       var textoFinder = intervaloIds.createTextFinder(armarioIdTexto).useRegularExpression(false);
       var correspondencias = textoFinder.findAll();
@@ -5379,8 +5490,10 @@ function getMovimentacoes(dados) {
           assinaturaMime: colunaAssinaturaMime && colunaAssinaturaMime <= linhaDados.length
             ? linhaDados[colunaAssinaturaMime - 1]
             : '',
-          itens: itens
-  });
+          itens: itens,
+          fotoUrl: colunaFotoUrl && colunaFotoUrl <= linhaDados.length ? linhaDados[colunaFotoUrl - 1] : '',
+          fotoId: colunaFotoId && colunaFotoId <= linhaDados.length ? linhaDados[colunaFotoId - 1] : ''
+        });
 }
 
 function getMovimentacoesResumo(dados) {
@@ -5433,7 +5546,7 @@ function getMovimentacoesResumo(dados) {
     return { success: true, data: {} };
   }
 
-  var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), estruturaMov.colunaItens, estruturaMov.colunaVolume);
+  var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), estruturaMov.colunaItens, estruturaMov.colunaVolume, estruturaMov.colunaFotoId);
   var linhas = sheet.getRange(2, 1, totalLinhas, largura).getValues();
   var contagens = {};
 
@@ -5483,19 +5596,22 @@ function salvarMovimentacao(dados) {
       return { success: false, error: 'Aba de movimentações não encontrada' };
     }
 
-    var estruturaMov = garantirEstruturaMovimentacoes(sheet);
-    var colunaStatus = estruturaMov.colunaStatus;
-    var colunaItens = estruturaMov.colunaItens;
-    var colunaVolume = estruturaMov.colunaVolume;
-    var colunaAssinatura = estruturaMov.colunaAssinatura;
-    var colunaAssinaturaMime = estruturaMov.colunaAssinaturaMime;
-    var larguraMovimentacao = Math.max(
-      colunaItens,
-      estruturaMov.ultimaColuna,
-      sheet.getLastColumn(),
-      colunaVolume,
-      colunaAssinaturaMime
-    );
+  var estruturaMov = garantirEstruturaMovimentacoes(sheet);
+  var colunaStatus = estruturaMov.colunaStatus;
+  var colunaItens = estruturaMov.colunaItens;
+  var colunaVolume = estruturaMov.colunaVolume;
+  var colunaAssinatura = estruturaMov.colunaAssinatura;
+  var colunaAssinaturaMime = estruturaMov.colunaAssinaturaMime;
+  var colunaFotoUrl = estruturaMov.colunaFotoUrl;
+  var colunaFotoId = estruturaMov.colunaFotoId;
+  var larguraMovimentacao = Math.max(
+    colunaItens,
+    estruturaMov.ultimaColuna,
+    sheet.getLastColumn(),
+    colunaVolume,
+    colunaAssinaturaMime,
+    colunaFotoId
+  );
 
     // Buscar número do armário
     var tipoArmarioNormalizado = normalizarTextoBasico(dados.tipoArmario);
@@ -5531,12 +5647,19 @@ function salvarMovimentacao(dados) {
     var dataMovimentacao = formatarDataPlanilha(dados.data);
     var horaMovimentacao = formatarHorarioPlanilha(dados.hora);
     var registroMovimento = registroAtual.dataHoraIso;
-    var assinaturaBase64 = (dados.assinaturaBase64 || '').toString().trim();
-    var assinaturaMime = (dados.assinaturaMime || '').toString().trim() || 'image/png';
+  var assinaturaBase64 = (dados.assinaturaBase64 || '').toString().trim();
+  var assinaturaMime = (dados.assinaturaMime || '').toString().trim() || 'image/png';
+  var fotoBase64 = (dados.fotoBase64 || '').toString().trim();
+  var fotoMime = (dados.fotoMime || '').toString().trim() || 'image/jpeg';
+  var fotoUrl = (dados.fotoUrl || '').toString().trim();
 
-    if (!assinaturaBase64) {
-      return { success: false, error: 'A assinatura do responsável é obrigatória.' };
-    }
+  if (!assinaturaBase64) {
+    return { success: false, error: 'A assinatura do responsável é obrigatória.' };
+  }
+
+  if ((tipoNormalizado === 'entrada' || tipoNormalizado === 'saida' || tipoNormalizado === 'saída') && !fotoBase64 && !fotoUrl) {
+    return { success: false, error: 'Inclua a foto da movimentação antes de salvar.' };
+  }
 
     var padraoPrefixo = /^data:([^;]+);base64,/i;
     if (padraoPrefixo.test(assinaturaBase64)) {
@@ -5547,9 +5670,9 @@ function salvarMovimentacao(dados) {
       assinaturaBase64 = assinaturaBase64.replace(padraoPrefixo, '');
     }
 
-    var itensSerializados = '';
-    var itensNormalizados = [];
-    var itensInformados = dados.itens;
+  var itensSerializados = '';
+  var itensNormalizados = [];
+  var itensInformados = dados.itens;
 
     if (typeof itensInformados === 'string' && itensInformados) {
       try {
@@ -5589,15 +5712,27 @@ function salvarMovimentacao(dados) {
       volumeTotal = volumeConsiderado;
     }
 
-    if (!volumeTotal) {
-      var volumeInformado = Number(dados.volume);
-      volumeTotal = Number.isFinite(volumeInformado) && volumeInformado > 0 ? volumeInformado : 1;
-    }
+  if (!volumeTotal) {
+    var volumeInformado = Number(dados.volume);
+    volumeTotal = Number.isFinite(volumeInformado) && volumeInformado > 0 ? volumeInformado : 1;
+  }
 
-    var novaLinha = new Array(larguraMovimentacao).fill('');
-    novaLinha[0] = novoId;
-    novaLinha[1] = dados.armarioId;
-    novaLinha[2] = numeroArmario;
+  if (fotoBase64) {
+    var nomeMov = gerarNomeArquivoEvidencia(tipoNormalizado === 'saida' || tipoNormalizado === 'saída' ? 'registro_mov_saida' : 'registro_mov_entrada', numeroArmario || dados.numeroArmario);
+    var arquivoMov = salvarImagemBase64EmPasta(fotoBase64, fotoMime, nomeMov, PASTA_DRIVE_FOTOS_ID);
+    if (arquivoMov) {
+      fotoUrl = arquivoMov.url;
+      fotoMime = arquivoMov.mime || fotoMime;
+      var fotoId = arquivoMov.id;
+    }
+  }
+
+  var fotoIdValor = fotoUrl ? (fotoId || '') : '';
+
+  var novaLinha = new Array(larguraMovimentacao).fill('');
+  novaLinha[0] = novoId;
+  novaLinha[1] = dados.armarioId;
+  novaLinha[2] = numeroArmario;
     novaLinha[3] = dados.tipo;
     novaLinha[4] = dados.descricao;
     novaLinha[5] = dados.responsavel;
@@ -5608,15 +5743,21 @@ function salvarMovimentacao(dados) {
     if (colunaItens) {
       novaLinha[colunaItens - 1] = itensSerializados;
     }
-    if (colunaVolume) {
-      novaLinha[colunaVolume - 1] = volumeTotal || '';
-    }
-    if (colunaAssinatura) {
-      novaLinha[colunaAssinatura - 1] = assinaturaBase64;
-    }
-    if (colunaAssinaturaMime) {
-      novaLinha[colunaAssinaturaMime - 1] = assinaturaMime;
-    }
+  if (colunaVolume) {
+    novaLinha[colunaVolume - 1] = volumeTotal || '';
+  }
+  if (colunaAssinatura) {
+    novaLinha[colunaAssinatura - 1] = assinaturaBase64;
+  }
+  if (colunaAssinaturaMime) {
+    novaLinha[colunaAssinaturaMime - 1] = assinaturaMime;
+  }
+  if (colunaFotoUrl) {
+    novaLinha[colunaFotoUrl - 1] = fotoUrl || '';
+  }
+  if (colunaFotoId) {
+    novaLinha[colunaFotoId - 1] = fotoIdValor;
+  }
 
     sheet.getRange(lastRow + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
 
