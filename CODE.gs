@@ -5311,7 +5311,11 @@ function garantirEstruturaRegistroImagens(sheet) {
   var cabecalhos = ['ID', 'Armário ID', 'Número Armário', 'Tipo', 'Contexto', 'Título', 'Detalhe', 'Responsável', 'Data/Hora', 'Foto URL', 'Foto ID', 'Foto Nome'];
   var totalColunas = sheet.getLastColumn();
   if (totalColunas < totalColunasMinimas) {
-    sheet.insertColumnsAfter(totalColunas, totalColunasMinimas - totalColunas);
+    if (totalColunas === 0) {
+      sheet.insertColumns(1, totalColunasMinimas);
+    } else {
+      sheet.insertColumnsAfter(totalColunas, totalColunasMinimas - totalColunas);
+    }
     totalColunas = sheet.getLastColumn();
   }
 
