@@ -625,9 +625,6 @@
             movSignatureField: document.getElementById('mov-signature-field'),
             movData: document.getElementById('mov-data'),
             movHora: document.getElementById('mov-hora'),
-            movFotoInput: document.getElementById('mov-foto-input'),
-            movFotoTrigger: document.getElementById('mov-foto-trigger'),
-            movFotoStatus: document.getElementById('mov-foto-status'),
             btnNovaUnidade: document.getElementById('btn-nova-unidade'),
             tabelaUnidades: document.getElementById('tabela-unidades'),
             tabelaUnidadesBody: document.querySelector('#tabela-unidades tbody'),
@@ -1442,7 +1439,6 @@
         let movimentacaoInventarioAtual = [];
         let movimentacaoVolumesBase = [];
         let movimentacoesRegistradas = [];
-        let movFotoAtual = { base64: '', mime: '', url: '' };
         let movEntradaDescricaoUltimoValor = '';
         let termoAssinaturaDesenhada = false;
         let termoDesenhandoAssinatura = false;
@@ -2747,20 +2743,6 @@
             }
             if (elementos.movSignatureClear) {
                 elementos.movSignatureClear.addEventListener('click', () => limparAssinaturaMovimentacao());
-            }
-            if (elementos.movFotoTrigger && elementos.movFotoInput) {
-                elementos.movFotoTrigger.addEventListener('click', () => elementos.movFotoInput?.click());
-                elementos.movFotoInput.addEventListener('change', async evento => {
-                    if (!evento.target.files?.length) return;
-                    try {
-                        await processarFotoMovimentacao(evento.target.files[0]);
-                    } catch (erroFoto) {
-                        console.error('Erro ao processar foto da movimentação:', erroFoto);
-                        mostrarErro('Não foi possível carregar a foto da movimentação.');
-                    } finally {
-                        elementos.movFotoInput.value = '';
-                    }
-                });
             }
             if (elementos.movSignatureCanvas) {
                 elementos.movSignatureCanvas.addEventListener('pointerdown', iniciarAssinaturaMovimentacao);
@@ -6643,26 +6625,6 @@
                 field.classList.add('invalid');
             }
         }
-        function limparFotoMovimentacao() {
-            movFotoAtual = { base64: '', mime: '', url: '' };
-            if (elementos.movFotoStatus) {
-                elementos.movFotoStatus.textContent = 'Nenhuma foto anexada.';
-                elementos.movFotoStatus.classList.remove('attached');
-                elementos.movFotoStatus.classList.add('pending');
-            }
-            if (elementos.movFotoInput) {
-                elementos.movFotoInput.value = '';
-            }
-        }
-        async function processarFotoMovimentacao(arquivo) {
-            const imagem = await lerArquivoImagemComoBase64(arquivo);
-            movFotoAtual = { base64: imagem.base64, mime: imagem.mime, url: '' };
-            if (elementos.movFotoStatus) {
-                elementos.movFotoStatus.textContent = 'Foto anexada para esta movimentação.';
-                elementos.movFotoStatus.classList.add('attached');
-                elementos.movFotoStatus.classList.remove('pending');
-            }
-        }
         function validarPassoTermo(indice) {
             const step = termoSteps[indice];
             if (!step) return true;
@@ -7802,7 +7764,7 @@
             const descricaoCampo = elementos.movEntradaDescricao?.value?.trim();
             const descricao = descricaoCampo || movEntradaDescricaoUltimoValor;
             if (!descricao) {
-                mostrarErro('Informe a descrição usando a lista suspensa.');
+                mostrarErro('Informe a descrição do volume movimentado.');
                 elementos.movEntradaDescricao?.focus();
                 return;
             }
@@ -7879,7 +7841,6 @@
             elementos.movimentacaoForm.reset();
             limparItensMovimentacaoFormulario();
             limparAssinaturaMovimentacao(true);
-            limparFotoMovimentacao();
             movEntradaDescricaoUltimoValor = '';
             atualizarResponsavelMovimentacaoInfo();
             const padraoLocal = obterDataHoraLocalPadrao();
@@ -8086,10 +8047,6 @@
                     elementos.movSignatureField?.classList.add('invalid');
                     return;
                 }
-                if ((tipoSelecionado === 'entrada' || tipoSelecionado === 'saida') && !movFotoAtual.base64) {
-                    mostrarErro('Inclua a foto da movimentação para prosseguir.');
-                    return;
-                }
                 const dados = {
                     armarioId: identificadores?.idPlanilha || '',
                     numeroArmario: identificadores?.numeroArmario || '',
@@ -8101,10 +8058,7 @@
                     hora: elementos.movHora.value,
                     itens: itensMovimentados,
                     assinaturaBase64: assinaturaMov.dataUrl || '',
-                    assinaturaMime: assinaturaMov.mime || 'image/png',
-                    fotoBase64: movFotoAtual.base64 || '',
-                    fotoMime: movFotoAtual.mime || 'image/jpeg',
-                    fotoUrl: movFotoAtual.url || ''
+                    assinaturaMime: assinaturaMov.mime || 'image/png'
                 };
                 const resultado = await callGoogleScript('salvarMovimentacao', dados);
                 if (resultado.success) {
@@ -8119,7 +8073,6 @@
                     limparItensMovimentacaoFormulario();
                     limparAssinaturaMovimentacao(true);
                     inicializarCanvasAssinatura();
-                    limparFotoMovimentacao();
                     const padraoLocal = obterDataHoraLocalPadrao();
                     elementos.movData.value = padraoLocal.data;
                     elementos.movHora.value = padraoLocal.hora;

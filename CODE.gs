@@ -5657,10 +5657,6 @@ function salvarMovimentacao(dados) {
     return { success: false, error: 'A assinatura do responsável é obrigatória.' };
   }
 
-  if ((tipoNormalizado === 'entrada' || tipoNormalizado === 'saida' || tipoNormalizado === 'saída') && !fotoBase64 && !fotoUrl) {
-    return { success: false, error: 'Inclua a foto da movimentação antes de salvar.' };
-  }
-
     var padraoPrefixo = /^data:([^;]+);base64,/i;
     if (padraoPrefixo.test(assinaturaBase64)) {
       var match = assinaturaBase64.match(padraoPrefixo);
