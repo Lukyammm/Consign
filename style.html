@@ -3942,6 +3942,101 @@
         .page.active {
             display: block;
         }
+        /* Modal Registro de Imagens */
+        .modal-registro-imagens {
+            text-align: left;
+        }
+        .registro-imagens-resumo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            color: var(--muted-color);
+            font-size: 0.95rem;
+        }
+        .registro-imagens-resumo strong {
+            color: var(--text-color);
+        }
+        .registro-imagens-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+        }
+        .registro-imagem-card {
+            background: color-mix(in srgb, var(--surface-color) 94%, var(--bg-color) 6%);
+            border: 1px solid color-mix(in srgb, var(--dark-color) 8%, transparent);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+        }
+        .registro-imagem-thumb {
+            position: relative;
+            padding-top: 64%;
+            background: linear-gradient(135deg, color-mix(in srgb, var(--dark-color) 18%, transparent), color-mix(in srgb, var(--dark-color) 8%, transparent));
+        }
+        .registro-imagem-thumb img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .registro-imagem-info {
+            padding: 12px 14px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .registro-imagem-contexto {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted-color);
+            font-weight: 700;
+        }
+        .registro-imagem-titulo {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+        .registro-imagem-detalhe {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--muted-color);
+        }
+        .registro-imagem-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            color: var(--muted-color);
+            font-size: 0.85rem;
+        }
+        .registro-imagem-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: color-mix(in srgb, var(--dark-color) 6%, transparent);
+            padding: 6px 8px;
+            border-radius: 10px;
+        }
+        .registro-imagem-link {
+            align-self: flex-start;
+            margin-top: 4px;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        .registro-imagem-link:hover {
+            text-decoration: underline;
+        }
+        .registro-imagens-vazia {
+            text-align: center;
+            color: var(--muted-color);
+            padding: 18px 0;
+        }
         /* Responsividade */
         @media (max-width: 1280px) {
             :root {
