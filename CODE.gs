@@ -5702,7 +5702,7 @@ function finalizarMovimentacoesArmario(armarioId, numeroArmario, tipo) {
 }
 
 // Funções para LOGS
-function registrarLog(acao, detalhes) {
+function registrarLog(acao, detalhes, prontuario) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     if (!ss) {
@@ -5719,20 +5719,29 @@ function registrarLog(acao, detalhes) {
       }
     }
 
-    if (sheet.getLastColumn() < 5) {
-      sheet.insertColumns(sheet.getLastColumn() + 1, 5 - sheet.getLastColumn());
+    var larguraMinima = 6;
+    if (sheet.getLastColumn() < larguraMinima) {
+      sheet.insertColumns(sheet.getLastColumn() + 1, larguraMinima - sheet.getLastColumn());
     }
 
-    var cabecalhos = sheet.getRange(1, 1, 1, 5).getValues()[0];
-    if (!cabecalhos[0]) {
-      sheet.getRange(1, 1, 1, 5).setValues([[
-        'Data/Hora',
-        'Usuário',
-        'Ação',
-        'Detalhes',
-        'IP'
-      ]]);
+    var cabecalhos = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var cabecalhosAtualizados = cabecalhos.slice();
+    while (cabecalhosAtualizados.length < larguraMinima) {
+      cabecalhosAtualizados.push('');
     }
+
+    cabecalhosAtualizados[0] = cabecalhosAtualizados[0] || 'Data/Hora';
+    cabecalhosAtualizados[1] = cabecalhosAtualizados[1] || 'Usuário';
+    cabecalhosAtualizados[2] = cabecalhosAtualizados[2] || 'Ação';
+    cabecalhosAtualizados[3] = cabecalhosAtualizados[3] || 'Detalhes';
+    cabecalhosAtualizados[4] = cabecalhosAtualizados[4] || 'IP';
+    cabecalhosAtualizados[5] = cabecalhosAtualizados[5] || 'Prontuário';
+
+    sheet.getRange(1, 1, 1, cabecalhosAtualizados.length).setValues([cabecalhosAtualizados]);
+
+    var estruturaLogs = obterEstruturaPlanilha(sheet);
+    var indiceIp = obterIndiceColuna(estruturaLogs, 'ip', 4);
+    var indiceProntuario = obterIndiceColuna(estruturaLogs, 'prontuario', 5);
 
     var lastRow = sheet.getLastRow();
     if (lastRow < 1) {
@@ -5742,15 +5751,15 @@ function registrarLog(acao, detalhes) {
     var dataLog = obterDataHoraAtualFormatada().dataHoraIso;
     var usuarioLog = determinarResponsavelRegistro(usuarioContextoRequisicao) || 'desconhecido';
 
-    var novaLinha = [
-      dataLog,
-      usuarioLog,
-      acao || '',
-      detalhes || '',
-      ''
-    ];
+    var novaLinha = new Array(Math.max(cabecalhosAtualizados.length, larguraMinima)).fill('');
+    novaLinha[0] = dataLog;
+    novaLinha[1] = usuarioLog;
+    novaLinha[2] = acao || '';
+    novaLinha[3] = detalhes || '';
+    novaLinha[indiceIp] = '';
+    novaLinha[indiceProntuario] = prontuario || '';
 
-    sheet.getRange(lastRow + 1, 1, 1, 5).setValues([novaLinha]);
+    sheet.getRange(lastRow + 1, 1, 1, novaLinha.length).setValues([novaLinha]);
 
   } catch (error) {
     console.error('Falha ao registrar log:', error);
@@ -5766,9 +5775,14 @@ function getLogs() {
       return { success: true, data: [] };
     }
     
-    var data = sheet.getRange(2, 1, sheet.getLastRow()-1, 5).getValues();
+    var totalLinhas = sheet.getLastRow()-1;
+    var totalColunas = Math.max(sheet.getLastColumn(), 6);
+    var data = sheet.getRange(2, 1, totalLinhas, totalColunas).getValues();
+    var estruturaLogs = obterEstruturaPlanilha(sheet);
+    var indiceIp = obterIndiceColuna(estruturaLogs, 'ip', 4);
+    var indiceProntuario = obterIndiceColuna(estruturaLogs, 'prontuario', 5);
     var logs = [];
-    
+
     data.forEach(function(row) {
       if (row[0]) {
         logs.push({
@@ -5776,7 +5790,8 @@ function getLogs() {
           usuario: row[1],
           acao: row[2],
           detalhes: row[3],
-          ip: row[4]
+          ip: indiceIp < row.length ? row[indiceIp] : row[4],
+          prontuario: indiceProntuario < row.length ? row[indiceProntuario] : ''
         });
       }
     });
