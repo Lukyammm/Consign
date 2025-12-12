@@ -4054,11 +4054,9 @@
             const statusFiltro = normalizarTexto(filtros.status);
             const unidadeFiltro = normalizarTexto(filtros.unidade);
             const buscaFiltro = normalizarTextoBusca(filtros.busca);
-            const prontuarioFiltro = normalizarTextoBusca(filtros.prontuario);
             const possuiFiltros = statusFiltro !== 'todos'
                 || unidadeFiltro !== 'todas'
-                || Boolean(buscaFiltro)
-                || Boolean(prontuarioFiltro);
+                || Boolean(buscaFiltro);
 
             const armariosComTermo = estado.armarios
                 .filter(a => normalizarTexto(a.tipo) === 'acompanhante')
