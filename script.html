@@ -2301,7 +2301,7 @@
         }
         async function atualizarDadosPosOperacao(mensagemCarregamento = 'Atualizando informações...', posAtualizacaoLocal, opcoes = {}) {
             const { modoRapido = false, timeoutRapido = 1200 } = opcoes || {};
-            const finalizarOverlay = mostrarOverlayCarregamento(mensagemCarregamento);
+            const finalizarOverlay = modoRapido ? () => {} : mostrarOverlayCarregamento(mensagemCarregamento);
 
             const executarAtualizacao = async () => {
                 const [resultadoArmarios, resultadoEstatisticas] = await Promise.allSettled([
@@ -8870,6 +8870,7 @@
 
                     garantirArmarioLiberadoLocal(id, metodo, confirmacao);
                     atualizarResumoDashboardLocal();
+                    atualizarInterface();
 
                     const tarefaAtualizacao = atualizarDadosPosOperacao('Atualizando status do armário...', null, {
                         modoRapido: true,
