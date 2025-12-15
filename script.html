@@ -2434,12 +2434,12 @@
             }
             atualizarFeedbackBuscaProntuario('Pesquisando prontuário...', 'is-loading');
             try {
-                const resultado = await callGoogleScript('buscarPacienteBaseVitae', { prontuario });
+                const resultado = await callGoogleScript('buscarPacienteBaseVitae', { prontuario }, { tentativas: 1, intervaloInicial: 250 });
                 if (resultado && resultado.success && resultado.data) {
                     preencherCamposPacienteBaseVitae(resultado.data);
                     atualizarFeedbackBuscaProntuario('Dados encontrados e preenchidos automaticamente.', 'is-success');
                 } else {
-                    atualizarFeedbackBuscaProntuario(resultado?.error || 'Prontuário não localizado. Insira Manualmente os dados', 'is-error');
+                    atualizarFeedbackBuscaProntuario('Prontuário não localizado. Verifique o número ou preencha manualmente.', 'is-error');
                 }
             } catch (erroBusca) {
                 console.error('Erro ao buscar prontuário na Base Vitae:', erroBusca);
@@ -2470,7 +2470,7 @@
             termoUltimaBuscaPreencheu = false;
             atualizarFeedbackBuscaProntuarioTermo('Pesquisando prontuário...', 'is-loading');
             try {
-                const resultado = await callGoogleScript('buscarPacienteBaseVitae', { prontuario: prontuarioNormalizado });
+                const resultado = await callGoogleScript('buscarPacienteBaseVitae', { prontuario: prontuarioNormalizado }, { tentativas: 1, intervaloInicial: 250 });
                 if (resultado && resultado.success && resultado.data) {
                     preencherCamposPacienteBaseVitae(resultado.data);
                     if (campoProntuario) {
@@ -2482,9 +2482,11 @@
                     termoUltimaBuscaPreencheu = true;
                     atualizarFeedbackBuscaProntuarioTermo('Dados encontrados e preenchidos automaticamente.', 'is-success');
                 } else {
-                    atualizarFeedbackBuscaProntuarioTermo(resultado?.error || 'Prontuário não localizado. Insira Manualmente os dados', 'is-error');
+                    ultimoProntuarioBuscadoTermo = '';
+                    atualizarFeedbackBuscaProntuarioTermo('Prontuário não localizado. Verifique o número ou preencha manualmente.', 'is-error');
                 }
             } catch (erroBusca) {
+                ultimoProntuarioBuscadoTermo = '';
                 console.error('Erro ao buscar prontuário na Base Vitae (termo):', erroBusca);
                 atualizarFeedbackBuscaProntuarioTermo('Não foi possível buscar o prontuário agora.', 'is-error');
             } finally {
