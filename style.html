@@ -2988,6 +2988,15 @@
             border-radius: 12px;
             border: 1px dashed color-mix(in srgb, var(--primary-color) 18%, transparent);
             background: color-mix(in srgb, var(--surface-color) 96%, white 4%);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .wizard-volume-photo.pending {
+            border-color: color-mix(in srgb, var(--danger-color) 70%, white 30%);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger-color) 25%, transparent);
+        }
+        .wizard-volume-photo.has-photo {
+            border-color: color-mix(in srgb, var(--success-dark) 75%, white 25%);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--success-dark) 30%, transparent);
         }
         .wizard-volume-photo .btn-volume-photo {
             display: inline-flex;
@@ -3001,15 +3010,15 @@
             color: var(--primary-color);
             box-shadow: 0 6px 16px color-mix(in srgb, var(--primary-color) 15%, transparent);
         }
-        .wizard-volume-photo .volume-photo-status {
-            font-size: 0.78rem;
-            font-weight: 700;
-        }
-        .wizard-volume-photo .volume-photo-status.pending {
+        .wizard-volume-photo.pending .btn-volume-photo {
+            border-color: color-mix(in srgb, var(--danger-color) 25%, transparent);
             color: var(--danger-color);
+            box-shadow: 0 6px 16px color-mix(in srgb, var(--danger-color) 15%, transparent);
         }
-        .wizard-volume-photo .volume-photo-status.attached {
+        .wizard-volume-photo.has-photo .btn-volume-photo {
+            border-color: color-mix(in srgb, var(--success-dark) 25%, transparent);
             color: var(--success-dark);
+            box-shadow: 0 6px 16px color-mix(in srgb, var(--success-dark) 18%, transparent);
         }
         .wizard-volume-actions .btn {
             padding: 10px 14px;
