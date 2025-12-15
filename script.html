@@ -2368,15 +2368,32 @@
                 feedback.classList.add(classe);
             }
         }
+        function atualizarFeedbackBuscaProntuarioTermo(mensagem, classe = '') {
+            const feedback = document.getElementById('termo-prontuario-feedback');
+            if (!feedback) return;
+            feedback.textContent = mensagem || '';
+            feedback.classList.remove('is-loading', 'is-success', 'is-error');
+            if (classe) {
+                feedback.classList.add(classe);
+            }
+        }
         function preencherCamposPacienteBaseVitae(dados) {
             if (!dados || typeof dados !== 'object') return;
             const campoPaciente = document.getElementById('nome-paciente');
             const campoLeito = document.getElementById('leito');
+            const termoPaciente = document.getElementById('termo-paciente');
+            const termoLeito = document.getElementById('termo-leito');
             if (campoPaciente && dados.nome) {
                 campoPaciente.value = padronizarNomeMaiusculo(dados.nome);
             }
             if (campoLeito && dados.leito) {
                 campoLeito.value = dados.leito;
+            }
+            if (termoPaciente && dados.nome) {
+                termoPaciente.value = padronizarNomeMaiusculo(dados.nome);
+            }
+            if (termoLeito && dados.leito) {
+                termoLeito.value = aplicarMascaraLeito(dados.leito);
             }
         }
         async function buscarPacientePorProntuario() {
@@ -2398,6 +2415,28 @@
             } catch (erroBusca) {
                 console.error('Erro ao buscar prontuário na Base Vitae:', erroBusca);
                 atualizarFeedbackBuscaProntuario('Não foi possível buscar o prontuário agora.', 'is-error');
+            }
+        }
+        async function buscarPacientePorProntuarioTermo() {
+            const campoProntuario = document.getElementById('termo-prontuario');
+            const prontuario = (campoProntuario?.value || '').trim();
+            if (!prontuario) {
+                atualizarFeedbackBuscaProntuarioTermo('Informe o prontuário para buscar.', 'is-error');
+                campoProntuario?.focus();
+                return;
+            }
+            atualizarFeedbackBuscaProntuarioTermo('Pesquisando prontuário...', 'is-loading');
+            try {
+                const resultado = await callGoogleScript('buscarPacienteBaseVitae', { prontuario });
+                if (resultado && resultado.success && resultado.data) {
+                    preencherCamposPacienteBaseVitae(resultado.data);
+                    atualizarFeedbackBuscaProntuarioTermo('Dados encontrados e preenchidos automaticamente.', 'is-success');
+                } else {
+                    atualizarFeedbackBuscaProntuarioTermo(resultado?.error || 'Prontuário não localizado na aba Base Vitae 1.', 'is-error');
+                }
+            } catch (erroBusca) {
+                console.error('Erro ao buscar prontuário na Base Vitae (termo):', erroBusca);
+                atualizarFeedbackBuscaProntuarioTermo('Não foi possível buscar o prontuário agora.', 'is-error');
             }
         }
         function mostrarErro(mensagem) {
@@ -2697,6 +2736,20 @@
                     if (event.key === 'Enter') {
                         event.preventDefault();
                         buscarPacientePorProntuario();
+                    }
+                });
+            }
+            const termoProntuarioInput = document.getElementById('termo-prontuario');
+            if (termoProntuarioInput) {
+                termoProntuarioInput.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        buscarPacientePorProntuarioTermo();
+                    }
+                });
+                termoProntuarioInput.addEventListener('blur', () => {
+                    if (termoProntuarioInput.value.trim()) {
+                        buscarPacientePorProntuarioTermo();
                     }
                 });
             }
@@ -6626,6 +6679,7 @@
         function preencherCamposTermo(armario, termoDados, preCadastro, opcoes = {}) {
             if (!armario) return;
             const { restaurarAssinatura = true } = opcoes;
+            atualizarFeedbackBuscaProntuarioTermo('');
             document.getElementById('termo-paciente').value = termoDados?.paciente || preCadastro?.nomePaciente || armario.nomePaciente || '';
             document.getElementById('termo-prontuario').value = termoDados?.prontuario || '';
             if (elementos.termoNascimento) {
