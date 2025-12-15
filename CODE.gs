@@ -566,6 +566,7 @@ const CACHE_TTL_PADRAO = 60; // segundos
 const CACHE_TTL_ARMARIOS = 45;
 const CACHE_TTL_HISTORICO = 90;
 const CACHE_TTL_MOVIMENTACOES = 45;
+const CACHE_TTL_INDICE_ARMARIOS = 30;
 
 // Configuração da planilha de liberações externas
 const PLANILHA_LIBERACAO_ID = '1UR6ynp6nxbpVMephgKkT8_YDc_ih5bYK565IebfojPI';
@@ -690,6 +691,87 @@ function limparCacheMovimentacoes(armarioId, numeroArmario, tipo) {
     chaveNumero,
     montarChaveCache('movimentacoes', 'todos')
   ]);
+}
+
+function limparCacheIndiceArmarios(sheetName) {
+  var nomesAbas = sheetName ? [sheetName] : ['Visitantes', 'Acompanhantes'];
+  var chaves = nomesAbas.map(function(nome) {
+    return montarChaveCache('indice-armarios', nome);
+  });
+  limparCaches(chaves);
+}
+
+function obterIndiceArmarios(sheetName, forcarReconstrucao) {
+  var cache = CacheService.getScriptCache();
+  var chaveCache = montarChaveCache('indice-armarios', sheetName);
+
+  if (forcarReconstrucao) {
+    try {
+      cache.remove(chaveCache);
+    } catch (erroRemocao) {
+      // ignorado
+    }
+  } else {
+    try {
+      var armazenado = cache.get(chaveCache);
+      if (armazenado) {
+        return JSON.parse(armazenado);
+      }
+    } catch (erroCache) {
+      try {
+        cache.remove(chaveCache);
+      } catch (erroRemocaoCache) {
+        // ignorado
+      }
+    }
+  }
+
+  var resultado = { porId: {}, porNumero: {} };
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    return resultado;
+  }
+
+  var estrutura = obterEstruturaPlanilha(sheet);
+  var idIndex = obterIndiceColuna(estrutura, 'id', 0);
+  var numeroIndex = obterIndiceColuna(estrutura, 'numero', 1);
+  var totalLinhas = sheet.getLastRow();
+
+  if (totalLinhas <= 1) {
+    return resultado;
+  }
+
+  if (idIndex === null || idIndex === undefined || numeroIndex === null || numeroIndex === undefined) {
+    return resultado;
+  }
+
+  var ids = sheet.getRange(2, idIndex + 1, totalLinhas - 1, 1).getValues();
+  var numeros = sheet.getRange(2, numeroIndex + 1, totalLinhas - 1, 1).getValues();
+
+  for (var i = 0; i < totalLinhas - 1; i++) {
+    var linhaPlanilha = i + 2;
+    var idValor = ids[i] && ids[i][0] !== null && ids[i][0] !== undefined ? ids[i][0].toString().trim() : '';
+    var numeroValor = normalizarNumeroArmario(numeros[i] && numeros[i][0] !== undefined ? numeros[i][0] : '');
+
+    if (idValor) {
+      resultado.porId[idValor] = linhaPlanilha;
+    }
+
+    if (numeroValor) {
+      var chaveNumero = obterChaveNumeroArmario(numeroValor);
+      resultado.porNumero[chaveNumero] = linhaPlanilha;
+    }
+  }
+
+  try {
+    cache.put(chaveCache, JSON.stringify(resultado), CACHE_TTL_INDICE_ARMARIOS);
+  } catch (erroGravacao) {
+    // ignorado
+  }
+
+  return resultado;
 }
 
 // Inicializar planilha com todas as abas e cabeçalhos
@@ -2512,26 +2594,36 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
     var linhaPlanilha = -1;
     var armarioData = null;
 
-    if (totalLinhas > 1 && idComparacao) {
-      var intervaloId = sheet.getRange(2, idIndex + 1, totalLinhas - 1, 1);
-      var idFinder = intervaloId.createTextFinder(idComparacao).matchEntireCell(true);
-      var idEncontrado = idFinder ? idFinder.findNext() : null;
-      if (idEncontrado) {
-        linhaPlanilha = idEncontrado.getRow();
+    if (totalLinhas > 1) {
+      var indiceArmarios = obterIndiceArmarios(sheetName);
+      var chaveNumeroInformado = numeroInformado ? obterChaveNumeroArmario(numeroInformado) : '';
+
+      if (idComparacao && indiceArmarios.porId[idComparacao]) {
+        linhaPlanilha = indiceArmarios.porId[idComparacao];
+      }
+
+      if (linhaPlanilha === -1 && chaveNumeroInformado && indiceArmarios.porNumero[chaveNumeroInformado]) {
+        linhaPlanilha = indiceArmarios.porNumero[chaveNumeroInformado];
+      }
+
+      if (linhaPlanilha !== -1) {
         armarioData = sheet.getRange(linhaPlanilha, 1, 1, totalColunas).getValues()[0];
       }
-    }
 
-    if ((linhaPlanilha === -1 || !armarioData) && numeroInformado && totalLinhas > 1) {
-      var intervaloNumero = sheet.getRange(2, numeroIndex + 1, totalLinhas - 1, 1);
-      var numeroFinder = intervaloNumero.createTextFinder(numeroInformado).matchEntireCell(true);
-      var correspondencias = numeroFinder ? numeroFinder.findAll() : [];
-      for (var indice = 0; indice < correspondencias.length; indice++) {
-        var linhaCandidata = correspondencias[indice].getRow();
-        var valoresLinha = sheet.getRange(linhaCandidata, 1, 1, totalColunas).getValues()[0];
-        linhaPlanilha = linhaCandidata;
-        armarioData = valoresLinha;
-        break;
+      if (linhaPlanilha === -1 || !armarioData) {
+        var indiceAtualizado = obterIndiceArmarios(sheetName, true);
+
+        if (idComparacao && indiceAtualizado.porId[idComparacao]) {
+          linhaPlanilha = indiceAtualizado.porId[idComparacao];
+        }
+
+        if (linhaPlanilha === -1 && chaveNumeroInformado && indiceAtualizado.porNumero[chaveNumeroInformado]) {
+          linhaPlanilha = indiceAtualizado.porNumero[chaveNumeroInformado];
+        }
+
+        if (linhaPlanilha !== -1) {
+          armarioData = sheet.getRange(linhaPlanilha, 1, 1, totalColunas).getValues()[0];
+        }
       }
     }
 
@@ -2607,6 +2699,7 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
 
     limparCacheArmarios();
     limparCacheHistorico();
+    limparCacheIndiceArmarios(sheetName);
 
     return { success: true, message: 'Armário liberado com sucesso' };
 
@@ -3466,6 +3559,7 @@ function cadastrarArmarioFisico(armarioData) {
 
     limparCacheCadastroArmarios();
     limparCacheArmarios();
+    limparCacheIndiceArmarios();
 
     return {
       success: true,
