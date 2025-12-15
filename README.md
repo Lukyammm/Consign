@@ -15,6 +15,8 @@
 - **Movimentações (entrada/saída):** cada registro requer uma foto e é salvo na pasta configurada.
 - **Registro de imagens:** toda foto anexada (volumes, movimentações e entrega do termo) é indexada na aba "Registro de Imagens" para facilitar consultas posteriores.
 
+- **Encerramento e liberação unificados:** a finalização do termo e a liberação do armário agora ocorrem em uma única ação para reduzir o tempo de espera e manter o fluxo mais ágil.
+
 ## Limitações conhecidas
 - As fotos são armazenadas apenas na pasta configurada e precisam de conectividade com o Drive.
 - O tamanho máximo aceito depende das cotas do Apps Script para arquivos base64.

@@ -1223,6 +1223,10 @@ function handlePost(e) {
         return ContentService.createTextOutput(JSON.stringify(atualizarDadosArmario(e.parameter)))
           .setMimeType(ContentService.MimeType.JSON);
 
+      case 'finalizarELiberarArmario':
+        return ContentService.createTextOutput(JSON.stringify(finalizarELiberarArmario(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
       case 'liberarArmario':
         return ContentService.createTextOutput(JSON.stringify(liberarArmario(
           e.parameter.id,
@@ -4795,6 +4799,46 @@ function finalizarTermo(dados) {
   } catch (error) {
     registrarLog('ERRO_TERMO', 'Erro ao finalizar termo: ' + error.toString());
     return { success: false, error: error.toString() };
+  }
+}
+
+function ehErroTermoNaoLocalizado(mensagemErro) {
+  if (!mensagemErro) {
+    return false;
+  }
+  var texto = normalizarTextoBasico(mensagemErro);
+  return texto.indexOf('termo nao localizado') !== -1;
+}
+
+function finalizarELiberarArmario(dados) {
+  try {
+    var finalizacao = finalizarTermo(dados) || { success: false, error: 'Falha desconhecida na finalização' };
+    var finalizacaoNaoLocalizada = !finalizacao.success && ehErroTermoNaoLocalizado(finalizacao.error);
+
+    if (!finalizacao.success && !finalizacaoNaoLocalizada) {
+      return { success: false, etapa: 'finalizacao', error: finalizacao.error || 'Erro ao finalizar termo' };
+    }
+
+    var liberacao = liberarArmario(dados.armarioId, dados.tipo || 'acompanhante', dados.numeroArmario, dados.usuarioResponsavel);
+    if (!liberacao || !liberacao.success) {
+      return {
+        success: false,
+        etapa: 'liberacao',
+        error: liberacao && liberacao.error ? liberacao.error : 'Erro ao liberar armário',
+        finalizacao: finalizacao
+      };
+    }
+
+    return {
+      success: true,
+      finalizacao: finalizacao,
+      liberacao: liberacao,
+      termoNaoLocalizado: finalizacaoNaoLocalizada
+    };
+
+  } catch (error) {
+    registrarLog('ERRO', 'Erro ao finalizar e liberar armário: ' + error.toString());
+    return { success: false, etapa: 'finalizacao-liberacao', error: error.toString() };
   }
 }
 
