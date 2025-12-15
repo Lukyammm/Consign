@@ -325,7 +325,7 @@
                     documento: document.getElementById('termo-resp-doc')?.value || '',
                     parentesco: document.getElementById('termo-resp-parentesco')?.value || ''
                 },
-                orientacoes: ['ori1', 'ori2', 'ori3'].filter(chave => document.getElementById(`termo-${chave}`)?.checked),
+                orientacoes: obterOrientacoesConfirmadas(),
                 volumes: obterVolumesTermo(),
                 assinatura: (() => {
                     if (!termoAssinaturaDesenhada || !elementos.termoAssinaturaCanvas) return '';
@@ -585,6 +585,8 @@
             termoArmario: document.getElementById('termo-armario'),
             termoLoading: document.getElementById('termo-loading'),
             termoLoadingText: document.getElementById('termo-loading-text'),
+            termoOriConfirmBtn: document.getElementById('termo-ori-confirm-btn'),
+            termoOriConfirmInput: document.getElementById('termo-ori-confirm'),
             termoVolumesList: document.getElementById('termo-volumes-list'),
             termoAddVolume: document.getElementById('termo-add-volume'),
             termoVolumesField: document.getElementById('termo-volumes-field'),
@@ -1444,6 +1446,9 @@
         let movEntradaDescricaoUltimoValor = '';
         let termoAssinaturaDesenhada = false;
         let termoDesenhandoAssinatura = false;
+        let termoBuscaProntuarioEmAndamento = false;
+        let ultimoProntuarioBuscadoTermo = '';
+        let termoUltimaBuscaPreencheu = false;
         let movAssinaturaDesenhada = false;
         let movDesenhandoAssinatura = false;
         let movAssinaturaImagemAtual = '';
@@ -2436,17 +2441,30 @@
                 (campoProntuarioBusca || campoProntuario)?.focus();
                 return;
             }
+            const prontuarioNormalizado = prontuario.replace(/\D/g, '') || prontuario;
+            if (termoBuscaProntuarioEmAndamento && prontuarioNormalizado === ultimoProntuarioBuscadoTermo) {
+                atualizarFeedbackBuscaProntuarioTermo('Busca em andamento para este prontuário...', 'is-loading');
+                return;
+            }
+            if (!termoBuscaProntuarioEmAndamento && prontuarioNormalizado === ultimoProntuarioBuscadoTermo && termoUltimaBuscaPreencheu) {
+                atualizarFeedbackBuscaProntuarioTermo('Dados já preenchidos para este prontuário.', 'is-success');
+                return;
+            }
+            termoBuscaProntuarioEmAndamento = true;
+            ultimoProntuarioBuscadoTermo = prontuarioNormalizado;
+            termoUltimaBuscaPreencheu = false;
             atualizarFeedbackBuscaProntuarioTermo('Pesquisando prontuário...', 'is-loading');
             try {
-                const resultado = await callGoogleScript('buscarPacienteBaseVitae', { prontuario });
+                const resultado = await callGoogleScript('buscarPacienteBaseVitae', { prontuario: prontuarioNormalizado });
                 if (resultado && resultado.success && resultado.data) {
                     preencherCamposPacienteBaseVitae(resultado.data);
                     if (campoProntuario) {
-                        campoProntuario.value = resultado.data.prontuario || prontuario;
+                        campoProntuario.value = resultado.data.prontuario || prontuarioNormalizado;
                     }
                     if (campoProntuarioBusca) {
-                        campoProntuarioBusca.value = resultado.data.prontuario || prontuario;
+                        campoProntuarioBusca.value = resultado.data.prontuario || prontuarioNormalizado;
                     }
+                    termoUltimaBuscaPreencheu = true;
                     atualizarFeedbackBuscaProntuarioTermo('Dados encontrados e preenchidos automaticamente.', 'is-success');
                 } else {
                     atualizarFeedbackBuscaProntuarioTermo(resultado?.error || 'Prontuário não localizado na aba Base Vitae 1.', 'is-error');
@@ -2454,6 +2472,8 @@
             } catch (erroBusca) {
                 console.error('Erro ao buscar prontuário na Base Vitae (termo):', erroBusca);
                 atualizarFeedbackBuscaProntuarioTermo('Não foi possível buscar o prontuário agora.', 'is-error');
+            } finally {
+                termoBuscaProntuarioEmAndamento = false;
             }
         }
         function mostrarErro(mensagem) {
@@ -2818,6 +2838,14 @@
             if (elementos.termoNascimento) {
                 elementos.termoNascimento.addEventListener('input', () => normalizarCampoDataNascimento(elementos.termoNascimento));
                 elementos.termoNascimento.addEventListener('blur', () => finalizarCampoDataNascimento(elementos.termoNascimento));
+            }
+            if (elementos.termoOriConfirmBtn && elementos.termoOriConfirmInput) {
+                elementos.termoOriConfirmBtn.addEventListener('click', () => {
+                    const novoEstado = !elementos.termoOriConfirmInput.checked;
+                    sincronizarCienciaOrientacoes(novoEstado);
+                    elementos.termoOriConfirmInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    salvarRascunhoTermo();
+                });
             }
             if (elementos.termoAddVolume) {
                 elementos.termoAddVolume.addEventListener('click', () => {
@@ -6697,6 +6725,31 @@
                 elementos.termoModal.setAttribute('aria-busy', ativo ? 'true' : 'false');
             }
         }
+        function sincronizarCienciaOrientacoes(confirmado) {
+            ['ori1', 'ori2', 'ori3'].forEach(chave => {
+                const checkbox = document.getElementById(`termo-${chave}`);
+                if (checkbox) {
+                    checkbox.checked = confirmado;
+                }
+            });
+            if (elementos.termoOriConfirmInput) {
+                elementos.termoOriConfirmInput.checked = confirmado;
+            }
+            const botao = elementos.termoOriConfirmBtn;
+            if (botao) {
+                botao.classList.toggle('active', confirmado);
+                botao.setAttribute('aria-pressed', confirmado ? 'true' : 'false');
+                const icone = botao.querySelector('.wizard-check-icon');
+                if (icone) {
+                    icone.classList.toggle('fa-square-check', confirmado);
+                    icone.classList.toggle('fa-square', !confirmado);
+                }
+            }
+        }
+        function obterOrientacoesConfirmadas() {
+            const confirmInput = elementos.termoOriConfirmInput || document.getElementById('termo-ori-confirm');
+            return confirmInput?.checked ? ['ori1', 'ori2', 'ori3'] : [];
+        }
         function preencherCamposTermo(armario, termoDados, preCadastro, opcoes = {}) {
             if (!armario) return;
             const { restaurarAssinatura = true } = opcoes;
@@ -6733,9 +6786,11 @@
             ['ori1', 'ori2', 'ori3'].forEach(chave => {
                 const checkbox = document.getElementById(`termo-${chave}`);
                 if (checkbox) {
-                    checkbox.checked = termoDados?.orientacoes?.includes(chave) || false;
+                    checkbox.checked = false;
                 }
             });
+            const orientacoesConfirmadas = Array.isArray(termoDados?.orientacoes) && termoDados.orientacoes.length >= 3;
+            sincronizarCienciaOrientacoes(orientacoesConfirmadas);
             prepararVolumesTermo(Array.isArray(termoDados?.volumes) && termoDados.volumes.length ? termoDados.volumes : []);
             restaurarRascunhoTermo();
             mostrarPassoTermo(termoPassoAtual || 0);
@@ -6762,7 +6817,7 @@
             if (elementos.termoNascimento) {
                 delete elementos.termoNascimento.dataset.isoValue;
             }
-            setEstadoCarregamentoTermo(true, 'Carregando dados do termo...');
+            sincronizarCienciaOrientacoes(false);
             const preCadastro = termoPreCadastro && identificadores && normalizarIdentificador(termoPreCadastro.id) === identificadores.idPlanilha
                 ? termoPreCadastro
                 : null;
@@ -7186,7 +7241,7 @@
                 telefone: document.getElementById('termo-resp-telefone').value.trim(),
                 documento: document.getElementById('termo-resp-doc').value.trim(),
                 parentesco: document.getElementById('termo-resp-parentesco').value.trim(),
-                orientacoes: ['ori1', 'ori2', 'ori3'].filter(chave => document.getElementById(`termo-${chave}`).checked),
+                orientacoes: obterOrientacoesConfirmadas(),
                 volumes: volumes,
                 descricaoVolumes: descricaoVolumes,
                 assinaturaBase64: assinaturaBase64,
@@ -7203,11 +7258,19 @@
                 };
             }
             dadosTermo.tipo = identificadores?.tipo || 'acompanhante';
-            const resultado = await callGoogleScript('salvarTermoCompleto', dadosTermo);
-            if (resultado.success) {
+            const promessaSalvamento = callGoogleScript('salvarTermoCompleto', dadosTermo);
+            fecharTermoModal();
+            let resultado;
+            try {
+                resultado = await promessaSalvamento;
+            } catch (erroSalvar) {
+                console.error('Erro ao salvar termo:', erroSalvar);
+                mostrarErro('Não foi possível registrar o termo agora. Tente novamente.');
+                return;
+            }
+            if (resultado?.success) {
                 const dadosImpressao = montarDadosImpressaoReserva(armarioAtual, dadosTermo, identificadores);
-                fecharTermoModal();
-                const atualizacaoRapida = atualizarDadosPosOperacao('Atualizando informações do armário...', null, {
+                atualizarDadosPosOperacao('Atualizando informações do armário...', null, {
                     modoRapido: true,
                     timeoutRapido: 600
                 }).catch(erro => {
@@ -7238,6 +7301,7 @@
             ajustarObrigatoriedadeCamposPaciente(null);
             prepararVolumesTermo();
             limparAssinaturaTermo(true);
+            sincronizarCienciaOrientacoes(false);
             limparRascunhoTermo();
         }
         function criarControladorAssinaturaFinalizacao(canvas, field) {
