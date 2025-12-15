@@ -569,6 +569,8 @@
             globalLoadingText: document.getElementById('global-loading-text'),
             termoModal: document.getElementById('termo-modal'),
             termoForm: document.getElementById('termo-form'),
+            termoProntuarioBusca: document.getElementById('termo-prontuario-busca'),
+            termoProntuarioBuscaBtn: document.getElementById('btn-termo-buscar-prontuario'),
             termoNascimento: document.getElementById('termo-nascimento'),
             termoSetor: document.getElementById('termo-setor'),
             termoLeito: document.getElementById('termo-leito'),
@@ -2383,6 +2385,8 @@
             const campoLeito = document.getElementById('leito');
             const termoPaciente = document.getElementById('termo-paciente');
             const termoLeito = document.getElementById('termo-leito');
+            const termoProntuario = document.getElementById('termo-prontuario');
+            const termoProntuarioBusca = document.getElementById('termo-prontuario-busca');
             if (campoPaciente && dados.nome) {
                 campoPaciente.value = padronizarNomeMaiusculo(dados.nome);
             }
@@ -2394,6 +2398,12 @@
             }
             if (termoLeito && dados.leito) {
                 termoLeito.value = aplicarMascaraLeito(dados.leito);
+            }
+            if (termoProntuario && dados.prontuario) {
+                termoProntuario.value = dados.prontuario;
+            }
+            if (termoProntuarioBusca && dados.prontuario) {
+                termoProntuarioBusca.value = dados.prontuario;
             }
         }
         async function buscarPacientePorProntuario() {
@@ -2418,11 +2428,12 @@
             }
         }
         async function buscarPacientePorProntuarioTermo() {
+            const campoProntuarioBusca = document.getElementById('termo-prontuario-busca');
             const campoProntuario = document.getElementById('termo-prontuario');
-            const prontuario = (campoProntuario?.value || '').trim();
+            const prontuario = (campoProntuarioBusca?.value || campoProntuario?.value || '').trim();
             if (!prontuario) {
                 atualizarFeedbackBuscaProntuarioTermo('Informe o prontuário para buscar.', 'is-error');
-                campoProntuario?.focus();
+                (campoProntuarioBusca || campoProntuario)?.focus();
                 return;
             }
             atualizarFeedbackBuscaProntuarioTermo('Pesquisando prontuário...', 'is-loading');
@@ -2430,6 +2441,12 @@
                 const resultado = await callGoogleScript('buscarPacienteBaseVitae', { prontuario });
                 if (resultado && resultado.success && resultado.data) {
                     preencherCamposPacienteBaseVitae(resultado.data);
+                    if (campoProntuario) {
+                        campoProntuario.value = resultado.data.prontuario || prontuario;
+                    }
+                    if (campoProntuarioBusca) {
+                        campoProntuarioBusca.value = resultado.data.prontuario || prontuario;
+                    }
                     atualizarFeedbackBuscaProntuarioTermo('Dados encontrados e preenchidos automaticamente.', 'is-success');
                 } else {
                     atualizarFeedbackBuscaProntuarioTermo(resultado?.error || 'Prontuário não localizado na aba Base Vitae 1.', 'is-error');
@@ -2739,20 +2756,24 @@
                     }
                 });
             }
+            if (elementos.termoProntuarioBuscaBtn) {
+                configurarBotaoAcao(elementos.termoProntuarioBuscaBtn, buscarPacientePorProntuarioTermo);
+            }
             const termoProntuarioInput = document.getElementById('termo-prontuario');
-            if (termoProntuarioInput) {
-                termoProntuarioInput.addEventListener('keydown', (event) => {
+            const termoProntuarioBuscaInput = elementos.termoProntuarioBusca;
+            [termoProntuarioInput, termoProntuarioBuscaInput].filter(Boolean).forEach(input => {
+                input.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') {
                         event.preventDefault();
                         buscarPacientePorProntuarioTermo();
                     }
                 });
-                termoProntuarioInput.addEventListener('blur', () => {
-                    if (termoProntuarioInput.value.trim()) {
+                input.addEventListener('blur', () => {
+                    if (input.value.trim()) {
                         buscarPacientePorProntuarioTermo();
                     }
                 });
-            }
+            });
             [document.getElementById('leito'), elementos.termoLeito].forEach(campo => aplicarMascaraLeitoCampo(campo));
             elementos.usuarioForm.addEventListener('submit', function(e) {
                 e.preventDefault();
