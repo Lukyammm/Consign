@@ -2677,20 +2677,29 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
     }
 
     if (historicoLastRow > 1 && numeroArmario) {
-      var historicoDados = historicoSheet.getRange(2, 1, historicoLastRow - 1, historicoSheet.getLastColumn()).getValues();
-      for (var i = historicoDados.length - 1; i >= 0; i--) {
-        var linhaHistorico = i + 2;
-        var numeroHistorico = historicoDados[i][2];
-        var statusRegistro = historicoDados[i][9];
-        if (numeroHistorico === numeroArmario && statusRegistro === 'EM USO') {
-          var horaFim = dataHoraAtual.horaCurta;
-          historicoSheet.getRange(linhaHistorico, 9).setValue(horaFim);
-          historicoSheet.getRange(linhaHistorico, 10).setValue('FINALIZADO');
-          if (responsavelRegistro) {
-            historicoSheet.getRange(linhaHistorico, 14).setValue(responsavelRegistro);
-          }
+      var totalLinhasHistorico = historicoLastRow - 1;
+      var numerosHistorico = historicoSheet.getRange(2, 3, totalLinhasHistorico, 1).getValues().flat();
+      var statusHistorico = historicoSheet.getRange(2, 10, totalLinhasHistorico, 1).getValues().flat();
+      var linhaHistorico = -1;
+
+      for (var i = numerosHistorico.length - 1; i >= 0; i--) {
+        if (numerosHistorico[i] === numeroArmario && statusHistorico[i] === 'EM USO') {
+          linhaHistorico = i + 2;
           break;
         }
+      }
+
+      if (linhaHistorico !== -1) {
+        var horaFim = dataHoraAtual.horaCurta;
+        var intervaloAtualizacao = historicoSheet.getRange(linhaHistorico, 9, 1, 6);
+        var dadosAtualizacao = intervaloAtualizacao.getValues()[0];
+        var valoresAtualizados = [horaFim, 'FINALIZADO', responsavelRegistro || dadosAtualizacao[5]];
+
+        dadosAtualizacao[0] = valoresAtualizados[0];
+        dadosAtualizacao[1] = valoresAtualizados[1];
+        dadosAtualizacao[5] = valoresAtualizados[2];
+
+        intervaloAtualizacao.setValues([dadosAtualizacao]);
       }
     }
 
