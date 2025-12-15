@@ -1598,47 +1598,125 @@ function obterMapaPacientesBaseVitae() {
   return {};
 }
 
+function obterMapaNascimentosPacientes() {
+  var chaveCache = montarChaveCache('paciente-por-setor', 'nascimentos');
+  return executarComCache(chaveCache, CACHE_TTL_PADRAO, function() {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName('PACIENTE_POR_SETOR');
+      if (!sheet || sheet.getLastRow() < 2) {
+        return { success: true, data: {} };
+      }
+
+      var totalColunas = Math.max(sheet.getLastColumn(), 8);
+      var dadosSheet = sheet.getRange(2, 1, sheet.getLastRow() - 1, totalColunas).getValues();
+      var mapa = {};
+
+      dadosSheet.forEach(function(linha) {
+        var prontuarioLinha = normalizarIdentificador(linha[2]);
+        if (!prontuarioLinha) {
+          return;
+        }
+
+        var prontuarioLinhaSemZeros = prontuarioLinha.replace(/^0+/, '') || prontuarioLinha;
+        var valorNascimento = linha[7];
+        var nascimentoFormatado = formatarDataDDMMAAAA(valorNascimento) || (valorNascimento ? valorNascimento.toString().trim() : '');
+
+        if (nascimentoFormatado) {
+          mapa[prontuarioLinha] = nascimentoFormatado;
+          if (prontuarioLinhaSemZeros !== prontuarioLinha) {
+            mapa[prontuarioLinhaSemZeros] = nascimentoFormatado;
+          }
+        }
+      });
+
+      return { success: true, data: mapa };
+    } catch (erroMapa) {
+      registrarLog('ERRO', 'Falha ao montar mapa de nascimentos: ' + erroMapa.toString());
+      return { success: true, data: {} };
+    }
+  });
+}
+
 function buscarNascimentoPorProntuario(prontuarioEntrada, prontuarioSemZeros) {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('PACIENTE_POR_SETOR');
-    if (!sheet) {
+    var mapaResultado = obterMapaNascimentosPacientes();
+    if (!mapaResultado || !mapaResultado.success) {
       return '';
     }
 
-    var ultimaLinha = sheet.getLastRow();
-    if (ultimaLinha < 2) {
-      return '';
-    }
-
-    var totalColunas = Math.max(sheet.getLastColumn(), 8);
-    var dadosSheet = sheet.getRange(2, 1, ultimaLinha - 1, totalColunas).getValues();
-    var nascimentoEncontrado = '';
-
-    dadosSheet.forEach(function(linha) {
-      var prontuarioLinha = normalizarIdentificador(linha[2]);
-      if (!prontuarioLinha) {
-        return;
-      }
-
-      var prontuarioLinhaSemZeros = prontuarioLinha.replace(/^0+/, '') || prontuarioLinha;
-      var corresponde = prontuarioLinha === prontuarioEntrada || prontuarioLinhaSemZeros === prontuarioSemZeros;
-      if (!corresponde) {
-        return;
-      }
-
-      var valorNascimento = linha[7];
-      var nascimentoFormatado = formatarDataDDMMAAAA(valorNascimento) || (valorNascimento ? valorNascimento.toString().trim() : '');
-      if (nascimentoFormatado) {
-        nascimentoEncontrado = nascimentoFormatado;
-      }
-    });
-
-    return nascimentoEncontrado;
+    var mapa = mapaResultado.data || {};
+    return mapa[prontuarioEntrada] || mapa[prontuarioSemZeros] || '';
   } catch (erro) {
     registrarLog('ERRO', 'Falha ao buscar nascimento na aba PACIENTE_POR_SETOR: ' + erro.toString());
     return '';
   }
+}
+
+function obterMapaPacientesBaseVitae() {
+  var chaveCache = montarChaveCache('base-vitae', 'pacientes');
+  return executarComCache(chaveCache, CACHE_TTL_PADRAO, function() {
+    try {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName('Base Vitae 1');
+      if (!sheet || sheet.getLastRow() < 2) {
+        return { success: true, data: {} };
+      }
+
+      var estrutura = obterEstruturaPlanilha(sheet);
+      var totalLinhas = sheet.getLastRow() - 1;
+      var totalColunas = estrutura.ultimaColuna || Math.max(sheet.getLastColumn(), 13);
+      var dadosSheet = sheet.getRange(2, 1, totalLinhas, totalColunas).getValues();
+
+      var prontuarioIndex = obterIndiceColuna(estrutura, ['prontuario'], 0);
+      var nomeIndex = obterIndiceColuna(estrutura, ['nome'], 1);
+      var setorIndex = obterIndiceColuna(estrutura, ['setor'], 6);
+      var leitoAIndex = obterIndiceColuna(estrutura, ['parte leito a', 'leito a'], 9);
+      var leitoBIndex = obterIndiceColuna(estrutura, ['parte leito b', 'leito b'], 10);
+      var referenciaIndex = obterIndiceColuna(estrutura, ['data referencia', 'referencia', 'referência'], 12);
+
+      var mapa = {};
+
+      dadosSheet.forEach(function(linha) {
+        var prontuarioValor = obterValorLinhaFlexivel(linha, estrutura, ['prontuario'], linha[prontuarioIndex]);
+        var prontuarioLinha = normalizarIdentificador(prontuarioValor);
+        if (!prontuarioLinha) {
+          return;
+        }
+
+        var prontuarioSemZeros = prontuarioLinha.replace(/^0+/, '') || prontuarioLinha;
+        var nome = linha[nomeIndex] ? linha[nomeIndex].toString().trim() : '';
+        var setor = linha[setorIndex] ? linha[setorIndex].toString().trim() : '';
+        var leitoA = linha[leitoAIndex] ? linha[leitoAIndex].toString().trim() : '';
+        var leitoB = linha[leitoBIndex] ? linha[leitoBIndex].toString().trim() : '';
+        var dataReferencia = obterDataValida(linha[referenciaIndex]);
+        var timestampReferencia = dataReferencia ? dataReferencia.getTime() : 0;
+
+        var registroAtual = mapa[prontuarioLinha];
+        if (registroAtual && registroAtual.dataReferencia > timestampReferencia) {
+          return;
+        }
+
+        var registro = {
+          prontuario: prontuarioLinha,
+          nome: nome,
+          leito: [leitoA, leitoB].filter(Boolean).join(' - '),
+          setor: setor,
+          dataReferencia: timestampReferencia
+        };
+
+        mapa[prontuarioLinha] = registro;
+        if (prontuarioSemZeros !== prontuarioLinha) {
+          mapa[prontuarioSemZeros] = registro;
+        }
+      });
+
+      return { success: true, data: mapa };
+    } catch (erroMapa) {
+      registrarLog('ERRO', 'Falha ao montar mapa da Base Vitae: ' + erroMapa.toString());
+      return { success: true, data: {} };
+    }
+  });
 }
 
 function buscarPacienteBaseVitae(dados) {
@@ -1649,55 +1727,17 @@ function buscarPacienteBaseVitae(dados) {
     }
 
     var prontuarioSemZeros = prontuarioEntrada.replace(/^0+/, '') || prontuarioEntrada;
-
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Base Vitae 1');
-    if (!sheet) {
-      return { success: false, error: 'Aba "Base Vitae 1" não encontrada' };
+    var mapaResultado = obterMapaPacientesBaseVitae();
+    if (!mapaResultado || !mapaResultado.success) {
+      return { success: false, error: 'Não foi possível consultar o prontuário no momento' };
     }
 
-    var ultimaLinha = sheet.getLastRow();
-    if (ultimaLinha < 2) {
-      return { success: false, error: 'Prontuário não localizado na aba "Base Vitae 1"' };
-    }
-
-    var totalColunas = Math.max(sheet.getLastColumn(), 13);
-    var dadosSheet = sheet.getRange(2, 1, ultimaLinha - 1, totalColunas).getValues();
-
-    var registroMaisRecente = null;
-
-    dadosSheet.forEach(function(linha) {
-      var prontuarioLinha = normalizarIdentificador(linha[0]);
-      if (!prontuarioLinha) {
-        return;
-      }
-      var prontuarioLinhaSemZeros = prontuarioLinha.replace(/^0+/, '') || prontuarioLinha;
-      var corresponde = prontuarioLinha === prontuarioEntrada || prontuarioLinhaSemZeros === prontuarioSemZeros;
-      if (!corresponde) {
-        return;
-      }
-
-      var dataReferencia = obterDataValida(linha[12]);
-      var timestampReferencia = dataReferencia ? dataReferencia.getTime() : 0;
-
-      if (!registroMaisRecente || timestampReferencia >= registroMaisRecente.dataReferencia) {
-        registroMaisRecente = {
-          nome: linha[1] ? linha[1].toString().trim() : '',
-          parteLeitoA: linha[9] ? linha[9].toString().trim() : '',
-          parteLeitoB: linha[10] ? linha[10].toString().trim() : '',
-          setor: linha[6] ? linha[6].toString().trim() : '',
-          dataReferencia: timestampReferencia
-        };
-      }
-    });
+    var mapa = mapaResultado.data || {};
+    var registroMaisRecente = mapa[prontuarioEntrada] || mapa[prontuarioSemZeros];
 
     if (!registroMaisRecente) {
-      return { success: false, error: 'Prontuário não localizado na aba "Base Vitae 1"' };
+      return { success: false, error: 'Prontuário não localizado. Insira Manualmente os dados' };
     }
-
-    var leitoCombinado = [registroMaisRecente.parteLeitoA, registroMaisRecente.parteLeitoB]
-      .filter(Boolean)
-      .join(' - ');
 
     var nascimento = buscarNascimentoPorProntuario(prontuarioEntrada, prontuarioSemZeros);
     var setorInternacao = registroMaisRecente.setor || '';
@@ -1705,8 +1745,9 @@ function buscarPacienteBaseVitae(dados) {
     return {
       success: true,
       data: {
+        prontuario: registroMaisRecente.prontuario || prontuarioEntrada,
         nome: registroMaisRecente.nome || '',
-        leito: leitoCombinado,
+        leito: registroMaisRecente.leito || '',
         setor: setorInternacao,
         nascimento: nascimento
       }
