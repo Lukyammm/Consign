@@ -1169,6 +1169,18 @@ function obterDataValida(valor) {
   return null;
 }
 
+function formatarDataDDMMAAAA(valor) {
+  var dataValida = obterDataValida(valor);
+  if (!dataValida) {
+    return '';
+  }
+  try {
+    return Utilities.formatDate(dataValida, obterFusoHorarioPadrao(), 'dd/MM/yyyy');
+  } catch (erroFormato) {
+    return '';
+  }
+}
+
 function adicionarDias(data, dias) {
   if (!data || isNaN(data.getTime())) {
     return null;
@@ -1586,6 +1598,49 @@ function obterMapaPacientesBaseVitae() {
   return {};
 }
 
+function buscarNascimentoPorProntuario(prontuarioEntrada, prontuarioSemZeros) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('PACIENTE_POR_SETOR');
+    if (!sheet) {
+      return '';
+    }
+
+    var ultimaLinha = sheet.getLastRow();
+    if (ultimaLinha < 2) {
+      return '';
+    }
+
+    var totalColunas = Math.max(sheet.getLastColumn(), 8);
+    var dadosSheet = sheet.getRange(2, 1, ultimaLinha - 1, totalColunas).getValues();
+    var nascimentoEncontrado = '';
+
+    dadosSheet.forEach(function(linha) {
+      var prontuarioLinha = normalizarIdentificador(linha[2]);
+      if (!prontuarioLinha) {
+        return;
+      }
+
+      var prontuarioLinhaSemZeros = prontuarioLinha.replace(/^0+/, '') || prontuarioLinha;
+      var corresponde = prontuarioLinha === prontuarioEntrada || prontuarioLinhaSemZeros === prontuarioSemZeros;
+      if (!corresponde) {
+        return;
+      }
+
+      var valorNascimento = linha[7];
+      var nascimentoFormatado = formatarDataDDMMAAAA(valorNascimento) || (valorNascimento ? valorNascimento.toString().trim() : '');
+      if (nascimentoFormatado) {
+        nascimentoEncontrado = nascimentoFormatado;
+      }
+    });
+
+    return nascimentoEncontrado;
+  } catch (erro) {
+    registrarLog('ERRO', 'Falha ao buscar nascimento na aba PACIENTE_POR_SETOR: ' + erro.toString());
+    return '';
+  }
+}
+
 function buscarPacienteBaseVitae(dados) {
   try {
     var prontuarioEntrada = dados && dados.prontuario ? normalizarIdentificador(dados.prontuario) : '';
@@ -1630,6 +1685,7 @@ function buscarPacienteBaseVitae(dados) {
           nome: linha[1] ? linha[1].toString().trim() : '',
           parteLeitoA: linha[9] ? linha[9].toString().trim() : '',
           parteLeitoB: linha[10] ? linha[10].toString().trim() : '',
+          setor: linha[6] ? linha[6].toString().trim() : '',
           dataReferencia: timestampReferencia
         };
       }
@@ -1643,11 +1699,16 @@ function buscarPacienteBaseVitae(dados) {
       .filter(Boolean)
       .join(' - ');
 
+    var nascimento = buscarNascimentoPorProntuario(prontuarioEntrada, prontuarioSemZeros);
+    var setorInternacao = registroMaisRecente.setor || '';
+
     return {
       success: true,
       data: {
         nome: registroMaisRecente.nome || '',
-        leito: leitoCombinado
+        leito: leitoCombinado,
+        setor: setorInternacao,
+        nascimento: nascimento
       }
     };
   } catch (erroBusca) {

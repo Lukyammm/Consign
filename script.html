@@ -2392,6 +2392,7 @@
             const termoLeito = document.getElementById('termo-leito');
             const termoProntuario = document.getElementById('termo-prontuario');
             const termoProntuarioBusca = document.getElementById('termo-prontuario-busca');
+            const termoNascimento = document.getElementById('termo-nascimento');
             if (campoPaciente && dados.nome) {
                 campoPaciente.value = padronizarNomeMaiusculo(dados.nome);
             }
@@ -2409,6 +2410,19 @@
             }
             if (termoProntuarioBusca && dados.prontuario) {
                 termoProntuarioBusca.value = dados.prontuario;
+            }
+            if (dados.setor) {
+                definirSetorTermo(dados.setor);
+            }
+            if (termoNascimento && dados.nascimento) {
+                const nascimentoFormatado = formatarDataParaCampoNascimento(dados.nascimento);
+                termoNascimento.value = nascimentoFormatado;
+                const nascimentoIso = converterDataTextoParaISO(nascimentoFormatado);
+                if (nascimentoIso) {
+                    termoNascimento.dataset.isoValue = nascimentoIso;
+                } else {
+                    delete termoNascimento.dataset.isoValue;
+                }
             }
         }
         async function buscarPacientePorProntuario() {
@@ -7255,6 +7269,22 @@
             }
         }
 
+        function notificarReservaEmSegundoPlano() {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Reserva iniciada',
+                text: 'Reservando armário em segundo plano...',
+                showConfirmButton: false,
+                timer: 1800,
+                timerProgressBar: true,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+
         async function aplicarTermo() {
             if (termoArmarioAtual === null) return;
             const armarioAtual = obterArmarioPorId(termoArmarioAtual) || estado.armarios.find(item => normalizarIdentificador(item.idPlanilha) === normalizarIdentificador(termoArmarioAtual));
@@ -7302,6 +7332,7 @@
             }
             dadosTermo.tipo = identificadores?.tipo || 'acompanhante';
             const promessaSalvamento = callGoogleScript('salvarTermoCompleto', dadosTermo);
+            notificarReservaEmSegundoPlano();
             fecharTermoModal();
             let resultado;
             try {
@@ -7313,12 +7344,14 @@
             }
             if (resultado?.success) {
                 const dadosImpressao = montarDadosImpressaoReserva(armarioAtual, dadosTermo, identificadores);
-                atualizarDadosPosOperacao('Atualizando informações do armário...', null, {
-                    modoRapido: true,
-                    timeoutRapido: 600
-                }).catch(erro => {
-                    console.error('Erro ao atualizar dados após salvar termo:', erro);
-                });
+                try {
+                    await atualizarDadosPosOperacao('Atualizando informações do armário...', null, {
+                        modoRapido: true,
+                        timeoutRapido: 600
+                    });
+                } catch (erroAtualizacao) {
+                    console.error('Erro ao atualizar dados após salvar termo:', erroAtualizacao);
+                }
                 mostrarSucesso('Etapa inicial do termo registrada. Finalize o termo ao encerrar o armário.');
                 if (deveGerarImpressaoReserva(identificadores?.tipo || armarioAtual.tipo || '')) {
                     abrirModalImpressaoReserva(dadosImpressao);
