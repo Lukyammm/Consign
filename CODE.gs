@@ -2677,13 +2677,12 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
     }
 
     if (historicoLastRow > 1 && numeroArmario) {
-      var intervaloHistoricoNumeros = historicoSheet.getRange(2, 3, historicoLastRow - 1, 1);
-      var historicoFinder = intervaloHistoricoNumeros.createTextFinder(numeroArmario).matchEntireCell(true);
-      var ocorrencias = historicoFinder ? historicoFinder.findAll() : [];
-      for (var i = ocorrencias.length - 1; i >= 0; i--) {
-        var linhaHistorico = ocorrencias[i].getRow();
-        var statusRegistro = historicoSheet.getRange(linhaHistorico, 10).getValue();
-        if (statusRegistro === 'EM USO') {
+      var historicoDados = historicoSheet.getRange(2, 1, historicoLastRow - 1, historicoSheet.getLastColumn()).getValues();
+      for (var i = historicoDados.length - 1; i >= 0; i--) {
+        var linhaHistorico = i + 2;
+        var numeroHistorico = historicoDados[i][2];
+        var statusRegistro = historicoDados[i][9];
+        if (numeroHistorico === numeroArmario && statusRegistro === 'EM USO') {
           var horaFim = dataHoraAtual.horaCurta;
           historicoSheet.getRange(linhaHistorico, 9).setValue(horaFim);
           historicoSheet.getRange(linhaHistorico, 10).setValue('FINALIZADO');
@@ -2697,6 +2696,7 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
 
     registrarLog('LIBERAÇÃO', `Armário ${numeroArmario} liberado`);
 
+    SpreadsheetApp.flush();
     limparCacheArmarios();
     limparCacheHistorico();
     limparCacheIndiceArmarios(sheetName);
