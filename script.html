@@ -1,6 +1,6 @@
 <script>
         // URL do Google Apps Script - ATUALIZE COM SUA URL
-        const SCRIPT_URL = 'https://script.google.com/a/macros/isgh.org.br/s/AKfycbzbGb6sQR1auYsyTB-kwPos7Cd7swLuTUDiAzzpwTPW2cj76ykYzKYgBDXA-g5ef7pbpw/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbGb6sQR1auYsyTB-kwPos7Cd7swLuTUDiAzzpwTPW2cj76ykYzKYgBDXA-g5ef7pbpw/exec';
         // Estado da aplicação
         function criarEstadoLiberacaoInicial() {
             return {
@@ -608,9 +608,6 @@
             movTabs: document.querySelectorAll('.mov-tab'),
             movTabPanels: document.querySelectorAll('.mov-tab-panel'),
             movTabPlaceholder: document.getElementById('mov-tab-placeholder'),
-            movSteps: document.querySelectorAll('.mov-step'),
-            movSideTabs: document.querySelectorAll('.mov-side-tab'),
-            movSidePanels: document.querySelectorAll('.mov-side-panel'),
             movFlowContent: document.getElementById('mov-flow-content'),
             movItensList: document.getElementById('mov-itens-list'),
             movItensLabel: document.getElementById('mov-itens-label'),
@@ -2960,9 +2957,6 @@
             });
             elementos.movTabs?.forEach(tab => {
                 tab.addEventListener('click', () => ativarAbaMovimentacao(tab.dataset.movTab));
-            });
-            elementos.movSideTabs?.forEach(tab => {
-                tab.addEventListener('click', () => alternarPainelComplementar(tab.dataset.sideTab));
             });
             elementos.movEntradaAdicionar?.addEventListener('click', adicionarItemEntradaRapido);
             elementos.movEntradaDescricao?.addEventListener('input', atualizarUltimaDescricaoEntrada);
@@ -7194,7 +7188,6 @@
             if (elementos.movSignatureField) {
                 elementos.movSignatureField.classList.toggle('invalid', !silencioso);
             }
-            sincronizarEtapasMovimentacao();
         }
         function obterPosicaoAssinaturaMovimentacao(evento) {
             const canvas = elementos.movSignatureCanvas;
@@ -7235,7 +7228,6 @@
             movAssinaturaDesenhada = true;
             movAssinaturaImagemAtual = elementos.movSignatureCanvas?.toDataURL('image/png') || movAssinaturaImagemAtual;
             elementos.movSignatureField?.classList.remove('invalid');
-            sincronizarEtapasMovimentacao();
         }
         function obterAssinaturaMovimentacao() {
             const canvas = elementos.movSignatureCanvas;
@@ -7674,62 +7666,12 @@
             if (elementos.movItensList) {
                 elementos.movItensList.innerHTML = '';
             }
-            sincronizarEtapasMovimentacao();
         }
         function atualizarStatusFotoMovItem(statusEl, possuiFoto) {
             if (!statusEl) return;
             statusEl.textContent = possuiFoto ? 'Foto anexada para este volume.' : 'Foto pendente para este volume.';
             statusEl.classList.toggle('attached', possuiFoto);
             statusEl.classList.toggle('pending', !possuiFoto);
-        }
-        function alternarPainelComplementar(nome = 'resumo') {
-            const alvo = normalizarTexto(nome) || 'resumo';
-            elementos.movSideTabs?.forEach(tab => {
-                const ativo = normalizarTexto(tab.dataset.sideTab) === alvo;
-                tab.classList.toggle('active', ativo);
-                tab.setAttribute('aria-selected', ativo ? 'true' : 'false');
-            });
-            elementos.movSidePanels?.forEach(painel => {
-                const ativo = normalizarTexto(painel.dataset.sidePanel) === alvo;
-                painel.classList.toggle('active', ativo);
-            });
-        }
-        function sincronizarEtapasMovimentacao() {
-            const tipo = normalizarTexto(elementos.movTipo?.value);
-            const itensQtd = elementos.movItensList
-                ? elementos.movItensList.querySelectorAll('.movimentacao-item-row').length
-                : 0;
-            const assinaturaColetada = movAssinaturaDesenhada;
-
-            elementos.movSteps?.forEach(step => {
-                const chave = step.dataset.step;
-                let ativo = false;
-                let concluido = false;
-                let mutado = false;
-
-                switch (chave) {
-                    case 'acao':
-                        ativo = !tipo;
-                        concluido = !!tipo;
-                        break;
-                    case 'registro':
-                        mutado = !tipo;
-                        ativo = !!tipo && itensQtd === 0;
-                        concluido = itensQtd > 0;
-                        break;
-                    case 'confirmacao':
-                        mutado = !tipo;
-                        ativo = !!tipo && itensQtd > 0 && !assinaturaColetada;
-                        concluido = assinaturaColetada;
-                        break;
-                    default:
-                        break;
-                }
-
-                step.classList.toggle('is-active', ativo);
-                step.classList.toggle('is-complete', concluido);
-                step.classList.toggle('is-muted', mutado);
-            });
         }
         function criarControleFotoMovItem(linha, { visivelInicialmente = true } = {}) {
             const fotoWrapper = document.createElement('div');
@@ -7829,10 +7771,7 @@
             botaoRemover.className = 'btn btn-ghost btn-danger-outline mov-remover-item';
             botaoRemover.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i><span>Remover</span>';
             botaoRemover.title = 'Remover este item';
-            botaoRemover.addEventListener('click', () => {
-                linha.remove();
-                sincronizarEtapasMovimentacao();
-            });
+            botaoRemover.addEventListener('click', () => linha.remove());
 
             const acoesWrapper = document.createElement('div');
             acoesWrapper.className = 'mov-item-actions';
@@ -7843,7 +7782,6 @@
             linha.appendChild(campoDescricaoWrapper);
             linha.appendChild(acoesWrapper);
             elementos.movItensList.appendChild(linha);
-            sincronizarEtapasMovimentacao();
             return linha;
         }
         function criarLinhaSaida(item = {}, origem = 'registrado') {
@@ -7940,7 +7878,6 @@
             linha.appendChild(acoesWrapper);
             elementos.movItensList.appendChild(linha);
             atualizarIndicadorRemocao(linha);
-            sincronizarEtapasMovimentacao();
             return linha;
         }
         function atualizarIndicadorRemocao(linha) {
@@ -7978,13 +7915,11 @@
                 }
                 atualizarStatusFotoMovItem(fotoStatus, false);
             }
-            sincronizarEtapasMovimentacao();
         }
         function preencherItensMovimentacaoAPartirInventario(tipo) {
             const tipoNormalizado = normalizarTexto(tipo);
             if (!tipoNormalizado) {
                 limparItensMovimentacaoFormulario();
-                sincronizarEtapasMovimentacao();
                 return;
             }
 
@@ -7998,7 +7933,6 @@
                 vazio.className = 'info-box info-compact';
                 vazio.textContent = 'Adicione os itens de entrada usando o botão abaixo.';
                 elementos.movItensList?.appendChild(vazio);
-                sincronizarEtapasMovimentacao();
                 return;
             }
 
@@ -8007,7 +7941,6 @@
                 vazio.className = 'info-box';
                 vazio.textContent = 'Nenhum item registrado no inventário até o momento.';
                 elementos.movItensList?.appendChild(vazio);
-                sincronizarEtapasMovimentacao();
                 return;
             }
 
@@ -8016,7 +7949,6 @@
                     criarLinhaSaida(item, 'registrado');
                 }
             });
-            sincronizarEtapasMovimentacao();
         }
         function obterItensMovimentacaoFormulario() {
             if (!elementos.movItensList) return [];
@@ -8126,7 +8058,6 @@
                 }
                 movEntradaDescricaoUltimoValor = '';
                 atualizarContextoMovimentacao('');
-                sincronizarEtapasMovimentacao();
                 return;
             }
             if (elementos.movTipo) {
@@ -8148,7 +8079,6 @@
             }
             preencherItensMovimentacaoAPartirInventario(tipoNormalizado);
             reproduzirSomMovimentacao(tipoNormalizado);
-            sincronizarEtapasMovimentacao();
         }
         function adicionarItemEntradaRapido() {
             const quantidade = Number(elementos.movEntradaQuantidade?.value);
@@ -8249,7 +8179,6 @@
             movimentacaoVolumesBase = [];
             movimentacoesRegistradas = [];
             ativarAbaMovimentacao('');
-            alternarPainelComplementar('resumo');
             if (elementos.movimentacaoModal.style.display !== 'flex') {
                 travaRolagem.aplicar();
             }
