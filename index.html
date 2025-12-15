@@ -815,7 +815,21 @@
                                 <div class="wizard-col-6">
                                     <div class="wizard-field">
                                         <label for="termo-resp-parentesco">Grau de parentesco</label>
-                                        <input type="text" id="termo-resp-parentesco" class="wizard-input" placeholder="Ex.: Filho(a)">
+                                        <select id="termo-resp-parentesco" class="wizard-input">
+                                            <option value="">Selecione</option>
+                                            <option value="Filho(a)">Filho(a)</option>
+                                            <option value="Pai/Mãe">Pai/Mãe</option>
+                                            <option value="Cônjuge/Companheiro(a)">Cônjuge/Companheiro(a)</option>
+                                            <option value="Irmão/Irmã">Irmão/Irmã</option>
+                                            <option value="Avô/Avó">Avô/Avó</option>
+                                            <option value="Neto(a)">Neto(a)</option>
+                                            <option value="Tio/Tia">Tio/Tia</option>
+                                            <option value="Sobrinho(a)">Sobrinho(a)</option>
+                                            <option value="Cuidador(a)">Cuidador(a)</option>
+                                            <option value="Amigo(a) ou vizinho(a)">Amigo(a) ou vizinho(a)</option>
+                                            <option value="Outro familiar">Outro familiar</option>
+                                            <option value="Outro">Outro</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -826,25 +840,22 @@
                                 <div class="wizard-col-12">
                                     <div class="wizard-field">
                                         <label class="wizard-required">ESTOU CIENTE E CONCORDO QUE:</label>
-                                        <div class="wizard-inline" style="align-items:flex-start;">
-                                            <label class="wizard-chip" style="align-items:flex-start;">
-                                                <input type="checkbox" id="termo-ori1" required>
-                                                <span>Meus pertences ficam sob guarda e responsabilidade da unidade; os itens que estou levando para o leito permanecem sob minha responsabilidade.</span>
-                                            </label>
+                                        <div class="wizard-orientacoes-list" aria-live="polite">
+                                            <p>Meus pertences ficam sob guarda e responsabilidade da unidade; os itens que estou levando para o leito permanecem sob minha responsabilidade.</p>
+                                            <p>Em caso de piora clínica, o serviço social/NAC entrará em contato com a família para recolher os pertences;</p>
+                                            <p>Após 15 dias da alta ou transferência, os itens não retirados poderão ser descartados conforme as normas vigentes.</p>
                                         </div>
-                                        <div class="wizard-inline" style="align-items:flex-start;">
-                                            <label class="wizard-chip" style="align-items:flex-start;">
-                                                <input type="checkbox" id="termo-ori2" required>
-                                                <span>Em caso de piora clínica, o serviço social/NAC entrará em contato com a família para recolher os pertences;</span>
-                                            </label>
+                                        <input type="checkbox" id="termo-ori1" class="sr-only">
+                                        <input type="checkbox" id="termo-ori2" class="sr-only">
+                                        <input type="checkbox" id="termo-ori3" class="sr-only">
+                                        <input type="checkbox" id="termo-ori-confirm" class="sr-only" required>
+                                        <div class="wizard-inline">
+                                            <button type="button" class="wizard-check-button" id="termo-ori-confirm-btn" aria-pressed="false">
+                                                <i class="fa-regular fa-square wizard-check-icon" aria-hidden="true"></i>
+                                                <span>Concordo com as três orientações acima</span>
+                                            </button>
                                         </div>
-                                        <div class="wizard-inline" style="align-items:flex-start;">
-                                            <label class="wizard-chip" style="align-items:flex-start;">
-                                                <input type="checkbox" id="termo-ori3" required>
-                                                <span>Após 15 dias da alta ou transferência, os itens não retirados poderão ser descartados conforme as normas vigentes.</span>
-                                            </label>
-                                        </div>
-                                        <div class="wizard-error">É necessário marcar todas as caixas de ciência.</div>
+                                        <div class="wizard-error">Confirme que está ciente de todas as orientações.</div>
                                     </div>
                                 </div>
                                 <div class="wizard-col-12">
