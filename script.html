@@ -2450,6 +2450,7 @@
                 atualizarFeedbackBuscaProntuarioTermo('Dados já preenchidos para este prontuário.', 'is-success');
                 return;
             }
+            const finalizarLoading = elementos.termoProntuarioBuscaBtn ? iniciarLoadingBotao(elementos.termoProntuarioBuscaBtn) : () => {};
             termoBuscaProntuarioEmAndamento = true;
             ultimoProntuarioBuscadoTermo = prontuarioNormalizado;
             termoUltimaBuscaPreencheu = false;
@@ -2474,6 +2475,7 @@
                 atualizarFeedbackBuscaProntuarioTermo('Não foi possível buscar o prontuário agora.', 'is-error');
             } finally {
                 termoBuscaProntuarioEmAndamento = false;
+                finalizarLoading();
             }
         }
         function mostrarErro(mensagem) {
@@ -2777,7 +2779,7 @@
                 });
             }
             if (elementos.termoProntuarioBuscaBtn) {
-                configurarBotaoAcao(elementos.termoProntuarioBuscaBtn, buscarPacientePorProntuarioTermo);
+                elementos.termoProntuarioBuscaBtn.addEventListener('click', buscarPacientePorProntuarioTermo);
             }
             const termoProntuarioInput = document.getElementById('termo-prontuario');
             const termoProntuarioBuscaInput = elementos.termoProntuarioBusca;
@@ -6781,6 +6783,10 @@
                     icone.classList.toggle('fa-square-check', confirmado);
                     icone.classList.toggle('fa-square', !confirmado);
                 }
+            }
+            const listaOrientacoes = document.getElementById('termo-orientacoes-list');
+            if (listaOrientacoes) {
+                listaOrientacoes.classList.toggle('is-confirmed', confirmado);
             }
         }
         function obterOrientacoesConfirmadas() {

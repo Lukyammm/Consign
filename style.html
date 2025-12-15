@@ -2725,6 +2725,16 @@
             color: var(--text-color);
             line-height: 1.45;
         }
+        .wizard-orientacoes-list.is-confirmed {
+            background: color-mix(in srgb, var(--success-color) 12%, white 88%);
+            border-color: color-mix(in srgb, var(--success-color) 46%, transparent);
+            box-shadow: 0 8px 18px rgba(34, 197, 94, 0.16);
+        }
+        .wizard-orientacao-indice {
+            font-weight: 700;
+            color: color-mix(in srgb, var(--primary-dark) 78%, black 22%);
+            margin-right: 6px;
+        }
         .wizard-check-button {
             display: inline-flex;
             align-items: center;
@@ -2744,13 +2754,13 @@
             transform: translateY(-1px);
         }
         .wizard-check-button.active {
-            background: color-mix(in srgb, var(--primary-color) 18%, white 82%);
-            border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
-            color: var(--primary-color);
-            box-shadow: 0 8px 16px rgba(53, 112, 255, 0.12);
+            background: color-mix(in srgb, var(--success-color) 16%, white 84%);
+            border-color: color-mix(in srgb, var(--success-color) 48%, transparent);
+            color: color-mix(in srgb, var(--success-color) 82%, black 18%);
+            box-shadow: 0 10px 20px rgba(34, 197, 94, 0.14);
         }
         .wizard-check-icon {
-            font-size: 1.25rem;
+            font-size: 3rem;
         }
         .wizard-loading {
             position: absolute;
