@@ -723,44 +723,61 @@
                                 <div class="wizard-step active" data-step="0">
                                     <div class="wizard-grid">
                                         <div class="wizard-col-12"><div class="wizard-badge">Dados do paciente</div></div>
-                                <div class="wizard-col-8">
-                                    <div class="wizard-field">
-                                        <label for="termo-paciente" class="wizard-required">Nome do paciente</label>
-                                        <input type="text" id="termo-paciente" class="wizard-input" required>
-                                        <div class="wizard-error">Informe o nome completo do paciente.</div>
-                                    </div>
-                                </div>
-                                <div class="wizard-col-4">
-                                    <div class="wizard-field">
-                                        <label for="termo-prontuario" class="wizard-required">Prontuário</label>
-                                        <input type="text" id="termo-prontuario" class="wizard-input" required>
-                                        <div class="wizard-error">Informe o número do prontuário.</div>
-                                        <div class="wizard-feedback" id="termo-prontuario-feedback" role="status" aria-live="polite"></div>
-                                    </div>
-                                </div>
-                                <div class="wizard-col-4">
-                                    <div class="wizard-field">
-                                        <label for="termo-nascimento" class="wizard-required">Data de nascimento</label>
-                                        <input type="text" id="termo-nascimento" class="wizard-input" required placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off" maxlength="10">
-                                        <div class="wizard-error">Informe a data de nascimento.</div>
-                                    </div>
-                                </div>
-                                <div class="wizard-col-4">
-                                    <div class="wizard-field">
-                                        <label for="termo-setor" class="wizard-required">Setor de internação</label>
-                                        <select id="termo-setor" class="wizard-input" required>
-                                            <option value="">Selecione o setor</option>
-                                        </select>
-                                        <div class="wizard-error">Informe o setor.</div>
-                                    </div>
-                                </div>
-                                <div class="wizard-col-4">
-                                    <div class="wizard-field">
-                                        <label for="termo-leito" class="wizard-required">Leito</label>
-                                        <input type="text" id="termo-leito" class="wizard-input" required>
-                                        <div class="wizard-error">Informe o leito.</div>
-                                    </div>
-                                </div>
+                                        <div class="wizard-col-12">
+                                            <div class="prontuario-search wizard-prontuario-search">
+                                                <div class="prontuario-search-header">
+                                                    <label for="termo-prontuario-busca">Pesquisar prontuário <span class="tag-opcional">Opcional</span></label>
+                                                    <div class="prontuario-search-actions">
+                                                        <div class="prontuario-input-group">
+                                                            <input type="text" id="termo-prontuario-busca" class="wizard-input" inputmode="numeric" autocomplete="off" placeholder="Digite o prontuário do paciente">
+                                                            <button type="button" class="btn btn-primary" id="btn-termo-buscar-prontuario">
+                                                                <i class="fas fa-search"></i>
+                                                                Buscar
+                                                            </button>
+                                                        </div>
+                                                        <div class="field-hint">Busca opcional na aba "Base Vitae 1". Preenche paciente, prontuário, leito e nascimento automaticamente quando encontrar.</div>
+                                                    </div>
+                                                </div>
+                                                <div class="wizard-feedback" id="termo-prontuario-feedback" role="status" aria-live="polite"></div>
+                                            </div>
+                                        </div>
+                                        <div class="wizard-col-8">
+                                            <div class="wizard-field">
+                                                <label for="termo-paciente" class="wizard-required">Nome do paciente</label>
+                                                <input type="text" id="termo-paciente" class="wizard-input" required>
+                                                <div class="wizard-error">Informe o nome completo do paciente.</div>
+                                            </div>
+                                        </div>
+                                        <div class="wizard-col-4">
+                                            <div class="wizard-field">
+                                                <label for="termo-prontuario" class="wizard-required">Prontuário</label>
+                                                <input type="text" id="termo-prontuario" class="wizard-input" required>
+                                                <div class="wizard-error">Informe o número do prontuário.</div>
+                                            </div>
+                                        </div>
+                                        <div class="wizard-col-4">
+                                            <div class="wizard-field">
+                                                <label for="termo-nascimento" class="wizard-required">Data de nascimento</label>
+                                                <input type="text" id="termo-nascimento" class="wizard-input" required placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off" maxlength="10">
+                                                <div class="wizard-error">Informe a data de nascimento.</div>
+                                            </div>
+                                        </div>
+                                        <div class="wizard-col-4">
+                                            <div class="wizard-field">
+                                                <label for="termo-setor" class="wizard-required">Setor de internação</label>
+                                                <select id="termo-setor" class="wizard-input" required>
+                                                    <option value="">Selecione o setor</option>
+                                                </select>
+                                                <div class="wizard-error">Informe o setor.</div>
+                                            </div>
+                                        </div>
+                                        <div class="wizard-col-4">
+                                            <div class="wizard-field">
+                                                <label for="termo-leito" class="wizard-required">Leito</label>
+                                                <input type="text" id="termo-leito" class="wizard-input" required>
+                                                <div class="wizard-error">Informe o leito.</div>
+                                            </div>
+                                        </div>
                                 <div class="wizard-col-12">
                                     <div class="wizard-field">
                                         <label class="wizard-required">Paciente consciente/orientado e responsável pelos pertences?</label>
