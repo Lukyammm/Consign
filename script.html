@@ -3561,6 +3561,29 @@
             return armarioAtualizado;
         }
 
+        function clonarArmario(armario) {
+            if (!armario) {
+                return null;
+            }
+
+            return {
+                ...armario,
+                termoInfo: armario.termoInfo ? { ...armario.termoInfo } : null
+            };
+        }
+
+        function restaurarArmarioLocal(id, armarioOriginal) {
+            if (!armarioOriginal) {
+                return;
+            }
+
+            const restaurado = atualizarArmarioLocal(id, armarioOriginal);
+            if (restaurado) {
+                atualizarResumoDashboardLocal();
+                atualizarInterface();
+            }
+        }
+
         function garantirArmarioLiberadoLocal(id, metodo, confirmacao) {
             const armario = obterArmarioPorId(id);
             if (!armario) {
@@ -5963,40 +5986,54 @@
                 mostrarErro('Armário não encontrado. Atualize a lista e tente novamente.');
                 return;
             }
+
+            const snapshotArmario = clonarArmario(armario);
             const identificadores = montarIdentificadoresArmario(armario);
             const payload = montarPayloadAcaoArmario(armario, {
                 tipo: tipoPreferencial || identificadores.tipo
             });
             payload.numero = identificadores.numeroArmario;
 
-            const resultado = await callGoogleScript('liberarArmario', payload);
-            if (resultado.success) {
-                garantirArmarioLiberadoLocal(id);
-                atualizarResumoDashboardLocal();
-                atualizarInterface();
-                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
-                    console.error('Erro ao atualizar tabelas localmente após liberação:', erro);
-                });
+            garantirArmarioLiberadoLocal(id);
+            atualizarResumoDashboardLocal();
+            atualizarInterface();
+            carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
+                console.error('Erro ao atualizar tabelas localmente após liberação:', erro);
+            });
 
-                mostrarSucesso('Armário liberado com sucesso');
-                sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
-                return;
+            let liberacaoConfirmada = false;
+
+            try {
+                const resultado = await callGoogleScript('liberarArmario', payload);
+                if (resultado.success) {
+                    liberacaoConfirmada = true;
+                    mostrarSucesso('Armário liberado com sucesso');
+                    sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
+                    return;
+                }
+
+                const mensagemErro = (resultado.error || '').toString();
+                const mensagemNormalizada = mensagemErro.toLowerCase();
+
+                if (mensagemNormalizada.includes('já está livre')) {
+                    mostrarErro('Este armário já está livre. Atualize a lista para confirmar a situação.');
+                    return;
+                }
+
+                if (mensagemNormalizada.includes('não encontrado')) {
+                    mostrarErro('Não encontramos este armário. Atualize a lista e tente novamente.');
+                    return;
+                }
+
+                notificarErroPadrao(resultado);
+            } catch (erro) {
+                console.error('Erro ao liberar armário:', erro);
+                mostrarErro('Não foi possível liberar o armário. Tente novamente.');
+            } finally {
+                if (!liberacaoConfirmada) {
+                    restaurarArmarioLocal(id, snapshotArmario);
+                }
             }
-
-            const mensagemErro = (resultado.error || '').toString();
-            const mensagemNormalizada = mensagemErro.toLowerCase();
-
-            if (mensagemNormalizada.includes('já está livre')) {
-                mostrarErro('Este armário já está livre. Atualize a lista para confirmar a situação.');
-                return;
-            }
-
-            if (mensagemNormalizada.includes('não encontrado')) {
-                mostrarErro('Não encontramos este armário. Atualize a lista e tente novamente.');
-                return;
-            }
-
-            notificarErroPadrao(resultado);
         }
         function formatarStatusArmario(status) {
             switch (status) {
