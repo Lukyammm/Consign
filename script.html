@@ -3533,6 +3533,29 @@
             return armarioAtualizado;
         }
 
+        function clonarArmario(armario) {
+            if (!armario) {
+                return null;
+            }
+
+            return {
+                ...armario,
+                termoInfo: armario.termoInfo ? { ...armario.termoInfo } : null
+            };
+        }
+
+        function restaurarArmarioLocal(id, armarioOriginal) {
+            if (!armarioOriginal) {
+                return;
+            }
+
+            const restaurado = atualizarArmarioLocal(id, armarioOriginal);
+            if (restaurado) {
+                atualizarResumoDashboardLocal();
+                atualizarInterface();
+            }
+        }
+
         function garantirArmarioLiberadoLocal(id, metodo, confirmacao) {
             const armario = obterArmarioPorId(id);
             if (!armario) {
@@ -5935,40 +5958,54 @@
                 mostrarErro('Armário não encontrado. Atualize a lista e tente novamente.');
                 return;
             }
+
+            const snapshotArmario = clonarArmario(armario);
             const identificadores = montarIdentificadoresArmario(armario);
             const payload = montarPayloadAcaoArmario(armario, {
                 tipo: tipoPreferencial || identificadores.tipo
             });
             payload.numero = identificadores.numeroArmario;
 
-            const resultado = await callGoogleScript('liberarArmario', payload);
-            if (resultado.success) {
-                garantirArmarioLiberadoLocal(id);
-                atualizarResumoDashboardLocal();
-                atualizarInterface();
-                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
-                    console.error('Erro ao atualizar tabelas localmente após liberação:', erro);
-                });
+            garantirArmarioLiberadoLocal(id);
+            atualizarResumoDashboardLocal();
+            atualizarInterface();
+            carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
+                console.error('Erro ao atualizar tabelas localmente após liberação:', erro);
+            });
 
-                mostrarSucesso('Armário liberado com sucesso');
-                sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
-                return;
+            let liberacaoConfirmada = false;
+
+            try {
+                const resultado = await callGoogleScript('liberarArmario', payload);
+                if (resultado.success) {
+                    liberacaoConfirmada = true;
+                    mostrarSucesso('Armário liberado com sucesso');
+                    sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
+                    return;
+                }
+
+                const mensagemErro = (resultado.error || '').toString();
+                const mensagemNormalizada = mensagemErro.toLowerCase();
+
+                if (mensagemNormalizada.includes('já está livre')) {
+                    mostrarErro('Este armário já está livre. Atualize a lista para confirmar a situação.');
+                    return;
+                }
+
+                if (mensagemNormalizada.includes('não encontrado')) {
+                    mostrarErro('Não encontramos este armário. Atualize a lista e tente novamente.');
+                    return;
+                }
+
+                notificarErroPadrao(resultado);
+            } catch (erro) {
+                console.error('Erro ao liberar armário:', erro);
+                mostrarErro('Não foi possível liberar o armário. Tente novamente.');
+            } finally {
+                if (!liberacaoConfirmada) {
+                    restaurarArmarioLocal(id, snapshotArmario);
+                }
             }
-
-            const mensagemErro = (resultado.error || '').toString();
-            const mensagemNormalizada = mensagemErro.toLowerCase();
-
-            if (mensagemNormalizada.includes('já está livre')) {
-                mostrarErro('Este armário já está livre. Atualize a lista para confirmar a situação.');
-                return;
-            }
-
-            if (mensagemNormalizada.includes('não encontrado')) {
-                mostrarErro('Não encontramos este armário. Atualize a lista e tente novamente.');
-                return;
-            }
-
-            notificarErroPadrao(resultado);
         }
         function formatarStatusArmario(status) {
             switch (status) {
@@ -8667,123 +8704,87 @@
             let mensagemSucesso = 'Termo finalizado e armário liberado com sucesso';
             const usuarioResponsavel = obterDescricaoResponsavelAtual();
 
-            const progressoHtml = `
-                <div class="liberacao-progress" aria-label="Concluindo e liberando armário">
-                    <div class="liberacao-step is-active" data-step="unificado">
-                        <div class="liberacao-step-icon" aria-hidden="true">
-                            <span class="liberacao-step-spinner"></span>
-                            <i class="fas fa-check"></i>
-                            <i class="fas fa-circle-exclamation"></i>
-                        </div>
-                        <div>
-                            <div class="liberacao-step-title">Encerrando e liberando armário</div>
-                            <div class="liberacao-step-subtitle">Atualizando status e registrando assinatura.</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            const atualizarEtapa = (estado) => {
-                const container = Swal.getHtmlContainer();
-                if (!container) return;
-                const elemento = container.querySelector('[data-step="unificado"]');
-                if (!elemento) return;
-                elemento.classList.remove('is-active', 'is-complete', 'is-error');
-                if (estado === 'ativa') {
-                    elemento.classList.add('is-active');
-                } else if (estado === 'concluida') {
-                    elemento.classList.add('is-complete');
-                } else if (estado === 'erro') {
-                    elemento.classList.add('is-error');
-                }
-            };
-            const aguardarTransicao = () => Promise.resolve();
-
-            Swal.fire({
-                title: 'Concluindo a liberação do armário...',
-                html: progressoHtml,
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                showConfirmButton: false,
-                didOpen: () => {
-                    const container = Swal.getHtmlContainer();
-                    if (container) {
-                        container.setAttribute('aria-live', 'assertive');
+            const notificarProcessamentoEmSegundoPlano = () => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: 'Liberação iniciada',
+                    text: 'Processando em segundo plano...',
+                    showConfirmButton: false,
+                    timer: 1800,
+                    timerProgressBar: true,
+                    didOpen: () => {
+                        Swal.showLoading();
                     }
-                    atualizarEtapa('ativa');
-                }
-            });
-
-            try {
-                const detectarErroTermoNaoEncontrado = (mensagem) => {
-                    if (!mensagem) return false;
-                    const texto = mensagem.toString().toLowerCase();
-                    const textoSemAcento = texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                    return texto.includes('termo não localizado') || textoSemAcento.includes('termo nao localizado');
-                };
-
-                const resultadoUnificado = await callGoogleScript('finalizarELiberarArmario', {
-                    armarioId: identificadores?.idPlanilha || '',
-                    numeroArmario: identificadores?.numeroArmario || '',
-                    metodo,
-                    assinaturaFinal: assinaturaFinal.assinatura.base64,
-                    assinaturaMimeFinal: assinaturaFinal.assinatura.mime,
-                    fotoEntregaBase64: assinaturaFinal.fotoBase64,
-                    fotoEntregaMime: assinaturaFinal.fotoMime,
-                    confirmacao,
-                    usuarioResponsavel,
-                    tipo: identificadores?.tipo || ''
                 });
+            };
 
-                const finalizacao = resultadoUnificado?.finalizacao || {};
-                const liberacao = resultadoUnificado?.liberacao || {};
-                const termoNaoLocalizado = resultadoUnificado?.termoNaoLocalizado
-                    || detectarErroTermoNaoEncontrado(finalizacao.error || resultadoUnificado?.error);
+            const executarLiberacaoAssincrona = async () => {
+                try {
+                    const detectarErroTermoNaoEncontrado = (mensagem) => {
+                        if (!mensagem) return false;
+                        const texto = mensagem.toString().toLowerCase();
+                        const textoSemAcento = texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        return texto.includes('termo não localizado') || textoSemAcento.includes('termo nao localizado');
+                    };
 
-                if (!resultadoUnificado || !resultadoUnificado.success) {
-                    if (resultadoUnificado?.etapa === 'finalizacao' && termoNaoLocalizado) {
-                        mensagemSucesso = 'Armário liberado com sucesso. Termo não localizado para finalização.';
-                    } else {
-                        atualizarEtapa('erro');
-                        await aguardarTransicao();
-                        Swal.close();
-                        notificarErroPadrao(resultadoUnificado || { success: false, error: 'Erro ao finalizar e liberar armário' });
+                    const resultadoUnificado = await callGoogleScript('finalizarELiberarArmario', {
+                        armarioId: identificadores?.idPlanilha || '',
+                        numeroArmario: identificadores?.numeroArmario || '',
+                        metodo,
+                        assinaturaFinal: assinaturaFinal.assinatura.base64,
+                        assinaturaMimeFinal: assinaturaFinal.assinatura.mime,
+                        fotoEntregaBase64: assinaturaFinal.fotoBase64,
+                        fotoEntregaMime: assinaturaFinal.fotoMime,
+                        confirmacao,
+                        usuarioResponsavel,
+                        tipo: identificadores?.tipo || ''
+                    });
+
+                    const finalizacao = resultadoUnificado?.finalizacao || {};
+                    const liberacao = resultadoUnificado?.liberacao || {};
+                    const termoNaoLocalizado = resultadoUnificado?.termoNaoLocalizado
+                        || detectarErroTermoNaoEncontrado(finalizacao.error || resultadoUnificado?.error);
+
+                    if (!resultadoUnificado || !resultadoUnificado.success) {
+                        if (resultadoUnificado?.etapa === 'finalizacao' && termoNaoLocalizado) {
+                            mensagemSucesso = 'Armário liberado com sucesso. Termo não localizado para finalização.';
+                        } else {
+                            notificarErroPadrao(resultadoUnificado || { success: false, error: 'Erro ao finalizar e liberar armário' });
+                            return;
+                        }
+                    }
+
+                    if (!liberacao.success) {
+                        notificarErroPadrao(liberacao, 'Não foi possível liberar o armário.');
                         return;
                     }
+
+                    if (!finalizacao.success && termoNaoLocalizado) {
+                        mensagemSucesso = 'Armário liberado com sucesso. Termo não localizado para finalização.';
+                    }
+
+                    garantirArmarioLiberadoLocal(id, metodo, confirmacao);
+                    atualizarResumoDashboardLocal();
+
+                    const tarefaAtualizacao = atualizarDadosPosOperacao('Atualizando status do armário...', null, {
+                        modoRapido: true,
+                        timeoutRapido: 350
+                    }).catch(erroAtualizacao => {
+                        console.error('Erro ao atualizar dados pós-liberação:', erroAtualizacao);
+                    });
+
+                    mostrarSucesso(mensagemSucesso);
+                    await tarefaAtualizacao;
+                } catch (erro) {
+                    console.error('Erro ao liberar armário de acompanhante:', erro);
+                    mostrarErro('Não foi possível concluir a liberação. Tente novamente.');
                 }
+            };
 
-                if (!liberacao.success) {
-                    atualizarEtapa('erro');
-                    Swal.close();
-                    notificarErroPadrao(liberacao, 'Não foi possível liberar o armário.');
-                    return;
-                }
-
-                if (!finalizacao.success && termoNaoLocalizado) {
-                    mensagemSucesso = 'Armário liberado com sucesso. Termo não localizado para finalização.';
-                }
-
-                atualizarEtapa('concluida');
-                Swal.close();
-
-                garantirArmarioLiberadoLocal(id, metodo, confirmacao);
-                atualizarResumoDashboardLocal();
-
-                const tarefaAtualizacao = atualizarDadosPosOperacao('Atualizando status do armário...', null, {
-                    modoRapido: true,
-                    timeoutRapido: 350
-                }).catch(erroAtualizacao => {
-                    console.error('Erro ao atualizar dados pós-liberação:', erroAtualizacao);
-                });
-
-                mostrarSucesso(mensagemSucesso);
-                await tarefaAtualizacao;
-            } catch (erro) {
-                console.error('Erro ao liberar armário de acompanhante:', erro);
-                atualizarEtapa('erro');
-                Swal.close();
-                mostrarErro('Não foi possível concluir a liberação. Tente novamente.');
-            }
+            notificarProcessamentoEmSegundoPlano();
+            executarLiberacaoAssincrona();
         }
         // Atualizar painel de notificações
         function renderizarPainelNotificacoes() {
