@@ -3577,7 +3577,9 @@
             const finalizar = botaoSalvar ? iniciarLoadingBotao(botaoSalvar) : () => {};
             try {
                 const acao = id ? 'atualizarPertencePerdido' : 'cadastrarPertencePerdido';
-                const resposta = await callGoogleScript(acao, payload);
+                // Evita envios duplicados em caso de falha de comunicação
+                // ao limitar a chamada a uma única tentativa.
+                const resposta = await callGoogleScript(acao, payload, { tentativas: 1 });
                 if (!resposta.success) {
                     throw new Error(resposta.error || 'Falha ao salvar');
                 }
