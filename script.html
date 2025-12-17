@@ -36,6 +36,20 @@
                 notificacoes: [],
                 termos: {},
                 movimentacoes: {},
+                achados: {
+                    itens: [],
+                    carregando: false,
+                    filtros: {
+                        busca: '',
+                        status: 'todos',
+                        dataInicio: '',
+                        dataFim: ''
+                    },
+                    resumo: {
+                        pendentes: 0,
+                        encontrados: 0
+                    }
+                },
                 usuarios: [],
                 logs: [],
                 carregamentoTermosId: 0,
@@ -670,6 +684,34 @@
             pdfViewerCancel: document.getElementById('pdf-viewer-cancel'),
             pdfViewerPrint: document.getElementById('pdf-viewer-print'),
             pdfViewerEmpty: document.getElementById('pdf-viewer-empty'),
+            tabelaAchadosBody: document.querySelector('#tabela-achados tbody'),
+            achadosBusca: document.getElementById('achados-busca'),
+            achadosStatus: document.getElementById('achados-status'),
+            achadosDataInicio: document.getElementById('achados-data-inicio'),
+            achadosDataFim: document.getElementById('achados-data-fim'),
+            achadosResumo: document.getElementById('achados-resumo'),
+            achadosFiltroAplicado: document.getElementById('achados-filtro-aplicado'),
+            achadosEmpty: document.getElementById('achados-empty'),
+            achadosLoading: document.getElementById('achados-loading'),
+            achadosNovo: document.getElementById('achados-novo'),
+            achadosRefresh: document.getElementById('achados-refresh'),
+            achadosLimparFiltros: document.getElementById('achados-limpar-filtros'),
+            achadosTotalPendentes: document.getElementById('achados-total-pendentes'),
+            achadosTotalEncontrados: document.getElementById('achados-total-encontrados'),
+            achadosCardPendentes: document.getElementById('achados-card-pendentes'),
+            achadosCardEncontrados: document.getElementById('achados-card-encontrados'),
+            achadoModal: document.getElementById('achado-modal'),
+            achadoModalTitle: document.getElementById('achado-modal-title'),
+            achadoModalClose: document.getElementById('achado-modal-close'),
+            achadoForm: document.getElementById('achado-form'),
+            achadoId: document.getElementById('achado-id'),
+            achadoDono: document.getElementById('achado-dono'),
+            achadoData: document.getElementById('achado-data'),
+            achadoTelefone: document.getElementById('achado-telefone'),
+            achadoStatusSelect: document.getElementById('achado-status'),
+            achadoDescricao: document.getElementById('achado-descricao'),
+            achadoHistorico: document.getElementById('achado-historico'),
+            achadoBtnCancelar: document.getElementById('achado-btn-cancelar'),
             logoutButton: document.getElementById('logout-button')
         };
         const mobileNavQuery = window.matchMedia('(max-width: 1024px)');
@@ -2677,6 +2719,15 @@
             elementos.usuarioModalClose.addEventListener('click', fecharModalUsuario);
             elementos.btnCancelar.addEventListener('click', fecharModalArmario);
             elementos.usuarioBtnCancelar.addEventListener('click', fecharModalUsuario);
+            if (elementos.achadoModalClose) {
+                elementos.achadoModalClose.addEventListener('click', fecharModalAchado);
+            }
+            if (elementos.achadoBtnCancelar) {
+                elementos.achadoBtnCancelar.addEventListener('click', fecharModalAchado);
+            }
+            if (elementos.achadoForm) {
+                elementos.achadoForm.addEventListener('submit', salvarAchado);
+            }
             const atualizarVisibilidadeBotaoLimparBusca = () => {
                 if (!elementos.filterSearchClear || !elementos.dashboardSearch) return;
                 const possuiTexto = (elementos.dashboardSearch.value || '').trim().length > 0;
@@ -2719,6 +2770,45 @@
             }
             atualizarBotoesFiltroDashboard();
             atualizarVisibilidadeBotaoLimparBusca();
+            configurarBotaoAcao(elementos.achadosNovo, () => abrirModalAchado());
+            configurarBotaoAcao(elementos.achadosRefresh, () => carregarAchados({ forcarAtualizacao: true }));
+            configurarBotaoAcao(elementos.achadosLimparFiltros, () => {
+                const alvo = obterEstadoAchados();
+                alvo.filtros = { busca: '', status: 'todos', dataInicio: '', dataFim: '' };
+                if (elementos.achadosBusca) elementos.achadosBusca.value = '';
+                if (elementos.achadosStatus) elementos.achadosStatus.value = 'todos';
+                if (elementos.achadosDataInicio) elementos.achadosDataInicio.value = '';
+                if (elementos.achadosDataFim) elementos.achadosDataFim.value = '';
+                renderizarTabelaAchados();
+            });
+            if (elementos.achadosBusca) {
+                elementos.achadosBusca.addEventListener('input', () => {
+                    const alvo = obterEstadoAchados();
+                    alvo.filtros.busca = elementos.achadosBusca.value || '';
+                    renderizarTabelaAchados();
+                });
+            }
+            if (elementos.achadosStatus) {
+                elementos.achadosStatus.addEventListener('change', () => {
+                    const alvo = obterEstadoAchados();
+                    alvo.filtros.status = elementos.achadosStatus.value || 'todos';
+                    renderizarTabelaAchados();
+                });
+            }
+            if (elementos.achadosDataInicio) {
+                elementos.achadosDataInicio.addEventListener('change', () => {
+                    const alvo = obterEstadoAchados();
+                    alvo.filtros.dataInicio = elementos.achadosDataInicio.value || '';
+                    renderizarTabelaAchados();
+                });
+            }
+            if (elementos.achadosDataFim) {
+                elementos.achadosDataFim.addEventListener('change', () => {
+                    const alvo = obterEstadoAchados();
+                    alvo.filtros.dataFim = elementos.achadosDataFim.value || '';
+                    renderizarTabelaAchados();
+                });
+            }
             const padraoLocalLiberacao = obterDataHoraLocalPadrao();
             if (elementos.liberacaoDataInicio) {
                 const padraoInicio = converterDataTextoParaISO(elementos.liberacaoDataInicio.value) || padraoLocalLiberacao.data;
@@ -3233,6 +3323,308 @@
                 cardLivres.style.display = exibirHero ? '' : 'none';
             }
         }
+
+        // Achados e Perdidos
+        function obterEstadoAchados() {
+            if (!estado.achados) {
+                estado.achados = {
+                    itens: [],
+                    carregando: false,
+                    filtros: {
+                        busca: '',
+                        status: 'todos',
+                        dataInicio: '',
+                        dataFim: ''
+                    },
+                    resumo: {
+                        pendentes: 0,
+                        encontrados: 0
+                    }
+                };
+            }
+            return estado.achados;
+        }
+        function mapearItemAchado(item) {
+            const dataBruta = item?.dataGuarda;
+            const dataObjeto = dataBruta ? new Date(dataBruta) : null;
+            const historico = (item?.historicoContato || '').toString();
+            return {
+                idLinha: item?.idLinha,
+                dono: (item?.dono || '').toString(),
+                descricao: (item?.descricao || '').toString(),
+                telefone: (item?.telefone || '').toString(),
+                encontrado: Boolean(item?.encontrado),
+                encontradoTexto: item?.encontradoTexto || (item?.encontrado ? 'Sim' : 'Não'),
+                dataGuarda: dataObjeto && !isNaN(dataObjeto.getTime()) ? dataObjeto : null,
+                dataGuardaTexto: item?.dataGuardaTexto || (dataObjeto ? formatarData(dataObjeto) : '-'),
+                historicoContato: historico,
+                ultimaLigacao: obterUltimaLigacao(historico)
+            };
+        }
+        function obterUltimaLigacao(historicoTexto) {
+            if (!historicoTexto) return '';
+            const partes = historicoTexto.split(/\n+/).map(linha => linha.trim()).filter(Boolean);
+            return partes.length ? partes[partes.length - 1] : '';
+        }
+        function atualizarResumoAchados(lista = []) {
+            const alvo = obterEstadoAchados();
+            const pendentes = lista.filter(item => !item.encontrado).length;
+            const encontrados = lista.filter(item => item.encontrado).length;
+            alvo.resumo = { pendentes, encontrados };
+            if (elementos.achadosTotalPendentes) elementos.achadosTotalPendentes.textContent = pendentes;
+            if (elementos.achadosTotalEncontrados) elementos.achadosTotalEncontrados.textContent = encontrados;
+            if (elementos.achadosCardPendentes) {
+                elementos.achadosCardPendentes.classList.toggle('highlight', pendentes > 0);
+            }
+            if (elementos.achadosCardEncontrados) {
+                elementos.achadosCardEncontrados.classList.toggle('highlight', encontrados > 0);
+            }
+        }
+        function aplicarFiltrosAchados(lista) {
+            const alvo = obterEstadoAchados();
+            const { busca, status, dataInicio, dataFim } = alvo.filtros;
+            const buscaNormalizada = normalizarTextoBusca(busca);
+            const inicio = dataInicio ? new Date(dataInicio) : null;
+            const fim = dataFim ? new Date(dataFim) : null;
+
+            return lista.filter(item => {
+                if (status === 'pendentes' && item.encontrado) return false;
+                if (status === 'encontrados' && !item.encontrado) return false;
+
+                if (inicio && item.dataGuarda && item.dataGuarda < inicio) return false;
+                if (fim && item.dataGuarda && item.dataGuarda > fim) return false;
+
+                if (buscaNormalizada) {
+                    const alvoBusca = [item.dono, item.descricao, item.telefone, item.historicoContato]
+                        .map(valor => normalizarTextoBusca(valor)).join(' ');
+                    if (!alvoBusca.includes(buscaNormalizada)) return false;
+                }
+                return true;
+            });
+        }
+        function atualizarEstadoTabelaAchados() {
+            const alvo = obterEstadoAchados();
+            const carregando = alvo.carregando;
+            if (elementos.achadosLoading) elementos.achadosLoading.hidden = !carregando;
+            if (elementos.tabelaAchadosBody) elementos.tabelaAchadosBody.closest('table').hidden = carregando;
+        }
+        function renderizarTabelaAchados() {
+            const alvo = obterEstadoAchados();
+            if (!elementos.tabelaAchadosBody) return;
+
+            const filtrados = aplicarFiltrosAchados(alvo.itens);
+            elementos.tabelaAchadosBody.innerHTML = '';
+
+            filtrados.forEach(item => {
+                const linha = document.createElement('tr');
+
+                const statusPill = document.createElement('span');
+                statusPill.className = 'lf-pill';
+                statusPill.innerHTML = `<i class="fas ${item.encontrado ? 'fa-circle-check' : 'fa-clock'}"></i> ${item.encontrado ? 'Encontrado' : 'Aguardando'}`;
+
+                const ultimaLigacao = item.ultimaLigacao || '-';
+                const tdAcoes = document.createElement('td');
+                tdAcoes.className = 'lf-actions';
+
+                const btnLigar = document.createElement('button');
+                btnLigar.type = 'button';
+                btnLigar.className = 'btn ghost';
+                btnLigar.innerHTML = '<i class="fas fa-phone"></i> Registrar ligação';
+                btnLigar.addEventListener('click', () => registrarLigacaoAchado(item));
+
+                const btnEditar = document.createElement('button');
+                btnEditar.type = 'button';
+                btnEditar.className = 'btn ghost';
+                btnEditar.innerHTML = '<i class="fas fa-pen"></i> Editar';
+                btnEditar.addEventListener('click', () => abrirModalAchado(item));
+
+                const btnEncontrado = document.createElement('button');
+                btnEncontrado.type = 'button';
+                btnEncontrado.className = 'btn btn-primary';
+                btnEncontrado.innerHTML = `<i class="fas ${item.encontrado ? 'fa-rotate-left' : 'fa-check'}"></i> ${item.encontrado ? 'Reabrir' : 'Marcar encontrado'}`;
+                btnEncontrado.addEventListener('click', () => alternarEncontradoAchado(item, !item.encontrado));
+
+                tdAcoes.append(btnLigar, btnEditar, btnEncontrado);
+
+                linha.appendChild(criarCelulaTexto(item.dono || '-'));
+                linha.appendChild(criarCelulaTexto(item.dataGuardaTexto || '-'));
+                linha.appendChild(criarCelulaTexto(item.descricao || '-'));
+                linha.appendChild(criarCelulaTexto(item.telefone || '-'));
+
+                const tdStatus = document.createElement('td');
+                tdStatus.appendChild(statusPill);
+                linha.appendChild(tdStatus);
+                linha.appendChild(criarCelulaTexto(ultimaLigacao || '-'));
+                linha.appendChild(tdAcoes);
+
+                elementos.tabelaAchadosBody.appendChild(linha);
+            });
+
+            atualizarResumoAchados(alvo.itens);
+
+            if (elementos.achadosEmpty) {
+                elementos.achadosEmpty.hidden = filtrados.length > 0 || alvo.carregando;
+            }
+            if (elementos.achadosLoading) {
+                elementos.achadosLoading.hidden = !alvo.carregando;
+            }
+            if (elementos.tabelaAchadosBody) {
+                elementos.tabelaAchadosBody.closest('table').hidden = alvo.carregando;
+            }
+            if (elementos.achadosResumo) {
+                elementos.achadosResumo.textContent = `${filtrados.length} de ${alvo.itens.length} registros`;
+            }
+            if (elementos.achadosFiltroAplicado) {
+                const filtros = [];
+                if (alvo.filtros.status !== 'todos') filtros.push(`Status: ${alvo.filtros.status === 'pendentes' ? 'Aguardando' : 'Encontrados'}`);
+                if (alvo.filtros.busca) filtros.push(`Busca: ${alvo.filtros.busca}`);
+                if (alvo.filtros.dataInicio || alvo.filtros.dataFim) {
+                    const inicio = alvo.filtros.dataInicio ? formatarData(alvo.filtros.dataInicio) : 'início';
+                    const fim = alvo.filtros.dataFim ? formatarData(alvo.filtros.dataFim) : 'hoje';
+                    filtros.push(`Período: ${inicio} a ${fim}`);
+                }
+                elementos.achadosFiltroAplicado.textContent = filtros.join(' | ');
+            }
+        }
+        function criarCelulaTexto(texto) {
+            const td = document.createElement('td');
+            td.textContent = texto;
+            return td;
+        }
+        async function carregarAchados({ forcarAtualizacao = false } = {}) {
+            const alvo = obterEstadoAchados();
+            if (!estado.autenticado) return false;
+            if (alvo.carregando) return false;
+            if (alvo.itens.length && !forcarAtualizacao) {
+                renderizarTabelaAchados();
+                return true;
+            }
+            alvo.carregando = true;
+            atualizarEstadoTabelaAchados();
+            try {
+                const resposta = await callGoogleScript('getPertencesPerdidos');
+                if (!resposta.success) {
+                    throw new Error(resposta.error || 'Não foi possível carregar os pertences');
+                }
+                const itens = Array.isArray(resposta.dados) ? resposta.dados.map(mapearItemAchado) : [];
+                alvo.itens = itens;
+                renderizarTabelaAchados();
+                return true;
+            } catch (erro) {
+                mostrarErro('Erro ao carregar achados e perdidos');
+                console.error(erro);
+                return false;
+            } finally {
+                alvo.carregando = false;
+                atualizarEstadoTabelaAchados();
+            }
+        }
+        function limparFormularioAchado() {
+            if (elementos.achadoForm) elementos.achadoForm.reset();
+            if (elementos.achadoId) elementos.achadoId.value = '';
+            if (elementos.achadoStatusSelect) elementos.achadoStatusSelect.value = 'nao';
+            if (elementos.achadoHistorico) elementos.achadoHistorico.value = '';
+        }
+        function preencherFormularioAchado(item) {
+            if (!item) return;
+            if (elementos.achadoId) elementos.achadoId.value = item.idLinha || '';
+            if (elementos.achadoDono) elementos.achadoDono.value = item.dono || '';
+            if (elementos.achadoDescricao) elementos.achadoDescricao.value = item.descricao || '';
+            if (elementos.achadoTelefone) elementos.achadoTelefone.value = item.telefone || '';
+            if (elementos.achadoStatusSelect) elementos.achadoStatusSelect.value = item.encontrado ? 'sim' : 'nao';
+            if (elementos.achadoData) {
+                const isoData = item.dataGuarda instanceof Date && !Number.isNaN(item.dataGuarda.getTime())
+                    ? item.dataGuarda.toISOString().slice(0, 10)
+                    : '';
+                elementos.achadoData.value = isoData;
+            }
+            if (elementos.achadoHistorico) elementos.achadoHistorico.value = item.historicoContato || '';
+        }
+        function abrirModalAchado(item) {
+            limparFormularioAchado();
+            if (elementos.achadoModalTitle) {
+                elementos.achadoModalTitle.textContent = item ? 'Editar pertence' : 'Registrar pertence';
+            }
+            if (item) {
+                preencherFormularioAchado(item);
+            }
+            if (elementos.achadoModal && elementos.achadoModal.style.display !== 'flex') {
+                travaRolagem.aplicar();
+                elementos.achadoModal.style.display = 'flex';
+            }
+        }
+        function fecharModalAchado() {
+            if (elementos.achadoModal && elementos.achadoModal.style.display === 'flex') {
+                travaRolagem.remover();
+                elementos.achadoModal.style.display = 'none';
+            }
+        }
+        async function salvarAchado(event) {
+            if (event) event.preventDefault();
+            if (!elementos.achadoForm) return;
+            const id = elementos.achadoId?.value || '';
+            const payload = {
+                idLinha: id,
+                dono: elementos.achadoDono?.value?.trim(),
+                descricao: elementos.achadoDescricao?.value?.trim(),
+                telefone: elementos.achadoTelefone?.value?.trim(),
+                dataGuarda: elementos.achadoData?.value || '',
+                encontrado: (elementos.achadoStatusSelect?.value || 'nao') === 'sim',
+                historicoContato: elementos.achadoHistorico?.value || ''
+            };
+
+            const botaoSalvar = elementos.achadoBtnCancelar?.nextElementSibling || elementos.achadoForm.querySelector('button[type="submit"]');
+            const finalizar = botaoSalvar ? iniciarLoadingBotao(botaoSalvar) : () => {};
+            try {
+                const acao = id ? 'atualizarPertencePerdido' : 'cadastrarPertencePerdido';
+                const resposta = await callGoogleScript(acao, payload);
+                if (!resposta.success) {
+                    throw new Error(resposta.error || 'Falha ao salvar');
+                }
+                mostrarSucesso('Registro salvo com sucesso.');
+                fecharModalAchado();
+                await carregarAchados({ forcarAtualizacao: true });
+            } catch (erro) {
+                console.error(erro);
+                mostrarErro('Não foi possível salvar o pertence.');
+            } finally {
+                finalizar();
+            }
+        }
+        async function alternarEncontradoAchado(item, novoValor) {
+            if (!item || !item.idLinha) return;
+            const resposta = await callGoogleScript('atualizarPertencePerdido', { idLinha: item.idLinha, encontrado: novoValor });
+            if (!resposta.success) {
+                mostrarErro('Não foi possível atualizar o status.');
+                return;
+            }
+            mostrarSucesso(novoValor ? 'Pertence marcado como encontrado.' : 'Pertence reaberto.');
+            await carregarAchados({ forcarAtualizacao: true });
+        }
+        async function registrarLigacaoAchado(item) {
+            if (!item || !item.idLinha) return;
+            const resultado = await Swal.fire({
+                title: 'Registrar ligação',
+                input: 'textarea',
+                inputLabel: 'Anote o que foi conversado',
+                inputPlaceholder: 'Ex.: Liguei para Maria, informou que busca amanhã às 10h',
+                confirmButtonText: 'Registrar',
+                cancelButtonText: 'Cancelar',
+                showCancelButton: true
+            });
+            if (resultado.isDismissed) return;
+            const anotacao = (resultado.value || '').toString();
+            const resposta = await callGoogleScript('registrarContatoPertence', {
+                idLinha: item.idLinha,
+                anotacao
+            });
+            if (!resposta.success) {
+                mostrarErro('Não foi possível registrar a ligação.');
+                return;
+            }
+            mostrarSucesso('Ligação registrada.');
+            await carregarAchados({ forcarAtualizacao: true });
+        }
         function obterFiltrosAtivosDashboard() {
             if (!Array.isArray(estado.filtrosSelecionados) || estado.filtrosSelecionados.length === 0) {
                 estado.filtrosSelecionados = ['todos'];
@@ -3610,6 +4002,9 @@
                         break;
                     case 'liberacao':
                         await carregarTabelaLiberacao();
+                        break;
+                    case 'achados-perdidos':
+                        await carregarAchados({ forcarAtualizacao: true });
                         break;
                     case 'termo-responsabilidade':
                         await carregarTabelaTermos({ recarregarArmarios });
