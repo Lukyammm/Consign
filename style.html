@@ -93,6 +93,7 @@
             gap: 14px;
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 8px 12px;
         }
         .lf-header {
             display: flex;
@@ -100,6 +101,7 @@
             justify-content: space-between;
             gap: 12px;
             padding: 14px 16px;
+            border-bottom: 1px solid color-mix(in srgb, var(--surface-color) 60%, transparent);
         }
         .lf-kicker {
             text-transform: uppercase;
@@ -116,12 +118,15 @@
         .lf-header-actions {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
         .lf-filters {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 10px;
             padding: 12px 14px;
+            border-left: 3px solid color-mix(in srgb, var(--primary-color) 18%, transparent);
+            row-gap: 12px;
         }
         .lf-filters .filter-group {
             display: flex;
@@ -164,6 +169,8 @@
             padding: 12px;
             display: grid;
             gap: 6px;
+            border-left: 4px solid color-mix(in srgb, var(--primary-color) 22%, transparent);
+            background: color-mix(in srgb, var(--surface-color) 90%, rgba(255, 255, 255, 0.05));
         }
         .lf-summary-card.highlight {
             border: 1px solid color-mix(in srgb, var(--primary-color) 40%, rgba(255, 255, 255, 0.1));
@@ -4668,6 +4675,49 @@
             }
         }
         @media (max-width: 768px) {
+            .lf-grid {
+                padding: 0 4px 14px;
+            }
+            .lf-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .lf-header-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .lf-header-actions .btn {
+                flex: 1 1 48%;
+                min-width: 140px;
+                justify-content: center;
+            }
+            .lf-filters {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                padding: 12px;
+            }
+            .lf-filters .filter-group {
+                min-width: 0;
+            }
+            .lf-summary {
+                grid-template-columns: 1fr;
+            }
+            .lf-summary-card {
+                border-left-width: 3px;
+            }
+            .lf-table .table-header {
+                align-items: flex-start;
+            }
+            #tabela-achados th,
+            #tabela-achados td {
+                padding: 10px 12px;
+            }
+            #tabela-achados td {
+                word-break: break-word;
+            }
+            .lf-table .chip {
+                align-self: flex-start;
+            }
             .selector-trigger {
                 align-items: flex-start;
             }
