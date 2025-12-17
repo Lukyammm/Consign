@@ -403,7 +403,7 @@
                         </div>
                     </div>
                     <div class="lf-filters glass-card">
-                        <div class="filter-group">
+                        <div class="filter-group filter-wide">
                             <label for="achados-busca">Buscar</label>
                             <div class="input-icon">
                                 <i class="fas fa-search"></i>
@@ -419,18 +419,29 @@
                             </select>
                         </div>
                         <div class="filter-group">
-                            <label for="achados-data-inicio">Da data</label>
-                            <input type="date" id="achados-data-inicio">
+                            <label for="achados-data-inicio">Período</label>
+                            <div class="range-grid">
+                                <div class="range-field">
+                                    <span>De</span>
+                                    <input type="date" id="achados-data-inicio">
+                                </div>
+                                <div class="range-field">
+                                    <span>Até</span>
+                                    <input type="date" id="achados-data-fim">
+                                </div>
+                            </div>
                         </div>
-                        <div class="filter-group">
-                            <label for="achados-data-fim">Até</label>
-                            <input type="date" id="achados-data-fim">
-                        </div>
-                        <div class="filter-group align-end">
-                            <button type="button" class="btn ghost" id="achados-limpar-filtros">
-                                <i class="fas fa-eraser"></i>
-                                Limpar filtros
-                            </button>
+                        <div class="filter-group filter-actions">
+                            <div class="actions-row">
+                                <button type="button" class="btn ghost btn-clean" id="achados-limpar-filtros">
+                                    <i class="fas fa-eraser"></i>
+                                    Limpar
+                                </button>
+                                <button type="button" class="btn btn-primary btn-search" id="achados-aplicar-filtros">
+                                    <i class="fas fa-search"></i>
+                                    Buscar
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="lf-summary">

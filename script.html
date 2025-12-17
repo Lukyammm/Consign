@@ -695,6 +695,7 @@
             achadosLoading: document.getElementById('achados-loading'),
             achadosNovo: document.getElementById('achados-novo'),
             achadosRefresh: document.getElementById('achados-refresh'),
+            achadosAplicarFiltros: document.getElementById('achados-aplicar-filtros'),
             achadosLimparFiltros: document.getElementById('achados-limpar-filtros'),
             achadosTotalPendentes: document.getElementById('achados-total-pendentes'),
             achadosTotalEncontrados: document.getElementById('achados-total-encontrados'),
@@ -2772,6 +2773,7 @@
             atualizarVisibilidadeBotaoLimparBusca();
             configurarBotaoAcao(elementos.achadosNovo, () => abrirModalAchado());
             configurarBotaoAcao(elementos.achadosRefresh, () => carregarAchados({ forcarAtualizacao: true }));
+            configurarBotaoAcao(elementos.achadosAplicarFiltros, () => carregarAchados({ forcarAtualizacao: true }));
             configurarBotaoAcao(elementos.achadosLimparFiltros, () => {
                 const alvo = obterEstadoAchados();
                 alvo.filtros = { busca: '', status: 'todos', dataInicio: '', dataFim: '' };

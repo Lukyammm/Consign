@@ -122,7 +122,7 @@
         }
         .lf-filters {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 14px;
             padding: 18px;
             border: 1px solid color-mix(in srgb, var(--primary-color) 14%, transparent);
@@ -152,6 +152,14 @@
             border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
         }
+        .lf-filters .filter-group.filter-wide {
+            grid-column: span 2;
+        }
+        @media (max-width: 720px) {
+            .lf-filters .filter-group.filter-wide {
+                grid-column: span 1;
+            }
+        }
         .lf-filters .filter-group label {
             font-size: 0.85rem;
             letter-spacing: 0.02em;
@@ -179,6 +187,35 @@
             outline: none;
             font-size: 0.95rem;
         }
+        .lf-filters .range-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+        }
+        .lf-filters .range-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 20%, var(--border-color) 80%);
+            background: color-mix(in srgb, var(--surface-color) 95%, rgba(59, 130, 246, 0.04));
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+        }
+        .lf-filters .range-field span {
+            font-weight: 700;
+            color: color-mix(in srgb, var(--text-color) 86%, var(--muted-color) 14%);
+            white-space: nowrap;
+        }
+        .lf-filters .range-field input[type="date"] {
+            border: none;
+            padding: 8px 0;
+            background: transparent;
+            width: 100%;
+            outline: none;
+            font-weight: 600;
+            color: color-mix(in srgb, var(--text-color) 90%, var(--muted-color) 10%);
+        }
         .lf-filters select,
         .lf-filters input[type="date"] {
             padding: 10px 12px;
@@ -199,6 +236,31 @@
         .lf-filters .input-icon:focus-within {
             border-color: color-mix(in srgb, var(--primary-color) 70%, var(--border-color) 30%);
             box-shadow: 0 0 0 4px var(--focus-ring), 0 12px 24px rgba(59, 130, 246, 0.08);
+        }
+        .lf-filters .filter-actions {
+            justify-content: center;
+            padding: 8px 12px 10px;
+        }
+        .lf-filters .filter-actions .actions-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .lf-filters .filter-actions .btn {
+            margin: 0;
+        }
+        .lf-filters .btn-clean {
+            padding: 8px 12px;
+            font-weight: 600;
+            min-width: 120px;
+        }
+        .lf-filters .btn-search {
+            padding: 12px 18px;
+            font-weight: 700;
+            min-width: 180px;
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.15);
         }
         .lf-filters .align-end {
             align-items: flex-end;
@@ -252,6 +314,21 @@
             position: sticky;
             top: 0;
             z-index: 1;
+        }
+        #tabela-achados th,
+        #tabela-achados td {
+            position: relative;
+        }
+        #tabela-achados th:not(:last-child)::after,
+        #tabela-achados td:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            top: 10px;
+            bottom: 10px;
+            right: 0;
+            width: 1px;
+            background: color-mix(in srgb, var(--border-color) 80%, rgba(59, 130, 246, 0.16));
+            opacity: 0.85;
         }
         #tabela-achados tbody tr {
             background: color-mix(in srgb, var(--surface-color) 96%, rgba(255, 255, 255, 0.15));
@@ -308,6 +385,19 @@
             white-space: nowrap;
             padding: 10px 14px;
             border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            line-height: 1.1;
+        }
+        @media (max-width: 720px) {
+            .lf-actions {
+                gap: 10px;
+            }
+            .lf-actions .btn {
+                min-width: 140px;
+            }
         }
         @keyframes spin {
             from { transform: rotate(0deg); }
