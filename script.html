@@ -2558,6 +2558,21 @@
                 confirmButtonText: 'OK'
             });
         }
+        function notificarRegistroContingenciaIniciado() {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Abrindo registro de contingência',
+                text: 'Preparando o formulário...',
+                showConfirmButton: false,
+                timer: 1600,
+                timerProgressBar: true,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
         function notificarErroPadrao(resultado, mensagemPadrao = 'Ocorreu um erro inesperado') {
             if (!resultado || resultado._erroNotificado) {
                 return;
@@ -5279,6 +5294,8 @@
                 return;
             }
 
+            notificarRegistroContingenciaIniciado();
+
                 let fotoContingencia = { base64: '', mime: '', nome: '' };
 
                 const resultado = await Swal.fire({
@@ -5303,7 +5320,14 @@
                         </div>
                         <div class="swal-form-group">
                             <label for="contingencia-foto">Foto da contingência</label>
-                            <input id="contingencia-foto" type="file" class="swal2-input" accept="image/jpeg,image/png" aria-required="true">
+                            <input id="contingencia-foto" type="file" class="sr-only" accept="image/jpeg,image/png" aria-required="true">
+                            <div class="file-upload-actions">
+                                <button type="button" class="upload-button" id="contingencia-foto-btn">
+                                    <i class="fas fa-upload" aria-hidden="true"></i>
+                                    <span>Adicionar foto</span>
+                                </button>
+                                <span class="file-upload-label" id="contingencia-foto-label">Nenhum arquivo selecionado</span>
+                            </div>
                             <small class="field-hint">Envie JPG ou PNG até 2 MB.</small>
                         </div>
                     </div>
@@ -5312,6 +5336,20 @@
                 showCancelButton: true,
                 confirmButtonText: 'Registrar',
                 cancelButtonText: 'Cancelar',
+                didOpen: () => {
+                    const inputFoto = document.getElementById('contingencia-foto');
+                    const botaoFoto = document.getElementById('contingencia-foto-btn');
+                    const labelFoto = document.getElementById('contingencia-foto-label');
+                    if (botaoFoto && inputFoto) {
+                        botaoFoto.addEventListener('click', () => inputFoto.click());
+                    }
+                    if (inputFoto && labelFoto) {
+                        inputFoto.addEventListener('change', () => {
+                            const arquivo = inputFoto.files?.[0];
+                            labelFoto.textContent = arquivo?.name || 'Nenhum arquivo selecionado';
+                        });
+                    }
+                },
                 preConfirm: async () => {
                     const popup = Swal.getPopup();
                     const acompanhante = padronizarNomeMaiusculo(popup.querySelector('#contingencia-acompanhante').value);
@@ -6078,9 +6116,32 @@
             } else {
                 await Swal.fire({
                     title: 'Sem armários disponíveis',
-                    text: `Não há armários ${tipo === 'visitante' ? 'de visitantes' : 'de acompanhantes'} disponíveis no momento.`,
-                    icon: 'warning',
-                    confirmButtonText: 'OK'
+                    html: `
+                        <div class="premium-modal">
+                            <div class="premium-modal__icon">
+                                <i class="fas fa-box-open" aria-hidden="true"></i>
+                            </div>
+                            <p class="premium-modal__lead">Nenhum armário ${tipo === 'visitante' ? 'de visitantes' : 'de acompanhantes'} está livre agora.</p>
+                            <div class="premium-modal__tips">
+                                <span class="premium-modal__badge">Dica rápida</span>
+                                <ul>
+                                    <li>Verifique se há liberações pendentes para acelerar o giro.</li>
+                                    <li>Considere mover contingências para armários recém liberados.</li>
+                                    <li>Mantenha a unidade selecionada atualizada para filtrar corretamente.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `,
+                    customClass: {
+                        popup: 'swal2-premium-popup',
+                        title: 'swal2-premium-title',
+                        confirmButton: 'swal2-premium-confirm'
+                    },
+                    background: 'rgba(255, 255, 255, 0.82)',
+                    backdrop: 'rgba(15, 23, 42, 0.32)',
+                    iconHtml: '<i class="fas fa-cubes"></i>',
+                    iconColor: '#4338ca',
+                    confirmButtonText: 'Entendi'
                 });
             }
         }
