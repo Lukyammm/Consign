@@ -3442,7 +3442,7 @@
                 btnEncontrado.type = 'button';
                 btnEncontrado.className = 'btn btn-primary';
                 btnEncontrado.innerHTML = `<i class="fas ${item.encontrado ? 'fa-rotate-left' : 'fa-check'}"></i> ${item.encontrado ? 'Reabrir' : 'Marcar encontrado'}`;
-                btnEncontrado.addEventListener('click', () => alternarEncontradoAchado(item, !item.encontrado));
+                btnEncontrado.addEventListener('click', () => confirmarAlternarStatusAchado(item, btnEncontrado));
 
                 tdAcoes.append(btnLigar, btnEditar, btnEncontrado);
 
@@ -3593,15 +3593,45 @@
                 finalizar();
             }
         }
-        async function alternarEncontradoAchado(item, novoValor) {
-            if (!item || !item.idLinha) return;
-            const resposta = await callGoogleScript('atualizarPertencePerdido', { idLinha: item.idLinha, encontrado: novoValor });
-            if (!resposta.success) {
-                mostrarErro('Não foi possível atualizar o status.');
-                return;
+        async function confirmarAlternarStatusAchado(item, botaoAcao) {
+            if (!item) return;
+            const marcarEncontrado = !item.encontrado;
+            const resultado = await Swal.fire({
+                title: marcarEncontrado ? 'Confirmar devolução?' : 'Reabrir pertence?',
+                text: marcarEncontrado
+                    ? 'Confirme que o pertence foi devolvido ao dono.'
+                    : 'O pertence voltará a ficar como aguardando retirada.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: marcarEncontrado ? 'Sim, marcar encontrado' : 'Sim, reabrir',
+                cancelButtonText: 'Cancelar'
+            });
+            if (resultado.isDismissed) return;
+
+            const finalizarLoading = iniciarLoadingBotao(botaoAcao);
+            if (botaoAcao) botaoAcao.setAttribute('aria-busy', 'true');
+            try {
+                await alternarEncontradoAchado(item, marcarEncontrado);
+            } finally {
+                if (botaoAcao) botaoAcao.removeAttribute('aria-busy');
+                finalizarLoading();
             }
-            mostrarSucesso(novoValor ? 'Pertence marcado como encontrado.' : 'Pertence reaberto.');
-            await carregarAchados({ forcarAtualizacao: true });
+        }
+        async function alternarEncontradoAchado(item, novoValor) {
+            if (!item || !item.idLinha) return false;
+            try {
+                const resposta = await callGoogleScript('atualizarPertencePerdido', { idLinha: item.idLinha, encontrado: novoValor });
+                if (!resposta.success) {
+                    throw new Error(resposta.error || 'Falha ao atualizar pertence');
+                }
+                mostrarSucesso(novoValor ? 'Pertence marcado como encontrado.' : 'Pertence reaberto.');
+                await carregarAchados({ forcarAtualizacao: true });
+                return true;
+            } catch (erro) {
+                console.error(erro);
+                mostrarErro('Não foi possível atualizar o status.');
+                return false;
+            }
         }
         async function registrarLigacaoAchado(item) {
             if (!item || !item.idLinha) return;
