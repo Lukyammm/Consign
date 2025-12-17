@@ -123,7 +123,7 @@
         }
         .lf-filters {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: 3fr 1fr 2fr auto;
             gap: 14px;
             padding: 18px;
             border: 1px solid color-mix(in srgb, var(--primary-color) 14%, transparent);
@@ -132,6 +132,7 @@
             box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
             position: relative;
             overflow: hidden;
+            align-items: end;
         }
         .lf-filters::after {
             content: "";
@@ -147,19 +148,11 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            padding: 12px 12px 14px;
+            padding: 12px;
             border-radius: 12px;
             background: color-mix(in srgb, var(--surface-color) 88%, rgba(255, 255, 255, 0.12));
             border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-        }
-        .lf-filters .filter-group.filter-wide {
-            grid-column: span 2;
-        }
-        @media (max-width: 720px) {
-            .lf-filters .filter-group.filter-wide {
-                grid-column: span 1;
-            }
         }
         .lf-filters .filter-group label {
             font-size: 0.85rem;
@@ -240,7 +233,11 @@
         }
         .lf-filters .filter-actions {
             justify-content: center;
-            padding: 8px 12px 10px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            align-self: end;
         }
         .lf-filters .filter-actions .actions-row {
             display: flex;
