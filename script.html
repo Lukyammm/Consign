@@ -27,7 +27,6 @@
                 unidadeAtual: 'todas',
                 filtrosSelecionados: ['todos'],
                 buscaDashboard: '',
-                ocultarDadosDashboard: false,
                 paginaAtual: 'dashboard',
                 armarios: [],
                 armariosCarregados: false,
@@ -538,7 +537,6 @@
             filterSearchWrapper: document.querySelector('.filter-search'),
             filterSearchClear: document.getElementById('dashboard-search-clear'),
             dashboardSearch: document.getElementById('dashboard-search'),
-            toggleDadosButton: document.getElementById('toggle-dados'),
             contingenciaButton: document.getElementById('btn-contingencia'),
             cardsHero: document.querySelector('.cards-hero'),
             cardProximo: document.querySelector('.card.proximo'),
@@ -1901,18 +1899,12 @@
                 const skeletonCard = document.createElement('div');
                 skeletonCard.className = 'armario-card skeleton';
                 skeletonCard.innerHTML = `
-                    <div class="armario-header">
+                    <div class="armario-status-bar skeleton-block" aria-hidden="true"></div>
+                    <div class="armario-header minimal">
                         <div class="armario-number skeleton-block" aria-hidden="true"></div>
-                        <div class="armario-header-right">
-                            <div class="skeleton-chip" aria-hidden="true"></div>
-                            <div class="skeleton-status" aria-hidden="true"></div>
-                        </div>
+                        <div class="skeleton-status" aria-hidden="true"></div>
                     </div>
-                    <div class="armario-details">
-                        <div class="skeleton-line" aria-hidden="true"></div>
-                        <div class="skeleton-line" aria-hidden="true"></div>
-                        <div class="skeleton-line short" aria-hidden="true"></div>
-                    </div>
+                    <div class="armario-paciente-line skeleton-line" aria-hidden="true"></div>
                 `;
                 elementos.armariosContainer.appendChild(skeletonCard);
             }
@@ -2722,19 +2714,11 @@
                     elementos.dashboardSearch.focus();
                 });
             }
-            if (elementos.toggleDadosButton) {
-                elementos.toggleDadosButton.addEventListener('click', () => {
-                    estado.ocultarDadosDashboard = !estado.ocultarDadosDashboard;
-                    atualizarToggleDadosDashboard();
-                    renderizarArmarios();
-                });
-            }
             if (elementos.contingenciaButton) {
                 elementos.contingenciaButton.addEventListener('click', abrirCadastroContingencia);
             }
             atualizarBotoesFiltroDashboard();
             atualizarVisibilidadeBotaoLimparBusca();
-            atualizarToggleDadosDashboard();
             const padraoLocalLiberacao = obterDataHoraLocalPadrao();
             if (elementos.liberacaoDataInicio) {
                 const padraoInicio = converterDataTextoParaISO(elementos.liberacaoDataInicio.value) || padraoLocalLiberacao.data;
@@ -3262,22 +3246,6 @@
                 botao.classList.toggle('active', ativos.includes(filtro));
             });
         }
-        function atualizarToggleDadosDashboard() {
-            if (!elementos.toggleDadosButton) {
-                return;
-            }
-            const ocultar = !!estado.ocultarDadosDashboard;
-            elementos.toggleDadosButton.classList.toggle('ativo', ocultar);
-            elementos.toggleDadosButton.setAttribute('aria-pressed', ocultar.toString());
-            const icone = elementos.toggleDadosButton.querySelector('i');
-            const label = elementos.toggleDadosButton.querySelector('.toggle-dados-label');
-            if (icone) {
-                icone.className = ocultar ? 'fas fa-eye-slash' : 'fas fa-eye';
-            }
-            if (label) {
-                label.textContent = ocultar ? 'Exibir dados' : 'Ocultar dados';
-            }
-        }
         function alternarFiltroDashboard(filtroSelecionado) {
             const filtroNormalizado = normalizarTexto(filtroSelecionado);
             if (!filtroNormalizado || filtroNormalizado === 'todos') {
@@ -3389,65 +3357,6 @@
                 if (armario.visitaEstendida) {
                     card.classList.add('visita-estendida');
                 }
-                let detailsHTML = '';
-                if (armario.status === 'livre') {
-                    detailsHTML += '<p>Disponível para uso</p>';
-                } else if (estado.ocultarDadosDashboard) {
-                    const paciente = armario.nomePaciente || '-';
-                    const prontuario = armario.prontuario || '-';
-                    detailsHTML += `
-                        <p class="armario-paciente"><strong>Paciente:</strong> <span class="armario-paciente-nome">${paciente}</span></p>
-                        <p><strong>Prontuário:</strong> ${prontuario}</p>
-                    `;
-                } else {
-                    const termoHtml = armario.tipo === 'acompanhante'
-                        ? `<p><strong>Termo:</strong> ${formatarStatusTermo(armario.termoStatus)}</p>`
-                        : '';
-                    const dataRegistroFormatada = formatarDataComDiaSemana(armario.dataRegistro);
-                    const dataRegistroHtml = `<p><strong>Data:</strong> ${dataRegistroFormatada}</p>`;
-                    const ehContingencia = armarioEhContingencia(armario);
-                    const observacaoTexto = ehContingencia
-                        ? (armario.observacoes && armario.observacoes.toString().trim() ? armario.observacoes.toString().trim() : '-')
-                        : '';
-                    const observacaoHtml = ehContingencia
-                        ? `<p><strong>Observação:</strong> ${observacaoTexto}</p>`
-                        : '';
-                    const diasContingencia = ehContingencia ? calcularDiasEmContingencia(armario.dataRegistro) : null;
-                    const diasContingenciaHtml = ehContingencia
-                        ? `<p><strong>Dias em contingência:</strong> ${diasContingencia !== null ? diasContingencia : '-'}</p>`
-                        : '';
-
-                    if (ehContingencia) {
-                        detailsHTML += `
-                            <p class="armario-paciente"><strong>Paciente:</strong> <span class="armario-paciente-nome">${armario.nomePaciente}</span></p>
-                            <p><strong>Acompanhante:</strong> ${armario.nomeVisitante}</p>
-                            <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
-                            ${observacaoHtml}
-                            ${dataRegistroHtml}
-                            ${diasContingenciaHtml}
-                        `;
-                    } else {
-                        const prontuario = armario.prontuario || '-';
-                        const leito = armario.leito || '-';
-                        detailsHTML += `
-                            <p class="armario-paciente"><strong>Paciente:</strong> <span class="armario-paciente-nome">${armario.nomePaciente}</span></p>
-                            <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
-                            <p class="armario-pront-leito">
-                                <span class="armario-pront"><strong>Prontuário:</strong> ${prontuario}</span>
-                                <span class="armario-leito"><strong>Leito:</strong> ${leito}</span>
-                            </p>
-                            <p><strong>Volumes:</strong> ${formatarVolumeParaExibicao(armario.volumes)}</p>
-                            ${armario.whatsapp ? `<p><strong>WhatsApp:</strong> ${armario.whatsapp}</p>` : ''}
-                            <p><strong>Início:</strong> ${armario.horaInicio}</p>
-                            ${armario.visitaEstendida
-                                ? '<p><strong>Visita:</strong> Estendida</p>'
-                                : (armario.horaPrevista ? `<p><strong>Previsão de saída:</strong> ${armario.horaPrevista}</p>` : '')
-                            }
-                            ${termoHtml}
-                            ${dataRegistroHtml}
-                        `;
-                    }
-                }
                 const statusTexto = armarioEhContingencia(armario)
                     ? 'Contingência'
                     : armario.status === 'livre'
@@ -3457,30 +3366,29 @@
                             : armario.status === 'proximo'
                                 ? 'Próximo'
                                 : 'Vencido';
-                const statusHtml = `
-                    <div class="armario-status status-${classeStatus}">
-                        ${statusTexto}
-                    </div>
-                `;
-                const destaqueVisita = armario.visitaEstendida
-                    ? `<div class="armario-highlight"><span class="visita-estendida-tag"><i class="fas fa-infinity" aria-hidden="true"></i> Visita estendida</span></div>`
-                    : '';
-                const armarioIdentificacao = `
-                    <div class="armario-identificacao">
-                        <span class="armario-number">${armario.numero}</span>
-                    </div>
-                `;
+                const statusIcones = {
+                    livre: 'fas fa-check',
+                    'em-uso': 'fas fa-user-clock',
+                    proximo: 'fas fa-exclamation-triangle',
+                    vencido: 'fas fa-times-circle',
+                    contingencia: 'fas fa-shield-alt'
+                };
+                const statusIcone = statusIcones[classeStatus] || 'fas fa-circle';
+                const nomePaciente = armario.status === 'livre'
+                    ? 'Disponível'
+                    : (armario.nomePaciente || '-');
                 card.innerHTML = `
-                    <div class="armario-header">
-                        ${armarioIdentificacao}
-                        <div class="armario-header-right">
-                            ${destaqueVisita}
-                            ${statusHtml}
+                    <div class="armario-status-bar status-${classeStatus}" aria-hidden="true"></div>
+                    <div class="armario-header minimal">
+                        <div class="armario-identificacao">
+                            <span class="armario-number prominent">${armario.numero}</span>
+                        </div>
+                        <div class="armario-status-icon status-${classeStatus}" aria-label="${statusTexto}">
+                            <i class="${statusIcone}" aria-hidden="true"></i>
+                            <span class="sr-only">${statusTexto}</span>
                         </div>
                     </div>
-                    <div class="armario-details">
-                        ${detailsHTML}
-                    </div>
+                    <div class="armario-paciente-line" title="${nomePaciente}">${nomePaciente}</div>
                 `;
                 card.addEventListener('click', () => abrirModalArmario(armario));
                 return card;

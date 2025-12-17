@@ -1534,37 +1534,6 @@
             gap: 10px;
             align-items: center;
         }
-        .btn-toggle-dados {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            background: var(--surface-color);
-            color: var(--text-color);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 10px 22px var(--shadow-color);
-            white-space: nowrap;
-        }
-        .btn-toggle-dados i {
-            color: var(--muted-color);
-            transition: color 0.2s ease;
-        }
-        .btn-toggle-dados:hover, .btn-toggle-dados:focus-visible {
-            border-color: var(--primary-color);
-            transform: translateY(-1px);
-            box-shadow: 0 12px 26px var(--shadow-color);
-        }
-        .btn-toggle-dados.ativo {
-            background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-color) 88%);
-            border-color: color-mix(in srgb, var(--primary-color) 40%, var(--border-color) 60%);
-            color: color-mix(in srgb, var(--primary-dark) 65%, var(--dark-color) 35%);
-        }
-        .btn-toggle-dados.ativo i {
-            color: color-mix(in srgb, var(--primary-dark) 70%, var(--muted-color) 30%);
-        }
         .btn-contingencia {
             display: inline-flex;
             align-items: center;
@@ -1597,10 +1566,14 @@
             background-color: var(--surface-color);
             border-radius: 12px;
             box-shadow: 0 12px 28px var(--shadow-color);
-            padding: 18px;
+            padding: 16px 16px 14px;
             transition: all 0.3s ease;
             cursor: pointer;
-            border-left: 4px solid var(--success-color);
+            border-left: 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         .armario-card.skeleton {
             position: relative;
@@ -1637,6 +1610,11 @@
             width: 64px;
             height: 18px;
         }
+        .armario-status-bar.skeleton-block {
+            width: 100%;
+            height: 6px;
+            border-radius: 12px 12px 0 0;
+        }
         .skeleton-chip {
             width: 110px;
             height: 16px;
@@ -1644,6 +1622,7 @@
         .skeleton-status {
             width: 96px;
             height: 24px;
+            border-radius: 12px;
         }
         @keyframes skeleton-shimmer {
             0% { transform: translateX(-100%); }
@@ -1652,7 +1631,6 @@
         .armario-card.em-uso {
             position: relative;
             overflow: hidden;
-            border-left-color: var(--em-uso-border-color);
             background: radial-gradient(circle at 50% 40%,
                     color-mix(in srgb, var(--em-uso-card-bg) 32%, white 68%) 0%,
                     color-mix(in srgb, var(--em-uso-card-bg) 62%, white 38%) 38%,
@@ -1660,6 +1638,27 @@
                     var(--em-uso-card-bg) 100%);
             color: var(--em-uso-text);
             box-shadow: 0 14px 32px color-mix(in srgb, var(--em-uso-border-color) 30%, transparent);
+        }
+        .armario-status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            border-radius: 12px 12px 0 0;
+            background: var(--livre-main);
+        }
+        .armario-status-bar.status-em-uso {
+            background: var(--em-uso-border-color);
+        }
+        .armario-status-bar.status-proximo {
+            background: var(--proximo-main);
+        }
+        .armario-status-bar.status-vencido {
+            background: var(--vencido-main);
+        }
+        .armario-status-bar.status-contingencia {
+            background: color-mix(in srgb, var(--contingencia-main) 80%, var(--contingencia-contrast) 20%);
         }
         .armario-card.contingencia {
             border-left-color: color-mix(in srgb, var(--contingencia-main) 80%, var(--contingencia-contrast) 20%);
@@ -1791,6 +1790,9 @@
             align-items: center;
             margin-bottom: 10px;
         }
+        .armario-header.minimal {
+            margin-bottom: 2px;
+        }
         .armario-identificacao {
             display: inline-flex;
             align-items: center;
@@ -1807,6 +1809,11 @@
             font-weight: bold;
             font-size: 1.6rem;
             color: var(--dark-color);
+        }
+        .armario-number.prominent {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
         }
         .armario-card.em-uso .armario-number {
             color: var(--em-uso-text);
@@ -1850,6 +1857,42 @@
             background-color: color-mix(in srgb, var(--contingencia-main) 18%, transparent);
             color: color-mix(in srgb, var(--contingencia-contrast) 80%, white 20%);
             border: 1px dashed color-mix(in srgb, var(--contingencia-main) 45%, transparent);
+        }
+        .armario-status-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in srgb, var(--livre-main) 16%, white 84%);
+            color: var(--livre-main);
+            box-shadow: 0 10px 22px var(--shadow-color);
+        }
+        .armario-status-icon.status-em-uso {
+            background: color-mix(in srgb, var(--em-uso-card-bg) 40%, white 60%);
+            color: var(--em-uso-border-color);
+        }
+        .armario-status-icon.status-proximo {
+            background: color-mix(in srgb, var(--proximo-main) 20%, white 80%);
+            color: var(--proximo-main);
+        }
+        .armario-status-icon.status-vencido {
+            background: color-mix(in srgb, var(--vencido-main) 18%, white 82%);
+            color: var(--vencido-main);
+        }
+        .armario-status-icon.status-contingencia {
+            background: color-mix(in srgb, var(--contingencia-main) 28%, white 72%);
+            color: color-mix(in srgb, var(--contingencia-contrast) 82%, white 18%);
+        }
+        .armario-paciente-line {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 6px;
         }
         .armario-details {
             font-size: 0.9rem;
@@ -4476,15 +4519,11 @@
                 flex: 1 1 100%;
                 width: 100%;
             }
-            .btn-toggle-dados,
             .btn-contingencia {
                 flex: 1 1 calc(50% - 4px);
                 min-width: 0;
                 justify-content: center;
                 text-align: center;
-                white-space: normal;
-            }
-            .btn-toggle-dados .toggle-dados-label {
                 white-space: normal;
             }
             .cards-hero {
@@ -4697,7 +4736,6 @@
             .contingencia-actions {
                 flex-direction: column;
             }
-            .btn-toggle-dados,
             .btn-contingencia {
                 flex: 1 1 100%;
                 width: 100%;
