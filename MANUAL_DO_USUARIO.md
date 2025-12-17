@@ -39,6 +39,12 @@ Este manual foi pensado para quem não é técnico. Ele explica, em linguagem di
 - **Ocultar dados sensíveis:** botão "Ocultar dados" alterna a exibição de informações pessoais.
 - **Contingência (Sem Armários):** registre casos em que não há armários disponíveis.
 
+### 6.1 Registrar contingência com foto
+1. Clique em **Contingência** no painel superior (perfil de acompanhantes).
+2. Preencha paciente, acompanhante, prontuário e observações.
+3. Anexe uma **foto obrigatória** (JPG ou PNG até 2 MB). Ela é salva no Drive com acesso somente via link e fica indexada na planilha.
+4. Conclua em **Registrar**. A imagem aparecerá ao abrir o registro da contingência.
+
 ## 7. Visitantes (armários de visita)
 1. Clique em **Visitantes** no menu.
 2. Use **Novo Cadastro** para registrar um armário em uso: informe unidade, número, visitante, paciente, leito, volumes e horários.

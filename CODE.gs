@@ -1884,6 +1884,7 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
   estrutura = garantirColunaProntuario(sheet, estrutura);
   if (!isVisitante) {
     estrutura = garantirColunaObservacoesAcompanhantes(sheet, estrutura);
+    estrutura = garantirColunasFotoContingencia(sheet, estrutura);
   }
   var totalLinhas = sheet.getLastRow() - 1;
   var totalColunas = estrutura.ultimaColuna || (isVisitante ? 14 : 12);
@@ -1916,6 +1917,12 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
   var observacoesIndex = obterIndiceColuna(estrutura, CABECALHOS_OBSERVACOES, null);
   var visitaEstendidaIndex = isVisitante
     ? obterIndiceColuna(estrutura, CABECALHOS_VISITA_ESTENDIDA, null)
+    : -1;
+  var fotoContingenciaUrlIndex = !isVisitante
+    ? obterIndiceColuna(estrutura, ['foto contingencia url', 'foto contingência url'], null)
+    : -1;
+  var fotoContingenciaIdIndex = !isVisitante
+    ? obterIndiceColuna(estrutura, ['foto contingencia id', 'foto contingência id'], null)
     : -1;
 
   var houveAtualizacaoStatus = false;
@@ -1984,6 +1991,8 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
       termoAplicado: termoIndex !== null && termoIndex !== undefined ? converterParaBoolean(row[termoIndex]) : false,
       whatsapp: whatsappIndex !== null && whatsappIndex !== undefined ? (row[whatsappIndex] || '') : '',
       observacoes: observacoesIndex !== null && observacoesIndex !== undefined ? (row[observacoesIndex] || '') : '',
+      fotoContingenciaUrl: fotoContingenciaUrlIndex > -1 ? (row[fotoContingenciaUrlIndex] || '') : '',
+      fotoContingenciaId: fotoContingenciaIdIndex > -1 ? (row[fotoContingenciaIdIndex] || '') : '',
       ehContingencia: ehContingencia,
       pacienteDeAlta: infoInternacao ? !infoInternacao.internadoAtual : false,
       destinoAtual: infoInternacao ? (infoInternacao.destinoAtual || '') : '',
@@ -2286,6 +2295,7 @@ function registrarContingencia(dados) {
 
     var estrutura = garantirColunaProntuario(sheet, obterEstruturaPlanilha(sheet));
     estrutura = garantirColunaObservacoesAcompanhantes(sheet, estrutura);
+    estrutura = garantirColunasFotoContingencia(sheet, estrutura);
     var totalColunas = estrutura.ultimaColuna || 12;
     var totalLinhas = sheet.getLastRow();
     var numeroIndex = obterIndiceColuna(estrutura, 'numero', 1);
@@ -2329,6 +2339,26 @@ function registrarContingencia(dados) {
       ? sheet.getRange(linhaPlanilha, 1, 1, totalColunas).getValues()[0]
       : new Array(totalColunas).fill('');
 
+    var fotoBase64 = (dados.fotoBase64 || '').toString().trim();
+    var fotoMime = (dados.fotoMime || '').toString().trim() || 'image/jpeg';
+    var fotoNome = dados.fotoNome || 'contingencia';
+
+    if (!fotoBase64) {
+      return { success: false, error: 'A foto da contingência é obrigatória.' };
+    }
+
+    var nomeArquivoFoto = gerarNomeArquivoEvidencia('contingencia', numeroContingencia);
+    var fotoRegistrada;
+    try {
+      fotoRegistrada = salvarImagemBase64EmPasta(fotoBase64, fotoMime, nomeArquivoFoto, PASTA_DRIVE_FOTOS_ID);
+    } catch (erroFoto) {
+      registrarLog('ERRO', 'Falha ao salvar foto de contingência: ' + erroFoto.toString());
+      return { success: false, error: 'Falha ao salvar a foto da contingência. Verifique as permissões do Drive.' };
+    }
+    if (!fotoRegistrada || !fotoRegistrada.url) {
+      return { success: false, error: 'Falha ao salvar a foto da contingência. Verifique as permissões do Drive.' };
+    }
+
     definirValorLinha(linhaBase, estrutura, 'id', idGerado);
     definirValorLinha(linhaBase, estrutura, 'numero', numeroContingencia);
     definirValorLinha(linhaBase, estrutura, 'status', 'contingencia');
@@ -2344,6 +2374,9 @@ function registrarContingencia(dados) {
     definirValorLinha(linhaBase, estrutura, CABECALHOS_WHATSAPP, dados.whatsapp || '');
     definirValorLinha(linhaBase, estrutura, 'termo aplicado', false);
     definirValorLinha(linhaBase, estrutura, CABECALHOS_OBSERVACOES, observacoes);
+    definirValorLinha(linhaBase, estrutura, ['foto contingencia url', 'foto contingência url'], fotoRegistrada.url || '');
+    definirValorLinha(linhaBase, estrutura, ['foto contingencia id', 'foto contingência id'], fotoRegistrada.id || '');
+    definirValorLinha(linhaBase, estrutura, ['foto contingencia nome', 'foto contingência nome'], fotoRegistrada.nome || fotoNome);
 
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([linhaBase]);
 
@@ -2399,6 +2432,8 @@ function registrarContingencia(dados) {
         termoAplicado: false,
         termoFinalizado: false,
         termoStatus: 'pendente',
+        fotoContingenciaUrl: fotoRegistrada.url || '',
+        fotoContingenciaId: fotoRegistrada.id || '',
         ehContingencia: true
       }
     };
@@ -5928,6 +5963,33 @@ function garantirColunaObservacoesAcompanhantes(sheet, estrutura) {
     sheet.insertColumnAfter(ultimaColuna);
     sheet.getRange(1, ultimaColuna + 1).setValue('Observações');
   }
+
+  return obterEstruturaPlanilha(sheet);
+}
+
+function garantirColunasFotoContingencia(sheet, estrutura) {
+  if (!sheet) {
+    return estrutura;
+  }
+
+  var estruturaAtual = estrutura || obterEstruturaPlanilha(sheet);
+  var indiceUrl = obterIndiceColuna(estruturaAtual, ['foto contingencia url', 'foto contingência url'], null);
+  var indiceId = obterIndiceColuna(estruturaAtual, ['foto contingencia id', 'foto contingência id'], null);
+  var indiceNome = obterIndiceColuna(estruturaAtual, ['foto contingencia nome', 'foto contingência nome'], null);
+
+  if (indiceUrl !== null && indiceId !== null && indiceNome !== null) {
+    return estruturaAtual;
+  }
+
+  var ultimaColuna = estruturaAtual.ultimaColuna || sheet.getLastColumn();
+  var novasColunas = ['Foto Contingência URL', 'Foto Contingência ID', 'Foto Contingência Nome'];
+
+  novasColunas.forEach(function(nomeColuna, index) {
+    if (obterIndiceColuna(estruturaAtual, nomeColuna, null) === null) {
+      sheet.insertColumnAfter(ultimaColuna + index);
+      sheet.getRange(1, ultimaColuna + index + 1).setValue(nomeColuna);
+    }
+  });
 
   return obterEstruturaPlanilha(sheet);
 }

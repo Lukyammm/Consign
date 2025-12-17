@@ -5279,6 +5279,8 @@
                 return;
             }
 
+                let fotoContingencia = { base64: '', mime: '', nome: '' };
+
                 const resultado = await Swal.fire({
                     title: 'Registrar contingência',
                     html: `
@@ -5299,22 +5301,60 @@
                             <label for="contingencia-observacoes">Observações</label>
                             <textarea id="contingencia-observacoes" class="swal2-textarea" placeholder="Observações da contingência"></textarea>
                         </div>
+                        <div class="swal-form-group">
+                            <label for="contingencia-foto">Foto da contingência</label>
+                            <input id="contingencia-foto" type="file" class="swal2-input" accept="image/jpeg,image/png" aria-required="true">
+                            <small class="field-hint">Envie JPG ou PNG até 2 MB.</small>
+                        </div>
                     </div>
                 `,
                 focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'Registrar',
                 cancelButtonText: 'Cancelar',
-                preConfirm: () => {
+                preConfirm: async () => {
                     const popup = Swal.getPopup();
                     const acompanhante = padronizarNomeMaiusculo(popup.querySelector('#contingencia-acompanhante').value);
                     const paciente = padronizarNomeMaiusculo(popup.querySelector('#contingencia-paciente').value);
                     const prontuario = popup.querySelector('#contingencia-prontuario').value.trim();
                     const observacoes = popup.querySelector('#contingencia-observacoes').value.trim();
+                    const inputFoto = popup.querySelector('#contingencia-foto');
+                    const arquivoFoto = inputFoto?.files?.[0];
+
                     if (!acompanhante || !paciente) {
                         Swal.showValidationMessage('Informe acompanhante e paciente.');
                         return false;
                     }
+
+                    if (!arquivoFoto) {
+                        Swal.showValidationMessage('Inclua a foto da contingência (JPG ou PNG).');
+                        return false;
+                    }
+
+                    const tamanhoMaximo = 2 * 1024 * 1024; // 2 MB
+                    if (!/^image\/(jpeg|png)$/i.test(arquivoFoto.type)) {
+                        Swal.showValidationMessage('Use apenas imagens JPG ou PNG.');
+                        return false;
+                    }
+
+                    if (arquivoFoto.size > tamanhoMaximo) {
+                        Swal.showValidationMessage('A imagem deve ter no máximo 2 MB.');
+                        return false;
+                    }
+
+                    try {
+                        const imagem = await lerArquivoImagemComoBase64(arquivoFoto, 450);
+                        fotoContingencia = {
+                            base64: imagem.base64,
+                            mime: imagem.mime || arquivoFoto.type,
+                            nome: arquivoFoto.name || 'contingencia'
+                        };
+                    } catch (erroFoto) {
+                        console.error('Erro ao carregar foto da contingência:', erroFoto);
+                        Swal.showValidationMessage('Não foi possível processar a foto enviada.');
+                        return false;
+                    }
+
                     return { acompanhante, paciente, prontuario, observacoes };
                 }
             });
@@ -5329,7 +5369,10 @@
                 prontuario: resultado.value.prontuario,
                 observacoes: resultado.value.observacoes,
                 unidade: estado.unidadeAtual === 'todas' ? '' : estado.unidadeAtual,
-                usuarioResponsavel: obterDescricaoResponsavelAtual()
+                usuarioResponsavel: obterDescricaoResponsavelAtual(),
+                fotoBase64: fotoContingencia.base64,
+                fotoMime: fotoContingencia.mime,
+                fotoNome: fotoContingencia.nome
             };
 
             const finalizar = mostrarOverlayCarregamento('Registrando contingência...');
@@ -5352,6 +5395,8 @@
                     prontuario: novoArmario.prontuario ? novoArmario.prontuario.toString().trim() : '',
                     observacoes: novoArmario.observacoes ? novoArmario.observacoes.toString().trim() : '',
                     visitaEstendida: Boolean(novoArmario.visitaEstendida),
+                    fotoContingenciaUrl: novoArmario.fotoContingenciaUrl || '',
+                    fotoContingenciaId: novoArmario.fotoContingenciaId || '',
                     ehContingencia: true,
                     status: 'contingencia'
                 };
@@ -5451,6 +5496,16 @@
             const termoStatusTexto = formatarStatusTermo(armario.termoStatus);
             const termoPendente = termoStatusNormalizado === 'pendente';
             const termoEmAndamento = termoStatusNormalizado === 'em andamento';
+            const fotoContingenciaHtml = armario.fotoContingenciaUrl
+                ? `<div class="armario-foto">
+                        <strong>Foto da contingência:</strong>
+                        <div class="armario-foto-thumb">
+                            <a href="${armario.fotoContingenciaUrl}" target="_blank" rel="noopener noreferrer">
+                                <img src="${armario.fotoContingenciaUrl}" alt="Foto registrada da contingência" loading="lazy">
+                            </a>
+                        </div>
+                    </div>`
+                : '';
                 const termoAviso = armario.tipo === 'acompanhante'
                     ? (termoEmAndamento
                         ? '<br><small>Finalize o termo durante a liberação do armário.</small>'
@@ -5493,6 +5548,7 @@
                             ? '<p><strong>Visita:</strong> Estendida</p>'
                             : (armario.horaPrevista ? `<p><strong>Previsão de saída:</strong> ${armario.horaPrevista}</p>` : '')}
                         ${dataRegistroHtml}
+                        ${ehContingencia ? fotoContingenciaHtml : ''}
                         ${termoHtml}
                         ${botoesApoio}
                         ${moverContingenciaHtml}
