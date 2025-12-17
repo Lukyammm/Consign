@@ -122,39 +122,83 @@
         }
         .lf-filters {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 10px;
-            padding: 12px 14px;
-            border-left: 3px solid color-mix(in srgb, var(--primary-color) 18%, transparent);
-            row-gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            padding: 18px;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 14%, transparent);
+            border-radius: 16px;
+            background: linear-gradient(135deg, color-mix(in srgb, var(--surface-color) 92%, white 8%), color-mix(in srgb, var(--primary-color) 6%, var(--surface-color) 94%));
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+            position: relative;
+            overflow: hidden;
+        }
+        .lf-filters::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 12% 20%, color-mix(in srgb, var(--primary-color) 18%, transparent) 0, transparent 38%),
+                        radial-gradient(circle at 86% 80%, color-mix(in srgb, var(--secondary-color) 14%, transparent) 0, transparent 36%);
+            opacity: 0.28;
         }
         .lf-filters .filter-group {
+            position: relative;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
+            padding: 12px 12px 14px;
+            border-radius: 12px;
+            background: color-mix(in srgb, var(--surface-color) 88%, rgba(255, 255, 255, 0.12));
+            border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        .lf-filters .filter-group label {
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+            color: color-mix(in srgb, var(--text-color) 86%, var(--muted-color) 14%);
+            font-weight: 700;
         }
         .lf-filters .input-icon {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 0 12px;
+            gap: 10px;
+            padding: 10px 12px;
             border-radius: 12px;
-            border: 1px solid color-mix(in srgb, var(--surface-color) 50%, transparent);
-            background: color-mix(in srgb, var(--surface-color) 92%, rgba(255, 255, 255, 0.08));
+            border: 1px solid color-mix(in srgb, var(--primary-color) 20%, var(--border-color) 80%);
+            background: color-mix(in srgb, var(--surface-color) 95%, rgba(59, 130, 246, 0.04));
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+        }
+        .lf-filters .input-icon i {
+            color: color-mix(in srgb, var(--primary-color) 60%, var(--muted-color) 40%);
         }
         .lf-filters .input-icon input {
             border: none;
-            padding: 10px 0;
+            padding: 8px 0;
             background: transparent;
             width: 100%;
             outline: none;
+            font-size: 0.95rem;
         }
         .lf-filters select,
         .lf-filters input[type="date"] {
             padding: 10px 12px;
             border-radius: 12px;
-            border: 1px solid color-mix(in srgb, var(--surface-color) 50%, transparent);
-            background: color-mix(in srgb, var(--surface-color) 92%, rgba(255, 255, 255, 0.08));
+            border: 1px solid color-mix(in srgb, var(--primary-color) 20%, var(--border-color) 80%);
+            background: color-mix(in srgb, var(--surface-color) 95%, rgba(59, 130, 246, 0.04));
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+            font-weight: 600;
+            color: color-mix(in srgb, var(--text-color) 90%, var(--muted-color) 10%);
+            appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, var(--primary-color) 50%), linear-gradient(135deg, var(--primary-color) 50%, transparent 50%);
+            background-position: calc(100% - 18px) calc(50% - 4px), calc(100% - 12px) calc(50% - 4px);
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+        }
+        .lf-filters select:focus,
+        .lf-filters input[type="date"]:focus,
+        .lf-filters .input-icon:focus-within {
+            border-color: color-mix(in srgb, var(--primary-color) 70%, var(--border-color) 30%);
+            box-shadow: 0 0 0 4px var(--focus-ring), 0 12px 24px rgba(59, 130, 246, 0.08);
         }
         .lf-filters .align-end {
             align-items: flex-end;
@@ -199,6 +243,37 @@
             border-radius: 20px;
             color: var(--text-color);
         }
+        #tabela-achados {
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+        #tabela-achados thead th {
+            background: color-mix(in srgb, var(--light-color) 80%, white 20%);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        #tabela-achados tbody tr {
+            background: color-mix(in srgb, var(--surface-color) 96%, rgba(255, 255, 255, 0.15));
+            border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+            border-radius: 14px;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+            transition: transform 0.15s ease, box-shadow 0.2s ease;
+        }
+        #tabela-achados tbody tr:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px rgba(15, 23, 42, 0.12);
+        }
+        #tabela-achados tbody td:first-child,
+        #tabela-achados thead th:first-child {
+            border-top-left-radius: 14px;
+            border-bottom-left-radius: 14px;
+        }
+        #tabela-achados tbody td:last-child,
+        #tabela-achados thead th:last-child {
+            border-top-right-radius: 14px;
+            border-bottom-right-radius: 14px;
+        }
         .lf-table .table-empty {
             padding: 24px;
             text-align: center;
@@ -225,6 +300,14 @@
             border-radius: 14px;
             background: color-mix(in srgb, var(--surface-color) 88%, rgba(255, 255, 255, 0.08));
             border: 1px solid color-mix(in srgb, var(--surface-color) 55%, transparent);
+        }
+        .lf-actions {
+            flex-wrap: wrap;
+        }
+        .lf-actions .btn {
+            white-space: nowrap;
+            padding: 10px 14px;
+            border-radius: 12px;
         }
         @keyframes spin {
             from { transform: rotate(0deg); }
@@ -4678,6 +4761,15 @@
             .lf-grid {
                 padding: 0 4px 14px;
             }
+            .lf-filters {
+                padding: 14px;
+                gap: 12px;
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            }
+            .lf-filters .filter-group {
+                padding: 10px 10px 12px;
+                min-width: 0;
+            }
             .lf-header {
                 flex-direction: column;
                 align-items: flex-start;
@@ -4691,13 +4783,6 @@
                 flex: 1 1 48%;
                 min-width: 140px;
                 justify-content: center;
-            }
-            .lf-filters {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                padding: 12px;
-            }
-            .lf-filters .filter-group {
-                min-width: 0;
             }
             .lf-summary {
                 grid-template-columns: 1fr;
@@ -4714,6 +4799,19 @@
             }
             #tabela-achados td {
                 word-break: break-word;
+            }
+            #tabela-achados {
+                border-spacing: 0 8px;
+            }
+            #tabela-achados tbody tr {
+                box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+            }
+            .lf-actions {
+                gap: 10px;
+            }
+            .lf-actions .btn {
+                flex: 1 1 160px;
+                justify-content: center;
             }
             .lf-table .chip {
                 align-self: flex-start;
