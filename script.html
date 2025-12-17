@@ -21,10 +21,10 @@
                 erro: ''
             };
         }
-        function criarEstadoInicial() {
+        function criarEstadoInicial() {A
             return {
                 perfilAtual: 'geral',
-                unidadeAtual: 'todas',
+                unidadeAtual: 'todas',Q
                 filtrosSelecionados: ['todos'],
                 buscaDashboard: '',
                 paginaAtual: 'dashboard',
@@ -556,8 +556,8 @@
             headerUserAvatar: document.getElementById('header-user-avatar'),
             headerUserName: document.getElementById('header-user-name'),
             headerUserRole: document.getElementById('header-user-role'),
-            headerContextLabel: document.getElementById('header-context-label'),
-            headerContextMeta: document.getElementById('header-context-meta'),
+            headerUserGreeting: document.getElementById('header-user-greeting'),
+            headerUserGreetingName: document.getElementById('header-user-greeting-name'),
             avatarModal: document.getElementById('avatar-modal'),
             avatarModalBackdrop: document.getElementById('avatar-modal-backdrop'),
             avatarModalClose: document.getElementById('avatar-modal-close'),
@@ -1384,13 +1384,20 @@
                 elementos.headerUserAvatar.style.backgroundImage = '';
                 elementos.headerUserAvatar.classList.remove('has-image');
                 elementos.headerUserProfile?.setAttribute('aria-label', 'Perfil do usuário');
+                if (elementos.headerUserGreetingName) {
+                    elementos.headerUserGreetingName.textContent = 'Visitante';
+                }
                 atualizarResponsavelMovimentacaoInfo();
                 return;
             }
             const nomeLimpo = (usuario.nome || 'Usuário').toString().trim();
+            const saudacao = obterNomeSaudacao(nomeLimpo);
             elementos.headerUserName.textContent = nomeLimpo;
             elementos.headerUserRole.textContent = perfilAtualEhAdmin() ? 'Administrador' : 'Usuário';
             elementos.headerUserProfile?.setAttribute('aria-label', `Perfil do usuário ${nomeLimpo} (${elementos.headerUserRole.textContent})`);
+            if (elementos.headerUserGreetingName) {
+                elementos.headerUserGreetingName.textContent = saudacao;
+            }
             const avatarUrl = usuario.avatarUrl ? usuario.avatarUrl.toString().trim() : '';
             if (avatarUrl) {
                 elementos.headerUserAvatar.style.backgroundImage = `url("${avatarUrl.replace(/"/g, '\\"')}")`;
@@ -1812,7 +1819,10 @@
             if (dashboardPage) {
                 dashboardPage.classList.add('active');
             }
-            atualizarContextoCabecalho('Dashboard');
+            const headerTitle = document.querySelector('.header-title h1');
+            if (headerTitle) {
+                headerTitle.textContent = 'Dashboard';
+            }
             if (elementos.liberacaoResumo) {
                 elementos.liberacaoResumo.textContent = 'Selecione um período para visualizar os registros de liberação.';
             }
@@ -3118,14 +3128,6 @@
             });
         }
         // Navegação entre páginas
-        function atualizarContextoCabecalho(titulo, meta = 'Hoje') {
-            if (elementos.headerContextLabel) {
-                elementos.headerContextLabel.textContent = titulo || '';
-            }
-            if (elementos.headerContextMeta) {
-                elementos.headerContextMeta.textContent = meta || '';
-            }
-        }
         function navegarParaPagina(pagina) {
             if (!usuarioTemAcessoPagina(pagina)) {
                 mostrarErro('Você não tem permissão para acessar esta área.');
@@ -3145,7 +3147,7 @@
 
             // Atualizar título
             const pageTitle = linkAlvo.querySelector('span')?.textContent || '';
-            atualizarContextoCabecalho(pageTitle);
+            document.querySelector('.header-title h1').textContent = pageTitle;
 
             estado.paginaAtual = pagina;
 
