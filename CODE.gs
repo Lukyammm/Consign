@@ -2291,6 +2291,26 @@ function registrarContingencia(dados) {
     var numeroIndex = obterIndiceColuna(estrutura, 'numero', 1);
     var statusIndex = obterIndiceColuna(estrutura, 'status', 2);
     var idIndex = obterIndiceColuna(estrutura, 'id', 0);
+    var tipoRegistro = normalizarTextoBasico(dados.tipoRegistro || 'entrada');
+    tipoRegistro = tipoRegistro === 'saida' || tipoRegistro === 'saída' ? 'saida' : 'entrada';
+    var fotoRegistroBase64 = (dados.fotoBase64 || '').toString().trim();
+    var fotoRegistroMime = (dados.fotoMime || '').toString().trim() || 'image/jpeg';
+    var fotoRegistroUrl = '';
+    var fotoRegistroId = '';
+    var fotoRegistroNome = '';
+
+    if (!fotoRegistroBase64) {
+      return { success: false, error: 'A foto da entrada ou saída é obrigatória para registrar contingência.' };
+    }
+
+    var padraoPrefixo = /^data:([^;]+);base64,/i;
+    if (padraoPrefixo.test(fotoRegistroBase64)) {
+      var matchPrefixo = fotoRegistroBase64.match(padraoPrefixo);
+      if (matchPrefixo && matchPrefixo[1]) {
+        fotoRegistroMime = matchPrefixo[1];
+      }
+      fotoRegistroBase64 = fotoRegistroBase64.replace(padraoPrefixo, '');
+    }
 
     var linhasPlanilha = totalLinhas > 1
       ? sheet.getRange(2, 1, totalLinhas - 1, totalColunas).getValues()
@@ -2323,7 +2343,11 @@ function registrarContingencia(dados) {
     var nomeChavesCadastro = CABECALHOS_NOME_ACOMPANHANTE;
     var volumes = parseInt(dados.volumes, 10);
     volumes = isNaN(volumes) || volumes < 0 ? 0 : volumes;
-    var observacoes = dados.observacoes ? dados.observacoes.toString().trim() : '';
+    var observacoesBase = dados.observacoes ? dados.observacoes.toString().trim() : '';
+    var infoRegistro = tipoRegistro === 'saida'
+      ? 'Registro de saída com evidência fotográfica.'
+      : 'Registro de entrada com evidência fotográfica.';
+    var observacoes = observacoesBase ? observacoesBase + ' | ' + infoRegistro : infoRegistro;
 
     var linhaBase = linhaDisponivel > -1
       ? sheet.getRange(linhaPlanilha, 1, 1, totalColunas).getValues()[0]
@@ -2346,6 +2370,18 @@ function registrarContingencia(dados) {
     definirValorLinha(linhaBase, estrutura, CABECALHOS_OBSERVACOES, observacoes);
 
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([linhaBase]);
+
+    if (fotoRegistroBase64) {
+      var nomeFotoRegistro = gerarNomeArquivoEvidencia(tipoRegistro === 'saida' ? 'contingencia_saida' : 'contingencia_entrada', numeroContingencia);
+      var arquivoFoto = salvarImagemBase64EmPasta(fotoRegistroBase64, fotoRegistroMime, nomeFotoRegistro, PASTA_DRIVE_FOTOS_ID);
+      if (arquivoFoto) {
+        fotoRegistroUrl = arquivoFoto.url;
+        fotoRegistroId = arquivoFoto.id;
+        fotoRegistroNome = arquivoFoto.nome || '';
+      } else {
+        return { success: false, error: 'Não foi possível salvar a foto da contingência.' };
+      }
+    }
 
     var historicoLastRow = historicoSheet.getLastRow();
     var ultimoHistoricoId = historicoLastRow > 1
@@ -2373,6 +2409,22 @@ function registrarContingencia(dados) {
     ];
 
     historicoSheet.getRange(proximaLinhaHistorico, 1, 1, historicoLinha.length).setValues([historicoLinha]);
+
+    if (fotoRegistroUrl) {
+      registrarRegistroImagem({
+        armarioId: idGerado,
+        numeroArmario: numeroContingencia,
+        tipo: 'contingencia',
+        contexto: tipoRegistro === 'saida' ? 'Saída da contingência' : 'Entrada da contingência',
+        titulo: dados.nomePaciente ? 'Paciente: ' + dados.nomePaciente : 'Registro de contingência',
+        detalhe: observacoes,
+        responsavel: responsavel,
+        dataHora: dataHoraAtual.dataHoraIso,
+        fotoUrl: fotoRegistroUrl,
+        fotoId: fotoRegistroId,
+        fotoNome: fotoRegistroNome
+      });
+    }
 
     limparCacheArmarios();
     limparCacheHistorico();
