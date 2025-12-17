@@ -4312,10 +4312,7 @@
             .sidebar:hover .sidebar-title,
             .sidebar:hover .sidebar-menu span,
             .sidebar:hover .sidebar-logout-button span {
-                opacity: 1;
-                visibility: visible;
-                max-width: 240px;
-                transform: translateX(0);
+                display: inline;
             }
             .sidebar:hover .sidebar-title {
                 display: inline-flex;
@@ -4325,20 +4322,12 @@
             }
             .sidebar:hover .sidebar-menu a {
                 justify-content: flex-start;
-                text-align: left;
                 gap: 10px;
                 padding: 12px 20px;
                 border-left: 4px solid transparent;
             }
             .sidebar:hover .sidebar-menu a.active {
                 background: color-mix(in srgb, white 8%, rgba(0, 0, 0, 0.12));
-            }
-            .sidebar:hover .sidebar-logout-button {
-                justify-content: flex-start;
-                gap: 10px;
-                padding: 12px 18px;
-                border: 1px solid rgba(255, 255, 255, 0.26);
-                background: rgba(255, 255, 255, 0.08);
             }
             .sidebar:hover ~ .main-content {
                 margin-left: var(--sidebar-width);
