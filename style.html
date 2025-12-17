@@ -16,8 +16,8 @@
 
             --em-uso-base: #4F6F97;
             --em-uso-contrast: #11223a;
-            --em-uso-border-color: color-mix(in srgb, var(--em-uso-base) 70%, #0d182b 30%);
-            --em-uso-card-bg: color-mix(in srgb, var(--em-uso-base) 20%, white 80%);
+            --em-uso-border-color: color-mix(in srgb, var(--primary-color) 62%, var(--em-uso-base) 38%);
+            --em-uso-card-bg: color-mix(in srgb, var(--primary-color) 18%, white 82%);
             --em-uso-badge-bg: color-mix(in srgb, var(--em-uso-base) 60%, #0e182b 40%);
             --em-uso-badge-text: color-mix(in srgb, #0d1b2f 80%, white 20%);
             --em-uso-icon: color-mix(in srgb, var(--em-uso-base) 75%, #0c1a2e 25%);
@@ -1279,9 +1279,12 @@
             background: var(--surface-color);
             color: var(--dark-color);
             border-radius: 14px;
-            box-shadow: 0 12px 28px var(--shadow-color);
+            box-shadow: 0 8px 20px color-mix(in srgb, var(--shadow-color) 70%, transparent);
             padding: 18px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid color-mix(in srgb, var(--primary-color) 10%, var(--border-color) 90%);
+            background: color-mix(in srgb, white 84%, var(--surface-color) 16%);
         }
         .cards-hero .card {
             display: flex;
@@ -1292,23 +1295,23 @@
         }
         .card:hover {
             transform: translateY(-6px);
-            box-shadow: 0 18px 36px var(--shadow-color);
+            box-shadow: 0 12px 26px color-mix(in srgb, var(--shadow-color) 72%, transparent);
         }
         .card.livre {
             border: 1px solid color-mix(in srgb, var(--livre-main) 35%, transparent);
             border-top: 5px solid var(--livre-main);
-            background: linear-gradient(160deg, var(--livre-glass), color-mix(in srgb, var(--livre-main) 12%, white 88%));
+            background: linear-gradient(160deg, color-mix(in srgb, var(--livre-glass) 80%, transparent), color-mix(in srgb, var(--livre-main) 8%, white 92%));
             color: var(--livre-contrast);
-            box-shadow: 0 14px 30px color-mix(in srgb, var(--livre-main) 18%, var(--shadow-color) 82%);
+            box-shadow: 0 10px 22px color-mix(in srgb, var(--livre-main) 14%, var(--shadow-color) 86%);
         }
         .card.em-uso {
             position: relative;
-            border: 1px solid color-mix(in srgb, var(--em-uso-border-color) 65%, transparent);
-            border-top: 5px solid var(--em-uso-border-color);
-            background: radial-gradient(circle at 20% 24%, color-mix(in srgb, var(--em-uso-card-bg) 62%, white 38%) 0%, color-mix(in srgb, var(--em-uso-card-bg) 82%, white 18%) 46%, var(--em-uso-card-bg) 88% 100%);
+            border: 1px solid color-mix(in srgb, var(--em-uso-border-color) 55%, transparent);
+            border-top: 4px solid color-mix(in srgb, var(--em-uso-border-color) 80%, transparent);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--em-uso-card-bg) 80%, transparent), color-mix(in srgb, var(--em-uso-card-bg) 65%, white 35%));
             color: var(--em-uso-text);
             overflow: hidden;
-            box-shadow: 0 14px 30px color-mix(in srgb, var(--em-uso-border-color) 24%, var(--shadow-color) 76%);
+            box-shadow: 0 10px 22px color-mix(in srgb, var(--em-uso-border-color) 20%, var(--shadow-color) 80%);
         }
         .card.em-uso::before {
             content: "";
@@ -1322,23 +1325,23 @@
             pointer-events: none;
         }
         .card.proximo {
-            border: 2px solid var(--proximo-main);
-            background: linear-gradient(140deg, color-mix(in srgb, var(--proximo-main) 14%, white 86%), color-mix(in srgb, var(--proximo-main) 26%, white 74%));
-            box-shadow: 0 16px 32px color-mix(in srgb, var(--proximo-main) 28%, var(--shadow-color) 72%);
+            border: 1.5px solid color-mix(in srgb, var(--proximo-main) 70%, transparent);
+            background: linear-gradient(140deg, color-mix(in srgb, var(--proximo-main) 10%, white 90%), color-mix(in srgb, var(--proximo-main) 22%, white 78%));
+            box-shadow: 0 12px 26px color-mix(in srgb, var(--proximo-main) 22%, var(--shadow-color) 78%);
             color: var(--proximo-contrast);
         }
         .card.vencido {
-            border: 2px solid var(--vencido-strong);
-            background: linear-gradient(145deg, color-mix(in srgb, var(--vencido-main) 18%, white 82%), color-mix(in srgb, var(--vencido-main) 32%, white 68%));
-            box-shadow: 0 18px 36px color-mix(in srgb, var(--vencido-main) 32%, var(--shadow-color) 68%);
+            border: 1.5px solid color-mix(in srgb, var(--vencido-strong) 70%, transparent);
+            background: linear-gradient(145deg, color-mix(in srgb, var(--vencido-main) 14%, white 86%), color-mix(in srgb, var(--vencido-main) 26%, white 74%));
+            box-shadow: 0 12px 28px color-mix(in srgb, var(--vencido-main) 26%, var(--shadow-color) 74%);
             color: color-mix(in srgb, var(--vencido-contrast) 76%, white 24%);
         }
         .card.contingencia {
             border: 1px dashed color-mix(in srgb, var(--contingencia-main) 50%, transparent);
             border-top: 5px solid var(--contingencia-main);
-            background: linear-gradient(160deg, var(--contingencia-glass), color-mix(in srgb, var(--contingencia-main) 12%, white 88%));
+            background: linear-gradient(160deg, color-mix(in srgb, var(--contingencia-glass) 80%, transparent), color-mix(in srgb, var(--contingencia-main) 10%, white 90%));
             color: var(--contingencia-contrast);
-            box-shadow: 0 14px 30px color-mix(in srgb, var(--contingencia-main) 22%, var(--shadow-color) 78%);
+            box-shadow: 0 10px 22px color-mix(in srgb, var(--contingencia-main) 18%, var(--shadow-color) 82%);
         }
         .card-header {
             display: flex;
@@ -1563,9 +1566,9 @@
             gap: 20px;
         }
         .armario-card {
-            background-color: var(--surface-color);
+            background: color-mix(in srgb, white 86%, var(--surface-color) 14%);
             border-radius: 12px;
-            box-shadow: 0 12px 28px var(--shadow-color);
+            box-shadow: 0 8px 20px color-mix(in srgb, var(--shadow-color) 70%, transparent);
             padding: 16px 16px 14px;
             transition: all 0.3s ease;
             cursor: pointer;
@@ -1574,6 +1577,8 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 8%, var(--border-color) 92%);
+            backdrop-filter: blur(8px);
         }
         .armario-card.skeleton {
             position: relative;
@@ -1631,13 +1636,12 @@
         .armario-card.em-uso {
             position: relative;
             overflow: hidden;
-            background: radial-gradient(circle at 50% 40%,
-                    color-mix(in srgb, var(--em-uso-card-bg) 32%, white 68%) 0%,
-                    color-mix(in srgb, var(--em-uso-card-bg) 62%, white 38%) 38%,
-                    color-mix(in srgb, var(--em-uso-card-bg) 86%, white 14%) 58%,
-                    var(--em-uso-card-bg) 100%);
+            background: linear-gradient(125deg,
+                    color-mix(in srgb, var(--em-uso-card-bg) 78%, transparent) 0%,
+                    color-mix(in srgb, var(--em-uso-card-bg) 70%, white 30%) 52%,
+                    color-mix(in srgb, var(--em-uso-card-bg) 64%, white 36%) 100%);
             color: var(--em-uso-text);
-            box-shadow: 0 14px 32px color-mix(in srgb, var(--em-uso-border-color) 30%, transparent);
+            box-shadow: 0 10px 24px color-mix(in srgb, var(--em-uso-border-color) 26%, transparent);
         }
         .armario-status-bar {
             position: absolute;
@@ -1691,7 +1695,7 @@
             border-left-color: var(--vencido-main);
         }
         .armario-card:hover {
-            box-shadow: 0 18px 36px var(--shadow-color);
+            box-shadow: 0 12px 26px color-mix(in srgb, var(--shadow-color) 72%, transparent);
             transform: translateY(-4px);
         }
         .armario-card.alta-registrada {
