@@ -5267,25 +5267,73 @@
                 return;
             }
 
-                const resultado = await Swal.fire({
-                    title: 'Registrar contingência',
-                    html: `
-                        <div class="swal-form-grid">
-                        <div class="swal-form-group">
-                            <label for="contingencia-paciente">Paciente</label>
-                            <input id="contingencia-paciente" class="swal2-input" placeholder="Nome do paciente" required>
+            let fotoContingencia = { base64: '', mime: '' };
+
+            const resultado = await Swal.fire({
+                title: 'Registrar contingência',
+                html: `
+                    <div class="swal-form-grid">
+                        <div class="swal-form-section">
+                            <div class="swal-form-section-title"><i class="fas fa-user-injured"></i> Dados do paciente</div>
+                            <div class="swal-form-fields two-columns">
+                                <div class="swal-form-group">
+                                    <label for="contingencia-paciente">Paciente</label>
+                                    <input id="contingencia-paciente" class="swal2-input" placeholder="Nome do paciente" required>
+                                </div>
+                                <div class="swal-form-group">
+                                    <label for="contingencia-prontuario">Prontuário</label>
+                                    <input id="contingencia-prontuario" class="swal2-input" placeholder="Prontuário" aria-required="true">
+                                </div>
+                            </div>
                         </div>
-                        <div class="swal-form-group">
-                            <label for="contingencia-acompanhante">Acompanhante</label>
-                            <input id="contingencia-acompanhante" class="swal2-input" placeholder="Nome do acompanhante" required>
+                        <div class="swal-form-section">
+                            <div class="swal-form-section-title"><i class="fas fa-user-shield"></i> Dados do acompanhante</div>
+                            <div class="swal-form-fields two-columns">
+                                <div class="swal-form-group">
+                                    <label for="contingencia-acompanhante">Acompanhante</label>
+                                    <input id="contingencia-acompanhante" class="swal2-input" placeholder="Nome do acompanhante" required>
+                                </div>
+                                <div class="swal-form-group">
+                                    <label for="contingencia-observacoes">Observações</label>
+                                    <textarea id="contingencia-observacoes" class="swal2-textarea" placeholder="Observações da contingência"></textarea>
+                                    <p class="swal-form-hint">Contextualize o motivo da contingência.</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="swal-form-group">
-                            <label for="contingencia-prontuario">Prontuário</label>
-                            <input id="contingencia-prontuario" class="swal2-input" placeholder="Prontuário" aria-required="true">
-                        </div>
-                        <div class="swal-form-group">
-                            <label for="contingencia-observacoes">Observações</label>
-                            <textarea id="contingencia-observacoes" class="swal2-textarea" placeholder="Observações da contingência"></textarea>
+                        <div class="swal-form-section">
+                            <div class="swal-form-section-title"><i class="fas fa-camera"></i> Registro obrigatório</div>
+                            <div class="swal-form-fields two-columns">
+                                <div class="swal-form-group">
+                                    <label>Momento do registro</label>
+                                    <div class="swal-choice-group" id="contingencia-tipo-registro">
+                                        <label class="swal-choice-chip">
+                                            <input type="radio" name="contingencia-momento" value="entrada" checked>
+                                            <div class="swal-choice-content">
+                                                <span>Entrada</span>
+                                                <small>Foto ao iniciar o uso</small>
+                                            </div>
+                                        </label>
+                                        <label class="swal-choice-chip">
+                                            <input type="radio" name="contingencia-momento" value="saida">
+                                            <div class="swal-choice-content">
+                                                <span>Saída</span>
+                                                <small>Foto ao finalizar</small>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="swal-form-group" id="contingencia-foto-wrapper">
+                                    <label for="contingencia-foto-input">Foto da entrada/saída</label>
+                                    <div class="swal-photo-upload">
+                                        <button type="button" class="swal-photo-trigger" id="contingencia-foto-trigger">
+                                            <i class="fas fa-camera"></i> Capturar ou anexar foto
+                                        </button>
+                                        <input type="file" id="contingencia-foto-input" accept="image/*" capture="environment" class="sr-only">
+                                        <p class="swal-photo-status" id="contingencia-foto-status"><i class="fas fa-info-circle" aria-hidden="true"></i> Nenhuma foto anexada.</p>
+                                    </div>
+                                    <p class="swal-form-hint">A evidência fotográfica é obrigatória para registrar a contingência.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `,
@@ -5293,17 +5341,79 @@
                 showCancelButton: true,
                 confirmButtonText: 'Registrar',
                 cancelButtonText: 'Cancelar',
+                didOpen: popup => {
+                    const fotoWrapper = popup.querySelector('#contingencia-foto-wrapper');
+                    const fotoTrigger = popup.querySelector('#contingencia-foto-trigger');
+                    const fotoInput = popup.querySelector('#contingencia-foto-input');
+                    const fotoStatus = popup.querySelector('#contingencia-foto-status');
+                    const radiosMomento = popup.querySelectorAll('input[name="contingencia-momento"]');
+
+                    const atualizarStatusFoto = (mensagem, anexada = false) => {
+                        if (!fotoStatus) return;
+                        fotoStatus.textContent = mensagem;
+                        fotoStatus.classList.toggle('attached', anexada);
+                        fotoStatus.classList.toggle('pending', !anexada);
+                        fotoWrapper?.classList.toggle('has-photo', anexada);
+                        fotoWrapper?.classList.remove('invalid');
+                    };
+
+                    fotoTrigger?.addEventListener('click', () => fotoInput?.click());
+                    fotoInput?.addEventListener('change', async evento => {
+                        const arquivo = evento.target.files?.[0];
+                        if (!arquivo) return;
+                        try {
+                            const imagem = await lerArquivoImagemComoBase64(arquivo);
+                            fotoContingencia = { base64: imagem.base64, mime: imagem.mime };
+                            const momentoSelecionado = popup.querySelector('input[name="contingencia-momento"]:checked')?.value || 'entrada';
+                            const descricaoMomento = momentoSelecionado === 'saida' ? 'saída' : 'entrada';
+                            atualizarStatusFoto(`Foto anexada para ${descricaoMomento}.`, true);
+                        } catch (erroFoto) {
+                            console.error('Erro ao processar foto da contingência:', erroFoto);
+                            Swal.showValidationMessage('Não foi possível carregar a foto.');
+                            atualizarStatusFoto('Nenhuma foto anexada.');
+                        } finally {
+                            evento.target.value = '';
+                        }
+                    });
+
+                    radiosMomento.forEach(radio => {
+                        radio.addEventListener('change', () => {
+                            const momentoSelecionado = radio.value === 'saida' ? 'saída' : 'entrada';
+                            if (fotoContingencia.base64) {
+                                atualizarStatusFoto(`Foto anexada para ${momentoSelecionado}.`, true);
+                            }
+                        });
+                    });
+                },
                 preConfirm: () => {
                     const popup = Swal.getPopup();
                     const acompanhante = padronizarNomeMaiusculo(popup.querySelector('#contingencia-acompanhante').value);
                     const paciente = padronizarNomeMaiusculo(popup.querySelector('#contingencia-paciente').value);
                     const prontuario = popup.querySelector('#contingencia-prontuario').value.trim();
                     const observacoes = popup.querySelector('#contingencia-observacoes').value.trim();
+                    const tipoRegistro = popup.querySelector('input[name="contingencia-momento"]:checked')?.value || 'entrada';
+
                     if (!acompanhante || !paciente) {
                         Swal.showValidationMessage('Informe acompanhante e paciente.');
                         return false;
                     }
-                    return { acompanhante, paciente, prontuario, observacoes };
+
+                    if (!fotoContingencia.base64) {
+                        const fotoWrapper = popup.querySelector('#contingencia-foto-wrapper');
+                        fotoWrapper?.classList.add('invalid');
+                        Swal.showValidationMessage('Inclua a foto da entrada ou saída.');
+                        return false;
+                    }
+
+                    return {
+                        acompanhante,
+                        paciente,
+                        prontuario,
+                        observacoes,
+                        tipoRegistro,
+                        fotoBase64: fotoContingencia.base64,
+                        fotoMime: fotoContingencia.mime
+                    };
                 }
             });
 
@@ -5316,6 +5426,9 @@
                 nomePaciente: padronizarNomeMaiusculo(resultado.value.paciente),
                 prontuario: resultado.value.prontuario,
                 observacoes: resultado.value.observacoes,
+                tipoRegistro: resultado.value.tipoRegistro,
+                fotoBase64: resultado.value.fotoBase64,
+                fotoMime: resultado.value.fotoMime,
                 unidade: estado.unidadeAtual === 'todas' ? '' : estado.unidadeAtual,
                 usuarioResponsavel: obterDescricaoResponsavelAtual()
             };
