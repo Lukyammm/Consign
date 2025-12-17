@@ -90,14 +90,16 @@
         .lf-grid {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         .lf-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            padding: 20px;
+            padding: 14px 16px;
         }
         .lf-kicker {
             text-transform: uppercase;
@@ -118,8 +120,8 @@
         .lf-filters {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            padding: 16px;
+            gap: 10px;
+            padding: 12px 14px;
         }
         .lf-filters .filter-group {
             display: flex;
@@ -159,7 +161,7 @@
             gap: 12px;
         }
         .lf-summary-card {
-            padding: 16px;
+            padding: 12px;
             display: grid;
             gap: 6px;
         }
@@ -172,7 +174,7 @@
             color: var(--text-light);
         }
         .lf-summary-value {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 700;
         }
         .lf-summary-detail {
