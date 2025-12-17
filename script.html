@@ -549,6 +549,7 @@
                 livres: document.getElementById('livres-count'),
                 emUso: document.getElementById('em-uso-count'),
                 proximo: document.getElementById('proximo-count'),
+                contingencia: document.getElementById('contingencia-count'),
                 vencidos: document.getElementById('vencidos-count')
             },
             pages: document.querySelectorAll('.page'),
@@ -3519,6 +3520,7 @@
                 livres: 0,
                 emUso: 0,
                 proximo: 0,
+                contingencia: 0,
                 vencidos: 0
             };
 
@@ -3547,6 +3549,9 @@
                     case 'proximo':
                         totais.proximo += 1;
                         break;
+                    case 'contingencia':
+                        totais.contingencia += 1;
+                        break;
                     case 'vencido':
                         totais.vencidos += 1;
                         break;
@@ -3558,6 +3563,7 @@
             elementos.cardsCount.livres.textContent = totais.livres;
             elementos.cardsCount.emUso.textContent = totais.emUso;
             elementos.cardsCount.proximo.textContent = totais.proximo;
+            elementos.cardsCount.contingencia.textContent = totais.contingencia;
             elementos.cardsCount.vencidos.textContent = totais.vencidos;
         }
 
