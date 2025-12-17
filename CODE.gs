@@ -574,6 +574,12 @@ const PLANILHA_LIBERACAO_ABA = 'LIBERACAO';
 const PLANILHA_LIBERACAO_LINHA_CABECALHO = 10;
 const PLANILHA_LIBERACAO_COLUNA_DATA = 4; // Coluna D
 
+// Achados e Perdidos
+const PLANILHA_PERTENCES_PERDIDOS_ID = '1OhOr91MpGsRjJXWb1kdLXNI2NCBBvsjidAc4utfgRJ0';
+const PLANILHA_PERTENCES_PERDIDOS_ABA = 'PERTENCES PERDIDOS GUARDA-VOLUMES';
+const PLANILHA_PERTENCES_PERDIDOS_LINHA_CABECALHO = 3;
+const PLANILHA_PERTENCES_PERDIDOS_COLUNA_INICIAL = 2; // Coluna B
+
 function montarChaveCache() {
   var partes = Array.prototype.slice.call(arguments).filter(function(parte) {
     return parte !== null && parte !== undefined && parte !== '';
@@ -1449,7 +1455,23 @@ function handlePost(e) {
       case 'inicializarPlanilha':
         return ContentService.createTextOutput(JSON.stringify(inicializarPlanilha()))
           .setMimeType(ContentService.MimeType.JSON);
-      
+
+      case 'getPertencesPerdidos':
+        return ContentService.createTextOutput(JSON.stringify(listarPertencesPerdidos()))
+          .setMimeType(ContentService.MimeType.JSON);
+
+      case 'cadastrarPertencePerdido':
+        return ContentService.createTextOutput(JSON.stringify(cadastrarPertencePerdido(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
+      case 'atualizarPertencePerdido':
+        return ContentService.createTextOutput(JSON.stringify(atualizarPertencePerdido(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
+      case 'registrarContatoPertence':
+        return ContentService.createTextOutput(JSON.stringify(registrarContatoPertence(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
       default:
         return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Ação não reconhecida: ' + action }))
           .setMimeType(ContentService.MimeType.JSON);
@@ -6437,6 +6459,224 @@ function finalizarMovimentacoesArmario(armarioId, numeroArmario, tipo) {
 }
 
 // Funções para LOGS
+// Achados e Perdidos - Pertences em guarda-volume
+function obterSheetPertencesPerdidos() {
+  var spreadsheet = SpreadsheetApp.openById(PLANILHA_PERTENCES_PERDIDOS_ID);
+  var sheet = spreadsheet.getSheetByName(PLANILHA_PERTENCES_PERDIDOS_ABA);
+  if (!sheet) {
+    throw new Error('Aba de pertences perdidos não encontrada.');
+  }
+  return sheet;
+}
+
+function garantirEstruturaPertences(sheet) {
+  var headersObrigatorios = [
+    'DONO DO PERTENCE',
+    'DATA DA GUARDA',
+    'DESCRIÇÃO',
+    'TELEFONE PARA CONTATO',
+    'FOI ENCONTRADO?',
+    'HISTÓRICO DE CONTATO'
+  ];
+
+  var totalColunasExistentes = Math.max(sheet.getLastColumn() - PLANILHA_PERTENCES_PERDIDOS_COLUNA_INICIAL + 1, headersObrigatorios.length);
+  var cabecalhosRange = sheet.getRange(PLANILHA_PERTENCES_PERDIDOS_LINHA_CABECALHO, PLANILHA_PERTENCES_PERDIDOS_COLUNA_INICIAL, 1, totalColunasExistentes);
+  var cabecalhos = cabecalhosRange.getValues()[0];
+
+  var alterado = false;
+  headersObrigatorios.forEach(function(nome, indice) {
+    if (!cabecalhos[indice]) {
+      cabecalhos[indice] = nome;
+      alterado = true;
+    }
+  });
+
+  if (alterado) {
+    cabecalhosRange.setValues([cabecalhos]);
+  }
+
+  var estrutura = {
+    ultimaColuna: totalColunasExistentes,
+    mapaIndices: {}
+  };
+
+  cabecalhos.forEach(function(cabecalho, indice) {
+    var chave = normalizarTextoBasico(cabecalho);
+    if (chave && estrutura.mapaIndices[chave] === undefined) {
+      estrutura.mapaIndices[chave] = indice;
+    }
+  });
+
+  return estrutura;
+}
+
+function listarPertencesPerdidos() {
+  try {
+    var sheet = obterSheetPertencesPerdidos();
+    var estrutura = garantirEstruturaPertences(sheet);
+
+    var totalLinhasDados = Math.max(sheet.getLastRow() - PLANILHA_PERTENCES_PERDIDOS_LINHA_CABECALHO, 0);
+    if (totalLinhasDados <= 0) {
+      return { success: true, dados: [] };
+    }
+
+    var rangeValores = sheet.getRange(
+      PLANILHA_PERTENCES_PERDIDOS_LINHA_CABECALHO + 1,
+      PLANILHA_PERTENCES_PERDIDOS_COLUNA_INICIAL,
+      totalLinhasDados,
+      estrutura.ultimaColuna
+    );
+
+    var valores = rangeValores.getValues();
+    var exibicoes = rangeValores.getDisplayValues();
+
+    var itens = valores.map(function(linha, indice) {
+      var linhaExibicao = exibicoes[indice] || [];
+      var linhaPlanilha = PLANILHA_PERTENCES_PERDIDOS_LINHA_CABECALHO + 1 + indice;
+
+      var dono = obterValorLinhaFlexivel(linha, estrutura, ['dono do pertence', 'dono'], '');
+      var dataGuardaValor = obterValorLinhaFlexivel(linha, estrutura, ['data da guarda', 'data'], '');
+      var dataGuardaTexto = obterValorLinhaFlexivel(linhaExibicao, estrutura, ['data da guarda', 'data'], '');
+      var descricao = obterValorLinhaFlexivel(linha, estrutura, ['descrição', 'descricao'], '');
+      var telefone = obterValorLinhaFlexivel(linha, estrutura, ['telefone para contato', 'telefone'], '');
+      var encontradoTexto = obterValorLinhaFlexivel(linhaExibicao, estrutura, ['foi encontrado?', 'encontrado'], '');
+      var historicoContato = obterValorLinhaFlexivel(linha, estrutura, ['histórico de contato', 'historico de contato', 'historico'], '');
+
+      var encontradoNormalizado = normalizarTextoBasico(encontradoTexto);
+      var encontrado = encontradoNormalizado === 'sim' || encontradoNormalizado === 'true';
+
+      return {
+        idLinha: linhaPlanilha,
+        dono: dono,
+        dataGuarda: dataGuardaValor,
+        dataGuardaTexto: dataGuardaTexto,
+        descricao: descricao,
+        telefone: telefone,
+        encontrado: encontrado,
+        encontradoTexto: encontrado ? 'Sim' : 'Não',
+        historicoContato: historicoContato || ''
+      };
+    });
+
+    return { success: true, dados: itens };
+  } catch (erro) {
+    registrarLog('ERRO', 'Erro ao listar pertences perdidos: ' + erro.toString());
+    return { success: false, error: erro.toString() };
+  }
+}
+
+function cadastrarPertencePerdido(parametros) {
+  try {
+    var sheet = obterSheetPertencesPerdidos();
+    var estrutura = garantirEstruturaPertences(sheet);
+
+    var dono = (parametros.dono || '').toString().trim();
+    var descricao = (parametros.descricao || '').toString().trim();
+    var telefone = (parametros.telefone || '').toString().trim();
+    var dataEntrada = parametros.dataGuarda ? new Date(parametros.dataGuarda) : '';
+    if (dataEntrada && isNaN(dataEntrada.getTime())) {
+      dataEntrada = '';
+    }
+
+    var novoHistorico = (parametros.historicoContato || '').toString().trim();
+
+    var linha = new Array(estrutura.ultimaColuna).fill('');
+    definirValorLinhaFlexivel(linha, estrutura, ['dono do pertence', 'dono'], dono);
+    definirValorLinhaFlexivel(linha, estrutura, ['data da guarda', 'data'], dataEntrada);
+    definirValorLinhaFlexivel(linha, estrutura, ['descrição', 'descricao'], descricao);
+    definirValorLinhaFlexivel(linha, estrutura, ['telefone para contato', 'telefone'], telefone);
+    definirValorLinhaFlexivel(linha, estrutura, ['foi encontrado?', 'encontrado'], 'Não');
+    if (novoHistorico) {
+      definirValorLinhaFlexivel(linha, estrutura, ['histórico de contato', 'historico'], novoHistorico);
+    }
+
+    sheet.getRange(sheet.getLastRow() + 1, PLANILHA_PERTENCES_PERDIDOS_COLUNA_INICIAL, 1, estrutura.ultimaColuna)
+      .setValues([linha]);
+
+    registrarLog('ACHADOS', 'Novo pertence registrado para ' + (dono || 'sem nome'));
+    return { success: true };
+  } catch (erro) {
+    registrarLog('ERRO', 'Erro ao cadastrar pertence perdido: ' + erro.toString());
+    return { success: false, error: erro.toString() };
+  }
+}
+
+function atualizarPertencePerdido(parametros) {
+  try {
+    var idLinha = parseInt(parametros.idLinha || parametros.id || parametros.linha, 10);
+    if (!idLinha || idLinha < PLANILHA_PERTENCES_PERDIDOS_LINHA_CABECALHO) {
+      return { success: false, error: 'Linha inválida' };
+    }
+
+    var sheet = obterSheetPertencesPerdidos();
+    var estrutura = garantirEstruturaPertences(sheet);
+
+    var linhaAtual = sheet.getRange(idLinha, PLANILHA_PERTENCES_PERDIDOS_COLUNA_INICIAL, 1, estrutura.ultimaColuna).getValues()[0] || [];
+
+    if (parametros.dono !== undefined) {
+      definirValorLinhaFlexivel(linhaAtual, estrutura, ['dono do pertence', 'dono'], parametros.dono);
+    }
+    if (parametros.descricao !== undefined) {
+      definirValorLinhaFlexivel(linhaAtual, estrutura, ['descrição', 'descricao'], parametros.descricao);
+    }
+    if (parametros.telefone !== undefined) {
+      definirValorLinhaFlexivel(linhaAtual, estrutura, ['telefone para contato', 'telefone'], parametros.telefone);
+    }
+    if (parametros.dataGuarda !== undefined) {
+      var dataAtualizada = parametros.dataGuarda ? new Date(parametros.dataGuarda) : '';
+      if (dataAtualizada && isNaN(dataAtualizada.getTime())) {
+        dataAtualizada = '';
+      }
+      definirValorLinhaFlexivel(linhaAtual, estrutura, ['data da guarda', 'data'], dataAtualizada);
+    }
+    if (parametros.encontrado !== undefined) {
+      var encontradoValor = converterParaBoolean(parametros.encontrado) ? 'Sim' : 'Não';
+      definirValorLinhaFlexivel(linhaAtual, estrutura, ['foi encontrado?', 'encontrado'], encontradoValor);
+    }
+    if (parametros.historicoContato !== undefined) {
+      definirValorLinhaFlexivel(linhaAtual, estrutura, ['histórico de contato', 'historico'], parametros.historicoContato);
+    }
+
+    sheet.getRange(idLinha, PLANILHA_PERTENCES_PERDIDOS_COLUNA_INICIAL, 1, estrutura.ultimaColuna).setValues([linhaAtual]);
+    registrarLog('ACHADOS', 'Pertence atualizado na linha ' + idLinha);
+    return { success: true };
+  } catch (erro) {
+    registrarLog('ERRO', 'Erro ao atualizar pertence perdido: ' + erro.toString());
+    return { success: false, error: erro.toString() };
+  }
+}
+
+function registrarContatoPertence(parametros) {
+  try {
+    var idLinha = parseInt(parametros.idLinha || parametros.id || parametros.linha, 10);
+    if (!idLinha || idLinha < PLANILHA_PERTENCES_PERDIDOS_LINHA_CABECALHO) {
+      return { success: false, error: 'Linha inválida' };
+    }
+
+    var anotacao = (parametros.anotacao || '').toString().trim();
+    var responsavel = (parametros.usuarioResponsavel || parametros.responsavel || '').toString().trim() || 'Equipe';
+
+    var sheet = obterSheetPertencesPerdidos();
+    var estrutura = garantirEstruturaPertences(sheet);
+    var range = sheet.getRange(idLinha, PLANILHA_PERTENCES_PERDIDOS_COLUNA_INICIAL, 1, estrutura.ultimaColuna);
+    var linhaAtual = range.getValues()[0] || [];
+
+    var historicoAtual = obterValorLinhaFlexivel(linhaAtual, estrutura, ['histórico de contato', 'historico de contato', 'historico'], '');
+    var dataTexto = Utilities.formatDate(new Date(), 'America/Fortaleza', 'dd/MM/yyyy HH:mm');
+    var entrada = dataTexto + ' - ' + responsavel + (anotacao ? ': ' + anotacao : ': ligação registrada');
+    var novoHistorico = historicoAtual ? historicoAtual + '\n' + entrada : entrada;
+
+    definirValorLinhaFlexivel(linhaAtual, estrutura, ['histórico de contato', 'historico de contato', 'historico'], novoHistorico);
+    range.setValues([linhaAtual]);
+
+    registrarLog('ACHADOS', 'Contato registrado para pertence na linha ' + idLinha + ' por ' + responsavel);
+    return { success: true, historicoContato: novoHistorico };
+  } catch (erro) {
+    registrarLog('ERRO', 'Erro ao registrar contato de pertence: ' + erro.toString());
+    return { success: false, error: erro.toString() };
+  }
+}
+
 function registrarLog(acao, detalhes) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();

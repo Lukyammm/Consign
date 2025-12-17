@@ -58,6 +58,7 @@
                     <li><a href="#" data-page="historico-visitantes"><i class="fas fa-history"></i> <span>Histórico Visitantes</span></a></li>
                     <li><a href="#" data-page="historico-acompanhantes"><i class="fas fa-history"></i> <span>Histórico Acompanhantes</span></a></li>
                     <li><a href="#" data-page="liberacao"><i class="fas fa-table"></i> <span>Liberações</span></a></li>
+                    <li><a href="#" data-page="achados-perdidos"><i class="fas fa-magnifying-glass-location"></i> <span>Achados e Perdidos</span></a></li>
                     <li><a href="#" data-page="termo-responsabilidade"><i class="fas fa-file-signature"></i> <span>Termo de Responsabilidade</span></a></li>
                     <li><a href="#" data-page="cadastro-armarios"><i class="fas fa-archive"></i> <span>Cadastro de Armários</span></a></li>
                     <li><a href="#" data-page="cadastro-unidades"><i class="fas fa-hospital"></i> <span>Cadastro de Unidades</span></a></li>
@@ -381,6 +382,106 @@
                     </div>
                 </div>
             </div>
+            <!-- Achados e Perdidos -->
+            <div class="page" id="achados-perdidos">
+                <div class="lf-grid">
+                    <div class="lf-header glass-card">
+                        <div>
+                            <p class="lf-kicker">Guarda-volumes</p>
+                            <h3>Achados e Perdidos</h3>
+                            <p class="lf-subtitle">Controle rápido dos pertences armazenados e das ligações realizadas.</p>
+                        </div>
+                        <div class="lf-header-actions">
+                            <button class="btn ghost" id="achados-refresh" type="button" aria-label="Atualizar lista">
+                                <i class="fas fa-rotate"></i>
+                                Atualizar
+                            </button>
+                            <button class="btn btn-primary" id="achados-novo" type="button">
+                                <i class="fas fa-plus"></i>
+                                Registrar pertence
+                            </button>
+                        </div>
+                    </div>
+                    <div class="lf-filters glass-card">
+                        <div class="filter-group">
+                            <label for="achados-busca">Buscar</label>
+                            <div class="input-icon">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="achados-busca" placeholder="Dono, descrição ou telefone">
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <label for="achados-status">Status</label>
+                            <select id="achados-status">
+                                <option value="todos">Todos</option>
+                                <option value="pendentes">Aguardando</option>
+                                <option value="encontrados">Encontrados</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="achados-data-inicio">Da data</label>
+                            <input type="date" id="achados-data-inicio">
+                        </div>
+                        <div class="filter-group">
+                            <label for="achados-data-fim">Até</label>
+                            <input type="date" id="achados-data-fim">
+                        </div>
+                        <div class="filter-group align-end">
+                            <button type="button" class="btn ghost" id="achados-limpar-filtros">
+                                <i class="fas fa-eraser"></i>
+                                Limpar filtros
+                            </button>
+                        </div>
+                    </div>
+                    <div class="lf-summary">
+                        <div class="lf-summary-card glass-card" id="achados-card-pendentes">
+                            <div class="lf-summary-label">Aguardando</div>
+                            <div class="lf-summary-value" id="achados-total-pendentes">0</div>
+                            <div class="lf-summary-detail">Itens ainda não retirados</div>
+                        </div>
+                        <div class="lf-summary-card glass-card" id="achados-card-encontrados">
+                            <div class="lf-summary-label">Encontrados</div>
+                            <div class="lf-summary-value" id="achados-total-encontrados">0</div>
+                            <div class="lf-summary-detail">Marcados como devolvidos</div>
+                        </div>
+                    </div>
+                    <div class="data-table glass-card lf-table">
+                        <div class="table-header">
+                            <div>
+                                <h3>Itens cadastrados</h3>
+                                <p id="achados-resumo" class="table-subtitle">Carregando dados...</p>
+                            </div>
+                            <div class="chip" id="achados-filtro-aplicado" aria-live="polite"></div>
+                        </div>
+                        <div class="table-container">
+                            <table id="tabela-achados">
+                                <thead>
+                                    <tr>
+                                        <th>Dono do pertence</th>
+                                        <th>Data da guarda</th>
+                                        <th>Descrição</th>
+                                        <th>Telefone</th>
+                                        <th>Encontrado?</th>
+                                        <th>Última ligação</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Linhas preenchidas via script -->
+                                </tbody>
+                            </table>
+                            <div class="table-empty" id="achados-empty" hidden>
+                                <i class="fas fa-inbox"></i>
+                                <p>Nenhum pertence cadastrado com os filtros atuais.</p>
+                            </div>
+                            <div class="table-empty" id="achados-loading" hidden>
+                                <div class="loader"></div>
+                                <p>Carregando achados e perdidos...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Termo de Responsabilidade -->
             <div class="page" id="termo-responsabilidade">
                 <div class="data-table">
@@ -696,6 +797,54 @@
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" id="usuario-btn-cancelar">Cancelar</button>
                         <button type="submit" class="btn btn-primary" id="usuario-btn-salvar">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Achados e Perdidos -->
+    <div class="modal" id="achado-modal">
+        <div class="modal-content modal-glass">
+            <div class="modal-header">
+                <div class="modal-title" id="achado-modal-title">Registrar pertence</div>
+                <button class="modal-close" id="achado-modal-close" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="achado-form" autocomplete="off">
+                    <input type="hidden" id="achado-id">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="achado-dono" class="wizard-required">Dono do pertence</label>
+                            <input type="text" id="achado-dono" class="form-control" required placeholder="Nome completo">
+                        </div>
+                        <div class="form-group">
+                            <label for="achado-data">Data da guarda</label>
+                            <input type="date" id="achado-data" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="achado-telefone">Telefone para contato</label>
+                            <input type="tel" id="achado-telefone" class="form-control" placeholder="(85) 00000-0000">
+                        </div>
+                        <div class="form-group">
+                            <label for="achado-status">Foi encontrado?</label>
+                            <select id="achado-status" class="form-control">
+                                <option value="nao">Não</option>
+                                <option value="sim">Sim</option>
+                            </select>
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label for="achado-descricao" class="wizard-required">Descrição</label>
+                            <textarea id="achado-descricao" class="form-control" rows="3" required placeholder="Ex.: mochila preta com carteira e documentos"></textarea>
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label for="achado-historico">Histórico de contato</label>
+                            <textarea id="achado-historico" class="form-control" rows="2" placeholder="Anotações rápidas e confirmações de ligação"></textarea>
+                            <div class="field-hint">Use para registrar ligações ou recados deixados.</div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="achado-btn-cancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="achado-btn-salvar">Salvar</button>
                     </div>
                 </form>
             </div>

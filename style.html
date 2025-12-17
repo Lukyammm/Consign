@@ -68,6 +68,159 @@
             --z-critical-overlay: 1200;
             --z-alert: 1250;
         }
+
+        /* Achados e Perdidos */
+        .glass-card {
+            background: color-mix(in srgb, var(--surface-color) 65%, rgba(255, 255, 255, 0.1));
+            border: 1px solid color-mix(in srgb, var(--surface-color) 40%, rgba(255, 255, 255, 0.35));
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+            backdrop-filter: blur(16px);
+            border-radius: 18px;
+        }
+        .btn.ghost {
+            background: color-mix(in srgb, var(--surface-color) 86%, rgba(255, 255, 255, 0.08));
+            border: 1px solid color-mix(in srgb, var(--surface-color) 55%, transparent);
+            color: var(--text-color);
+        }
+        .modal-glass {
+            background: color-mix(in srgb, var(--surface-color) 80%, rgba(255, 255, 255, 0.25));
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.18);
+            border: 1px solid color-mix(in srgb, var(--surface-color) 35%, rgba(255, 255, 255, 0.35));
+        }
+        .lf-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .lf-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 20px;
+        }
+        .lf-kicker {
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+        }
+        .lf-subtitle {
+            margin: 6px 0 0;
+            color: var(--text-light);
+        }
+        .lf-header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .lf-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            padding: 16px;
+        }
+        .lf-filters .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .lf-filters .input-icon {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--surface-color) 50%, transparent);
+            background: color-mix(in srgb, var(--surface-color) 92%, rgba(255, 255, 255, 0.08));
+        }
+        .lf-filters .input-icon input {
+            border: none;
+            padding: 10px 0;
+            background: transparent;
+            width: 100%;
+            outline: none;
+        }
+        .lf-filters select,
+        .lf-filters input[type="date"] {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--surface-color) 50%, transparent);
+            background: color-mix(in srgb, var(--surface-color) 92%, rgba(255, 255, 255, 0.08));
+        }
+        .lf-filters .align-end {
+            align-items: flex-end;
+            justify-content: flex-end;
+        }
+        .lf-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+        }
+        .lf-summary-card {
+            padding: 16px;
+            display: grid;
+            gap: 6px;
+        }
+        .lf-summary-card.highlight {
+            border: 1px solid color-mix(in srgb, var(--primary-color) 40%, rgba(255, 255, 255, 0.1));
+            box-shadow: 0 10px 26px rgba(34, 197, 94, 0.18);
+        }
+        .lf-summary-label {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        .lf-summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .lf-summary-detail {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+        .lf-table .table-subtitle {
+            margin-top: 4px;
+            color: var(--text-light);
+        }
+        .lf-table .chip {
+            background: color-mix(in srgb, var(--surface-color) 85%, transparent);
+            border: 1px solid color-mix(in srgb, var(--surface-color) 60%, transparent);
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: var(--text-color);
+        }
+        .lf-table .table-empty {
+            padding: 24px;
+            text-align: center;
+            color: var(--text-light);
+        }
+        .lf-table .loader {
+            width: 32px;
+            height: 32px;
+            border: 3px solid color-mix(in srgb, var(--surface-color) 60%, transparent);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            animation: spin 1s linear infinite;
+        }
+        .lf-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .lf-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--surface-color) 88%, rgba(255, 255, 255, 0.08));
+            border: 1px solid color-mix(in srgb, var(--surface-color) 55%, transparent);
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
         .mov-item-flag.remocao-indicador {
             background: color-mix(in srgb, var(--danger-color) 12%, var(--surface-color) 88%);
             color: var(--danger-dark);
