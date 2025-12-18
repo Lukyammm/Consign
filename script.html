@@ -1,6 +1,78 @@
 <script>
-        // URL do Google Apps Script - ATUALIZE COM SUA URL
-        const SCRIPT_URL = 'https://script.google.com/a/macros/isgh.org.br/s/AKfycbzbGb6sQR1auYsyTB-kwPos7Cd7swLuTUDiAzzpwTPW2cj76ykYzKYgBDXA-g5ef7pbpw/exec';
+        // URL do Google Apps Script - definida dinamicamente pelo Apps Script
+        const SCRIPT_URL = <?= JSON.stringify(scriptUrl || '') ?>;
+        let erroCriticoMostrado = false;
+
+        function exibirErroCriticoInicial(mensagem, detalhes = {}) {
+            if (erroCriticoMostrado) return;
+            erroCriticoMostrado = true;
+            console.error(mensagem, detalhes);
+            try {
+                const corpo = document.body;
+                if (!corpo) return;
+                const estilo = document.createElement('style');
+                estilo.textContent = `
+                    .app-critical-error {
+                        min-height: 100vh;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 12px;
+                        background: #0f172a;
+                        color: #f8fafc;
+                        font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+                        text-align: center;
+                        padding: 24px;
+                    }
+                    .app-critical-error h1 {
+                        font-size: 24px;
+                        margin: 0;
+                    }
+                    .app-critical-error p {
+                        margin: 0;
+                        max-width: 640px;
+                        line-height: 1.5;
+                    }
+                    .app-critical-error code {
+                        background: rgba(255, 255, 255, 0.08);
+                        border: 1px solid rgba(255, 255, 255, 0.12);
+                        border-radius: 8px;
+                        padding: 8px 12px;
+                        display: inline-block;
+                        color: #cbd5f5;
+                    }
+                `;
+                const container = document.createElement('div');
+                container.className = 'app-critical-error';
+                container.innerHTML = `
+                    <h1>Não foi possível carregar o sistema</h1>
+                    <p>${mensagem}</p>
+                    ${SCRIPT_URL ? `<p><code>${SCRIPT_URL}</code></p>` : ''}
+                    <p>Republique o WebApp e tente novamente. Se o problema persistir, copie o erro do console e envie para suporte.</p>
+                `;
+                corpo.innerHTML = '';
+                corpo.appendChild(estilo);
+                corpo.appendChild(container);
+            } catch (erroRender) {
+                console.error('Falha ao renderizar mensagem de erro crítico:', erroRender);
+            }
+        }
+
+        const scriptUrlValido = typeof SCRIPT_URL === 'string' && /^https?:\/\//.test(SCRIPT_URL.trim());
+        if (!scriptUrlValido) {
+            exibirErroCriticoInicial('URL do WebApp não configurada ou inválida. Publique o Apps Script como WebApp e copie o endereço público.');
+            throw new Error('URL do WebApp não configurada ou inválida.');
+        }
+        window.addEventListener('error', (event) => {
+            if (erroCriticoMostrado) return;
+            exibirErroCriticoInicial('Erro inesperado ao carregar o aplicativo. Consulte o console para detalhes.', {
+                mensagem: event.message,
+                origem: event.filename,
+                linha: event.lineno,
+                coluna: event.colno,
+            });
+        });
         // Estado da aplicação
         function criarEstadoLiberacaoInicial() {
             return {
