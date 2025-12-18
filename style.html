@@ -1232,6 +1232,44 @@
             font-weight: 600;
             color: var(--dark-color);
         }
+        .file-upload-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .upload-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 28%, var(--border-color) 72%);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 18%, #ffffff 82%), #ffffff);
+            color: color-mix(in srgb, var(--primary-color) 80%, var(--dark-color) 20%);
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 12px 26px color-mix(in srgb, var(--primary-color) 16%, var(--shadow-color) 84%);
+            transition: all 0.2s ease;
+        }
+        .upload-button i {
+            color: color-mix(in srgb, var(--primary-color) 70%, var(--dark-color) 30%);
+        }
+        .upload-button:hover,
+        .upload-button:focus-visible {
+            transform: translateY(-1px);
+            border-color: var(--primary-color);
+            box-shadow: 0 14px 30px color-mix(in srgb, var(--primary-color) 20%, var(--shadow-color) 80%);
+        }
+        .file-upload-label {
+            font-size: 0.9rem;
+            color: color-mix(in srgb, var(--dark-color) 70%, var(--muted-color) 30%);
+            background: color-mix(in srgb, var(--light-color) 82%, white 18%);
+            border-radius: 10px;
+            padding: 8px 12px;
+            border: 1px dashed color-mix(in srgb, var(--border-color) 70%, var(--primary-color) 30%);
+            min-width: 200px;
+        }
         .swal-form-hint {
             font-size: 0.75rem;
             color: var(--muted-color);
@@ -2077,6 +2115,79 @@
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+        .swal2-premium-popup {
+            border-radius: 22px !important;
+            padding: 26px !important;
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+            backdrop-filter: blur(12px);
+        }
+        .swal2-premium-title {
+            font-size: 1.4rem !important;
+            font-weight: 800 !important;
+            color: color-mix(in srgb, var(--primary-color) 60%, var(--dark-color) 40%) !important;
+            letter-spacing: -0.01em;
+        }
+        .swal2-premium-confirm {
+            border-radius: 12px !important;
+            padding: 12px 24px !important;
+            font-weight: 700 !important;
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 68%, #8b5cf6 32%), color-mix(in srgb, var(--primary-color) 48%, #6366f1 52%)) !important;
+            box-shadow: 0 14px 30px color-mix(in srgb, var(--primary-color) 28%, var(--shadow-color) 72%) !important;
+        }
+        .premium-modal {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            align-items: flex-start;
+            color: var(--dark-color);
+            text-align: left;
+        }
+        .premium-modal__icon {
+            width: 62px;
+            height: 62px;
+            display: grid;
+            place-items: center;
+            border-radius: 18px;
+            background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--primary-color) 32%, #ffffff 68%), #f8fafc);
+            color: color-mix(in srgb, var(--primary-color) 80%, var(--dark-color) 20%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 16px 32px rgba(67, 56, 202, 0.18);
+            font-size: 1.6rem;
+        }
+        .premium-modal__lead {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: color-mix(in srgb, var(--dark-color) 82%, var(--primary-color) 18%);
+            margin: 0;
+        }
+        .premium-modal__tips {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--light-color) 90%, white 10%);
+            border: 1px solid color-mix(in srgb, var(--primary-color) 16%, var(--border-color) 84%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+        .premium-modal__badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: color-mix(in srgb, var(--primary-color) 12%, #eef2ff 88%);
+            color: color-mix(in srgb, var(--primary-color) 78%, var(--dark-color) 22%);
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .premium-modal__tips ul {
+            margin: 10px 0 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 6px;
+            color: color-mix(in srgb, var(--dark-color) 74%, var(--muted-color) 26%);
+        }
+        .premium-modal__tips li {
+            line-height: 1.45;
         }
         .armario-alerta-info i { font-size: 0.9rem; }
         .armario-card.visita-estendida {
