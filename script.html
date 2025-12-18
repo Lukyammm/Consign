@@ -1,6 +1,6 @@
 <script>
         // URL do Google Apps Script - definida dinamicamente pelo Apps Script
-        const SCRIPT_URL = '<?= scriptUrl ?>';
+        const SCRIPT_URL = <?= JSON.stringify(scriptUrl || '') ?>;
         if (!SCRIPT_URL) {
             console.error('URL do WebApp não configurada. Publique o Apps Script como WebApp para preencher scriptUrl.');
         }
