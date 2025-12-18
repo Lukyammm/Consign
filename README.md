@@ -23,6 +23,7 @@
 1. Confirme que a URL pública do WebApp (em **Implantar > Implantar como aplicativo da web**) está ativa e copiável.
 2. Acesse novamente o WebApp; se a URL não for injetada, a página exibirá um aviso em fundo escuro com a URL detectada ou com a instrução de publicar o aplicativo.
 3. Caso veja o aviso de erro crítico, republique o WebApp, limpe o cache do navegador e tente novamente.
+4. Enquanto a URL não estiver válida, o botão de login bloqueará as requisições e mostrará o alerta de URL faltando em vez de enviar o formulário para uma página em branco.
 
 ## Limitações conhecidas
 - As fotos são armazenadas apenas na pasta configurada e precisam de conectividade com o Drive.

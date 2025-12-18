@@ -62,7 +62,6 @@
         const scriptUrlValido = typeof SCRIPT_URL === 'string' && /^https?:\/\//.test(SCRIPT_URL.trim());
         if (!scriptUrlValido) {
             exibirErroCriticoInicial('URL do WebApp não configurada ou inválida. Publique o Apps Script como WebApp e copie o endereço público.');
-            throw new Error('URL do WebApp não configurada ou inválida.');
         }
         window.addEventListener('error', (event) => {
             if (erroCriticoMostrado) return;
@@ -1704,6 +1703,11 @@
         }
         // Função para chamar o Google Apps Script
         async function callGoogleScript(action, data = {}, opcoes = {}) {
+            if (!scriptUrlValido) {
+                console.error('Tentativa de chamada ao Apps Script sem URL válida.', { action });
+                mostrarErro('URL do WebApp não configurada ou inválida. Republique o Apps Script e tente novamente.');
+                return { success: false, error: 'URL do WebApp não configurada', _erroNotificado: true };
+            }
             const tentativasConfiguradas = Number.isFinite(opcoes.tentativas) && opcoes.tentativas > 0
                 ? Math.floor(opcoes.tentativas)
                 : 3;
