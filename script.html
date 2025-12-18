@@ -1,6 +1,9 @@
 <script>
-        // URL do Google Apps Script - ATUALIZE COM SUA URL
-        const SCRIPT_URL = 'https://script.google.com/a/macros/isgh.org.br/s/AKfycbzbGb6sQR1auYsyTB-kwPos7Cd7swLuTUDiAzzpwTPW2cj76ykYzKYgBDXA-g5ef7pbpw/exec';
+        // URL do Google Apps Script - definida dinamicamente pelo Apps Script
+        const SCRIPT_URL = '<?= scriptUrl ?>';
+        if (!SCRIPT_URL) {
+            console.error('URL do WebApp não configurada. Publique o Apps Script como WebApp para preencher scriptUrl.');
+        }
         // Estado da aplicação
         function criarEstadoLiberacaoInicial() {
             return {
