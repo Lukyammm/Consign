@@ -2032,7 +2032,8 @@
             }
 
             const resultado = await callGoogleScript('getArmarios', {
-                tipo: 'todos'
+                tipo: 'todos',
+                incluirInternacoes: false
             });
 
             if (resultado.success) {
