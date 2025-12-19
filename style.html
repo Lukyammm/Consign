@@ -1,61 +1,200 @@
 <style>
         :root {
             /* Core palette */
-            --primary-color: #3B82F6;
-            --secondary-color: #10B981;
-            --success-color: #5BA98C;
-            --warning-color: #C67B2A;
-            --danger-color: #8B1E3A;
-            --primary-dark: #1D4ED8;
-            --danger-dark: #6A1227;
-
-            /* Status palette */
-            --livre-main: #5BA98C;
-            --livre-contrast: #1f3b33;
-            --livre-glass: color-mix(in srgb, var(--livre-main) 16%, white 84%);
-
-            --em-uso-base: #4F6F97;
-            --em-uso-contrast: #11223a;
-            --em-uso-border-color: color-mix(in srgb, var(--primary-color) 62%, var(--em-uso-base) 38%);
-            --em-uso-card-bg: color-mix(in srgb, var(--primary-color) 18%, white 82%);
-            --em-uso-badge-bg: color-mix(in srgb, var(--em-uso-base) 60%, #0e182b 40%);
-            --em-uso-badge-text: color-mix(in srgb, #0d1b2f 80%, white 20%);
-            --em-uso-icon: color-mix(in srgb, var(--em-uso-base) 75%, #0c1a2e 25%);
-            --em-uso-text: color-mix(in srgb, #0f1f36 78%, white 22%);
-
-            --proximo-main: #C67B2A;
-            --proximo-contrast: #4b2c08;
-            --proximo-glow: color-mix(in srgb, var(--proximo-main) 40%, transparent);
-
-            --vencido-main: #8B1E3A;
-            --vencido-contrast: #3a0b16;
-            --vencido-strong: color-mix(in srgb, var(--vencido-main) 60%, #3a0b16 40%);
-
-            --contingencia-main: #52418F;
-            --contingencia-contrast: #241b46;
-            --contingencia-glass: color-mix(in srgb, var(--contingencia-main) 18%, white 82%);
+            --color-primary-500: #3B82F6;
+            --color-primary-600: #1D4ED8;
+            --color-secondary-500: #10B981;
+            --color-success-500: #5BA98C;
+            --color-warning-500: #C67B2A;
+            --color-danger-500: #8B1E3A;
+            --color-danger-600: #6A1227;
 
             /* Neutrals */
-            --dark-color: #1F2937;
-            --light-color: #F3F4F6;
-            --text-color: var(--dark-color);
-            --muted-color: #6B7280;
-            --surface-color: #FFFFFF;
-            --bg-color: #F9FAFB;
-            --border-color: #E5E7EB;
+            --color-neutral-0: #FFFFFF;
+            --color-neutral-50: #F9FAFB;
+            --color-neutral-100: #F3F4F6;
+            --color-neutral-200: #E5E7EB;
+            --color-neutral-500: #6B7280;
+            --color-neutral-700: #1F2937;
+            --color-neutral-900: #0F172A;
+            --color-surface: #FFFFFF;
+            --color-background: #F9FAFB;
+
+            /* Status palette */
+            --status-livre: #5BA98C;
+            --status-em-uso: #4F6F97;
+            --status-proximo: #C67B2A;
+            --status-vencido: #8B1E3A;
+            --status-contingencia: #52418F;
+
+            /* Legacy mappings */
+            --primary-color: var(--color-primary-500);
+            --secondary-color: var(--color-secondary-500);
+            --success-color: var(--color-success-500);
+            --warning-color: var(--color-warning-500);
+            --danger-color: var(--color-danger-500);
+            --primary-dark: var(--color-primary-600);
+            --danger-dark: var(--color-danger-600);
+            --success-dark: color-mix(in srgb, var(--success-color) 70%, var(--color-neutral-900) 30%);
+
+            --dark-color: var(--color-neutral-700);
+            --light-color: var(--color-neutral-100);
+            --text-color: var(--color-neutral-700);
+            --muted-color: var(--color-neutral-500);
+            --surface-color: var(--color-surface);
+            --bg-color: var(--color-background);
+            --border-color: var(--color-neutral-200);
             --shadow-color: rgba(15, 23, 42, 0.08);
             --sidebar-width-collapsed: 88px;
 
             /* Typography */
             --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 
+            /* Spacing scale */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 20px;
+            --space-6: 24px;
+
+            /* Radius scale */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+
+            /* Shadow scale */
+            --shadow-sm: 0 4px 12px var(--shadow-color);
+            --shadow-md: 0 12px 28px var(--shadow-color);
+            --shadow-lg: 0 24px 48px var(--shadow-color);
+
             /* Misc */
-            --focus-ring: rgba(59, 130, 246, 0.25);
+            --focus-ring: color-mix(in srgb, var(--primary-color) 25%, transparent);
             --sidebar-width: 250px;
-            --extended-badge-bg: color-mix(in srgb, var(--primary-color) 14%, white 86%);
-            --extended-badge-text: color-mix(in srgb, var(--primary-color) 80%, black 20%);
-            --extended-row-bg: color-mix(in srgb, var(--primary-color) 10%, white 90%);
+            --extended-badge-bg: color-mix(in srgb, var(--primary-color) 14%, var(--surface-color) 86%);
+            --extended-badge-text: color-mix(in srgb, var(--primary-color) 80%, var(--color-neutral-900) 20%);
+            --extended-row-bg: color-mix(in srgb, var(--primary-color) 10%, var(--surface-color) 90%);
             --extended-border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
+
+            /* Status tokens */
+            --livre-main: var(--status-livre);
+            --livre-contrast: color-mix(in srgb, var(--status-livre) 25%, var(--color-neutral-900) 75%);
+            --livre-glass: color-mix(in srgb, var(--status-livre) 16%, var(--surface-color) 84%);
+
+            --em-uso-base: var(--status-em-uso);
+            --em-uso-contrast: color-mix(in srgb, var(--status-em-uso) 35%, var(--color-neutral-900) 65%);
+            --em-uso-border-color: color-mix(in srgb, var(--primary-color) 62%, var(--status-em-uso) 38%);
+            --em-uso-card-bg: color-mix(in srgb, var(--primary-color) 18%, var(--surface-color) 82%);
+            --em-uso-badge-bg: color-mix(in srgb, var(--status-em-uso) 60%, var(--color-neutral-900) 40%);
+            --em-uso-badge-text: color-mix(in srgb, var(--color-neutral-900) 80%, var(--surface-color) 20%);
+            --em-uso-icon: color-mix(in srgb, var(--status-em-uso) 75%, var(--color-neutral-900) 25%);
+            --em-uso-text: color-mix(in srgb, var(--color-neutral-900) 78%, var(--surface-color) 22%);
+
+            --proximo-main: var(--status-proximo);
+            --proximo-contrast: color-mix(in srgb, var(--status-proximo) 32%, var(--color-neutral-900) 68%);
+            --proximo-glow: color-mix(in srgb, var(--status-proximo) 40%, transparent);
+
+            --vencido-main: var(--status-vencido);
+            --vencido-contrast: color-mix(in srgb, var(--status-vencido) 32%, var(--color-neutral-900) 68%);
+            --vencido-strong: color-mix(in srgb, var(--status-vencido) 60%, var(--color-neutral-900) 40%);
+
+            --contingencia-main: var(--status-contingencia);
+            --contingencia-contrast: color-mix(in srgb, var(--status-contingencia) 32%, var(--color-neutral-900) 68%);
+            --contingencia-glass: color-mix(in srgb, var(--status-contingencia) 18%, var(--surface-color) 82%);
+
+            /* Component tokens */
+            --btn-height: 44px;
+            --btn-padding-x: 20px;
+            --btn-font-size: 0.95rem;
+            --btn-font-weight: 600;
+            --btn-radius: var(--radius-lg);
+            --btn-border-width: 1px;
+            --btn-shadow: var(--shadow-sm);
+            --btn-focus-ring: var(--focus-ring);
+
+            --btn-primary-bg: linear-gradient(135deg,
+                color-mix(in srgb, var(--primary-color) 12%, var(--surface-color) 88%),
+                color-mix(in srgb, var(--primary-color) 92%, var(--primary-dark) 8%));
+            --btn-primary-bg-hover: linear-gradient(135deg,
+                color-mix(in srgb, var(--primary-color) 10%, var(--surface-color) 90%),
+                color-mix(in srgb, var(--primary-dark) 25%, var(--primary-color) 75%));
+            --btn-primary-text: var(--color-neutral-0);
+            --btn-primary-border: color-mix(in srgb, var(--primary-color) 70%, var(--surface-color) 30%);
+            --btn-primary-shadow: 0 14px 28px color-mix(in srgb, var(--primary-color) 40%, transparent);
+
+            --btn-secondary-bg: color-mix(in srgb, var(--dark-color) 65%, var(--surface-color) 35%);
+            --btn-secondary-bg-hover: color-mix(in srgb, var(--dark-color) 78%, var(--color-neutral-900) 22%);
+            --btn-secondary-text: var(--color-neutral-0);
+            --btn-secondary-border: transparent;
+            --btn-secondary-shadow: 0 12px 24px color-mix(in srgb, var(--dark-color) 25%, transparent);
+
+            --btn-danger-bg: var(--danger-color);
+            --btn-danger-bg-hover: color-mix(in srgb, var(--danger-color) 85%, var(--danger-dark) 15%);
+            --btn-danger-text: var(--color-neutral-0);
+            --btn-danger-border: transparent;
+            --btn-danger-shadow: 0 12px 24px color-mix(in srgb, var(--danger-color) 35%, transparent);
+
+            --btn-ghost-bg: color-mix(in srgb, var(--surface-color) 86%, transparent);
+            --btn-ghost-bg-hover: color-mix(in srgb, var(--surface-color) 75%, transparent);
+            --btn-ghost-text: var(--text-color);
+            --btn-ghost-border: color-mix(in srgb, var(--border-color) 70%, transparent);
+            --btn-ghost-shadow: none;
+
+            --btn-cta-bg: linear-gradient(135deg,
+                color-mix(in srgb, var(--primary-color) 82%, var(--surface-color) 18%),
+                color-mix(in srgb, var(--primary-dark) 78%, var(--primary-color) 22%));
+            --btn-cta-bg-hover: linear-gradient(135deg,
+                color-mix(in srgb, var(--primary-color) 88%, var(--surface-color) 12%),
+                color-mix(in srgb, var(--primary-dark) 82%, var(--primary-color) 18%));
+            --btn-cta-text: var(--color-neutral-0);
+            --btn-cta-border: color-mix(in srgb, var(--primary-dark) 60%, var(--surface-color) 40%);
+            --btn-cta-shadow: 0 16px 36px color-mix(in srgb, var(--primary-dark) 28%, transparent);
+
+            --card-bg: var(--surface-color);
+            --card-border: color-mix(in srgb, var(--dark-color) 6%, transparent);
+            --card-shadow: var(--shadow-md);
+            --card-radius: var(--radius-lg);
+
+            --modal-bg: var(--surface-color);
+            --modal-border: color-mix(in srgb, var(--dark-color) 6%, transparent);
+            --modal-shadow: var(--shadow-lg);
+            --modal-radius: var(--radius-lg);
+            --modal-overlay: rgba(0, 0, 0, 0.5);
+
+            --badge-radius: var(--radius-lg);
+            --badge-font-size: 0.75rem;
+            --badge-padding-y: 4px;
+            --badge-padding-x: 12px;
+            --badge-bg: color-mix(in srgb, var(--primary-color) 12%, var(--surface-color) 88%);
+            --badge-text: var(--primary-color);
+            --badge-border: color-mix(in srgb, var(--primary-color) 28%, transparent);
+
+            --input-bg: var(--surface-color);
+            --input-border: var(--border-color);
+            --input-text: var(--text-color);
+            --input-placeholder: color-mix(in srgb, var(--muted-color) 72%, var(--text-color) 28%);
+            --input-radius: var(--radius-md);
+            --input-focus-border: var(--primary-color);
+            --input-focus-ring: var(--focus-ring);
+
+            --table-bg: var(--surface-color);
+            --table-border: color-mix(in srgb, var(--dark-color) 6%, transparent);
+            --table-header-bg: color-mix(in srgb, var(--light-color) 75%, var(--surface-color) 25%);
+            --table-header-text: var(--dark-color);
+            --table-row-hover: color-mix(in srgb, var(--light-color) 65%, var(--surface-color) 35%);
+            --table-row-border: color-mix(in srgb, var(--dark-color) 6%, transparent);
+
+            --login-bg: linear-gradient(135deg,
+                color-mix(in srgb, var(--primary-color) 8%, var(--surface-color) 92%),
+                color-mix(in srgb, var(--secondary-color) 8%, var(--surface-color) 92%));
+            --login-card-bg: var(--surface-color);
+            --login-title: var(--primary-color);
+            --login-subtitle: var(--color-neutral-900);
+            --login-label: var(--color-neutral-700);
+            --login-input-bg: color-mix(in srgb, var(--surface-color) 92%, var(--light-color) 8%);
+            --login-feedback-bg: color-mix(in srgb, var(--dark-color) 3%, transparent);
+            --login-help-text: var(--muted-color);
+            --login-logo-filter: none;
 
             /* Layer scale */
             --z-base: 0;
@@ -69,71 +208,55 @@
             --z-alert: 1250;
         }
         [data-theme="dark"] {
-            --primary-color: #60A5FA;
-            --secondary-color: #34D399;
-            --success-color: #6FC7A5;
-            --warning-color: #F4A261;
-            --danger-color: #F87171;
-            --primary-dark: #1D4ED8;
-            --danger-dark: #B91C1C;
+            --color-primary-500: #60A5FA;
+            --color-primary-600: #1D4ED8;
+            --color-secondary-500: #34D399;
+            --color-success-500: #6FC7A5;
+            --color-warning-500: #F4A261;
+            --color-danger-500: #F87171;
+            --color-danger-600: #B91C1C;
 
-            --dark-color: #E5E7EB;
-            --light-color: #0B1220;
-            --text-color: #E5E7EB;
-            --muted-color: #94A3B8;
-            --surface-color: #111827;
-            --bg-color: #0B1120;
-            --border-color: #1F2937;
+            --color-neutral-0: #FFFFFF;
+            --color-neutral-50: #0B1120;
+            --color-neutral-100: #0B1220;
+            --color-neutral-200: #1F2937;
+            --color-neutral-500: #94A3B8;
+            --color-neutral-700: #E5E7EB;
+            --color-neutral-900: #F8FAFC;
+            --color-surface: #111827;
+            --color-background: #0B1120;
+
+            --status-livre: #5FBF9C;
+            --status-em-uso: #6B8BC7;
+            --status-proximo: #F59E0B;
+            --status-vencido: #F87171;
+            --status-contingencia: #8B7AD5;
+
             --shadow-color: rgba(2, 6, 23, 0.65);
-
-            --livre-main: #5FBF9C;
-            --livre-contrast: #0E1C16;
-            --livre-glass: color-mix(in srgb, var(--livre-main) 18%, #0f172a 82%);
-
-            --em-uso-base: #6B8BC7;
-            --em-uso-contrast: #0B1220;
-            --em-uso-border-color: color-mix(in srgb, var(--primary-color) 55%, #0b1220 45%);
-            --em-uso-card-bg: color-mix(in srgb, var(--primary-color) 20%, #0b1220 80%);
-            --em-uso-badge-bg: color-mix(in srgb, var(--em-uso-base) 55%, #0b1220 45%);
-            --em-uso-badge-text: color-mix(in srgb, #e2e8f0 70%, #0b1220 30%);
-            --em-uso-icon: color-mix(in srgb, var(--em-uso-base) 70%, #cbd5f5 30%);
-            --em-uso-text: color-mix(in srgb, #e2e8f0 68%, #0b1220 32%);
-
-            --proximo-main: #F59E0B;
-            --proximo-contrast: #1F1303;
-            --proximo-glow: color-mix(in srgb, var(--proximo-main) 35%, transparent);
-
-            --vencido-main: #F87171;
-            --vencido-contrast: #2A0D0D;
-            --vencido-strong: color-mix(in srgb, var(--vencido-main) 55%, #2a0d0d 45%);
-
-            --contingencia-main: #8B7AD5;
-            --contingencia-contrast: #1A1235;
-            --contingencia-glass: color-mix(in srgb, var(--contingencia-main) 16%, #0b1220 84%);
-
-            --extended-badge-bg: color-mix(in srgb, var(--primary-color) 22%, #0b1220 78%);
-            --extended-badge-text: color-mix(in srgb, var(--primary-color) 70%, #e2e8f0 30%);
-            --extended-row-bg: color-mix(in srgb, var(--primary-color) 12%, #0b1220 88%);
-            --extended-border-color: color-mix(in srgb, var(--primary-color) 35%, #0b1220 65%);
+            --modal-overlay: color-mix(in srgb, var(--color-neutral-900) 35%, transparent);
+            --login-bg: linear-gradient(135deg,
+                color-mix(in srgb, var(--color-background) 85%, var(--primary-color) 15%),
+                color-mix(in srgb, var(--color-background) 90%, var(--secondary-color) 10%));
+            --login-card-bg: var(--color-surface);
+            --login-subtitle: var(--color-neutral-900);
+            --login-label: var(--muted-color);
+            --login-input-bg: color-mix(in srgb, var(--color-surface) 88%, var(--color-background) 12%);
+            --login-feedback-bg: color-mix(in srgb, var(--color-background) 70%, transparent);
+            --login-logo-filter: brightness(0) invert(1);
         }
 
         /* Achados e Perdidos */
         .glass-card {
-            background: color-mix(in srgb, var(--surface-color) 65%, rgba(255, 255, 255, 0.1));
-            border: 1px solid color-mix(in srgb, var(--surface-color) 40%, rgba(255, 255, 255, 0.35));
-            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+            background: color-mix(in srgb, var(--surface-color) 65%, transparent);
+            border: 1px solid color-mix(in srgb, var(--surface-color) 40%, transparent);
+            box-shadow: var(--shadow-lg);
             backdrop-filter: blur(16px);
-            border-radius: 18px;
-        }
-        .btn.ghost {
-            background: color-mix(in srgb, var(--surface-color) 86%, rgba(255, 255, 255, 0.08));
-            border: 1px solid color-mix(in srgb, var(--surface-color) 55%, transparent);
-            color: var(--text-color);
+            border-radius: var(--radius-lg);
         }
         .modal-glass {
-            background: color-mix(in srgb, var(--surface-color) 80%, rgba(255, 255, 255, 0.25));
-            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.18);
-            border: 1px solid color-mix(in srgb, var(--surface-color) 35%, rgba(255, 255, 255, 0.35));
+            background: color-mix(in srgb, var(--surface-color) 80%, transparent);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid color-mix(in srgb, var(--surface-color) 35%, transparent);
         }
         .lf-grid {
             display: flex;
@@ -561,15 +684,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: color-mix(in srgb, var(--light-color) 16%, transparent);
-            color: color-mix(in srgb, var(--light-color) 92%, var(--primary-dark) 8%);
+            background: color-mix(in srgb, var(--surface-color) 16%, transparent);
+            color: color-mix(in srgb, var(--text-color) 85%, var(--primary-dark) 15%);
             font-size: 28px;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
-        }
-        [data-theme="dark"] .sidebar-logo-icon {
-            background: color-mix(in srgb, #0b1220 70%, #ffffff 30%);
-            color: #f8fafc;
-            box-shadow: 0 12px 26px rgba(2, 6, 23, 0.6);
+            box-shadow: var(--shadow-md);
         }
         .sidebar-title {
             font-size: 1.1rem;
@@ -772,10 +890,10 @@
             align-items: center;
             gap: 12px;
             padding: 12px 16px;
-            border-radius: 14px;
+            border-radius: var(--radius-md);
             border: 1px solid var(--border-color);
-            background: linear-gradient(135deg, var(--surface-color) 0%, color-mix(in srgb, var(--primary-color) 6%, white 94%) 100%);
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            background: linear-gradient(135deg, var(--surface-color) 0%, color-mix(in srgb, var(--primary-color) 6%, var(--surface-color) 94%) 100%);
+            box-shadow: var(--shadow-sm);
             transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
             width: 100%;
             min-width: 0;
@@ -808,8 +926,8 @@
             font-size: 1.05rem;
         }
         .selector-control:hover {
-            border-color: color-mix(in srgb, var(--primary-color) 60%, white 40%);
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+            border-color: color-mix(in srgb, var(--primary-color) 60%, var(--surface-color) 40%);
+            box-shadow: var(--shadow-md);
             transform: translateY(-1px);
         }
         .selector-control.open,
@@ -854,7 +972,7 @@
         .selector-trigger-label {
             font-size: 1rem;
             font-weight: 700;
-            color: var(--dark-color);
+            color: var(--text-color);
             line-height: 1.2;
             word-break: break-word;
         }
@@ -889,9 +1007,9 @@
             width: max(260px, 100%);
             max-width: 360px;
             background: var(--surface-color);
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             border: 1px solid color-mix(in srgb, var(--primary-color) 12%, var(--border-color) 88%);
-            box-shadow: 0 22px 40px rgba(15, 23, 42, 0.22);
+            box-shadow: var(--shadow-lg);
             padding: 18px 16px;
             max-height: min(320px, calc(70vh - 32px));
             overflow-y: auto;
@@ -949,7 +1067,7 @@
             padding: 12px 14px;
             border-radius: 12px;
             cursor: pointer;
-            color: var(--dark-color);
+            color: var(--text-color);
             transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
         }
         .selector-option-button:focus {
@@ -958,9 +1076,9 @@
         }
         .selector-option-button:hover:not(.is-disabled),
         .selector-option-button:focus-visible:not(.is-disabled) {
-            background: color-mix(in srgb, var(--primary-color) 18%, white 82%);
+            background: color-mix(in srgb, var(--primary-color) 18%, var(--surface-color) 82%);
             transform: translateX(2px);
-            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 30%, white 70%);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 30%, var(--surface-color) 70%);
         }
         .selector-option-content {
             display: flex;
@@ -975,7 +1093,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: color-mix(in srgb, var(--primary-color) 12%, white 88%);
+            background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-color) 88%);
             color: var(--primary-dark);
             font-size: 1rem;
             flex-shrink: 0;
@@ -996,7 +1114,7 @@
         }
         .selector-option-description {
             font-size: 0.78rem;
-            color: color-mix(in srgb, var(--muted-color) 85%, white 15%);
+            color: color-mix(in srgb, var(--muted-color) 85%, var(--surface-color) 15%);
             max-width: 260px;
         }
         .selector-option-check {
@@ -1006,8 +1124,8 @@
             transition: opacity 0.15s ease;
         }
         .selector-option-button.is-selected {
-            background: color-mix(in srgb, var(--primary-color) 24%, white 76%);
-            box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary-color) 40%, white 60%);
+            background: color-mix(in srgb, var(--primary-color) 24%, var(--surface-color) 76%);
+            box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary-color) 40%, var(--surface-color) 60%);
         }
         .selector-option-button.is-selected .selector-option-check {
             opacity: 1;
@@ -1017,13 +1135,13 @@
             opacity: 0.55;
         }
         .selector-option-button.is-disabled .selector-option-description {
-            color: color-mix(in srgb, var(--muted-color) 64%, white 36%);
+            color: color-mix(in srgb, var(--muted-color) 64%, var(--surface-color) 36%);
         }
         .selector-options::-webkit-scrollbar {
             width: 8px;
         }
         .selector-options::-webkit-scrollbar-track {
-            background: color-mix(in srgb, var(--surface-color) 70%, white 30%);
+            background: color-mix(in srgb, var(--surface-color) 70%, var(--bg-color) 30%);
             border-radius: 10px;
         }
         .selector-options::-webkit-scrollbar-thumb {
@@ -1524,25 +1642,25 @@
         }
         .avatar-custom-control input[type="url"] {
             flex: 1;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
+            border-radius: var(--input-radius);
+            border: 1px solid var(--input-border);
             padding: 8px 10px;
             font-size: 0.85rem;
-            color: var(--text-color);
-            background-color: var(--surface-color);
+            color: var(--input-text);
+            background-color: var(--input-bg);
         }
         .avatar-custom-control input[type="url"]:focus {
-            outline: 2px solid var(--focus-ring);
+            outline: 2px solid var(--input-focus-ring);
             outline-offset: 1px;
         }
         .avatar-custom-control input[type="url"].invalid {
             border-color: var(--danger-color);
-            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger-color) 18%, transparent);
         }
         .avatar-apply-button {
             border: none;
-            background: var(--primary-color);
-            color: white;
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
             padding: 8px 14px;
             border-radius: 10px;
             font-weight: 600;
@@ -1553,7 +1671,7 @@
         }
         .avatar-apply-button:hover,
         .avatar-apply-button:focus-visible {
-            background: var(--primary-dark);
+            background: var(--btn-primary-bg-hover);
             transform: translateY(-1px);
             outline: none;
         }
@@ -1567,17 +1685,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle at top, rgba(14, 116, 144, 0.12), transparent 60%),
-                linear-gradient(135deg, #eef5fb 0%, #e2f2f7 100%);
-            padding: 20px;
+            background: var(--login-bg);
+            padding: var(--space-5);
             z-index: var(--z-overlay);
         }
         .login-card {
             width: min(420px, 100%);
-            background: #ffffff;
-            border-radius: 22px;
+            background: var(--login-card-bg);
+            border-radius: calc(var(--radius-lg) + 6px);
             padding: 40px 36px;
-            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+            box-shadow: var(--shadow-lg);
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -1587,16 +1704,17 @@
             font-size: 1rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: #2563eb;
+            color: var(--login-title);
         }
         .login-card h3 {
             font-size: 1.35rem;
             font-weight: 700;
-            color: #0f172a;
+            color: var(--login-subtitle);
         }
         .login-card img {
             width: 160px;
             align-self: center;
+            filter: var(--login-logo-filter);
         }
         .login-form {
             display: flex;
@@ -1607,31 +1725,32 @@
         .login-form label {
             font-size: 0.85rem;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--login-label);
         }
         .login-form input {
             width: 100%;
-            border-radius: 14px;
-            border: 1px solid #cbd5f5;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--input-border);
             padding: 12px 14px;
             font-size: 0.95rem;
-            background-color: #f8fafc;
+            background-color: var(--login-input-bg);
+            color: var(--input-text);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
         .login-form input:focus {
             outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-            background-color: #ffffff;
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 3px var(--input-focus-ring);
+            background-color: var(--input-bg);
         }
         .login-form button {
             margin-top: 8px;
             width: 100%;
             border: none;
-            border-radius: 14px;
+            border-radius: var(--btn-radius);
             padding: 12px 14px;
-            background: linear-gradient(135deg, #2563eb, #0ea5e9);
-            color: white;
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -1640,15 +1759,15 @@
         }
         .login-form button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 15px 30px rgba(37, 99, 235, 0.25);
+            box-shadow: 0 15px 30px color-mix(in srgb, var(--primary-color) 25%, transparent);
         }
         .login-feedback {
             font-size: 0.85rem;
             text-align: left;
             padding: 6px 10px;
             border-radius: 12px;
-            background: rgba(15, 23, 42, 0.02);
-            color: #0f172a;
+            background: var(--login-feedback-bg);
+            color: var(--text-color);
             min-height: 36px;
             display: flex;
             align-items: center;
@@ -1668,30 +1787,34 @@
             transition: opacity 0.2s ease, transform 0.2s ease;
         }
         .login-feedback.is-loading {
-            color: #2563eb;
+            color: var(--primary-color);
         }
         .login-feedback.is-loading::before {
             opacity: 1;
             transform: scale(1);
             animation: none;
-            background: linear-gradient(135deg, #2563eb, #38bdf8);
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--primary-color) 85%, var(--surface-color) 15%),
+                color-mix(in srgb, var(--primary-color) 55%, var(--secondary-color) 45%));
         }
         .login-feedback.is-error {
-            color: #b91c1c;
-            background: rgba(239, 68, 68, 0.08);
+            color: var(--danger-color);
+            background: color-mix(in srgb, var(--danger-color) 12%, transparent);
         }
         .login-feedback.is-error::before {
             opacity: 1;
             transform: scale(1);
         }
         .login-feedback.is-success {
-            color: #047857;
-            background: rgba(16, 185, 129, 0.12);
+            color: var(--success-color);
+            background: color-mix(in srgb, var(--success-color) 14%, transparent);
         }
         .login-feedback.is-success::before {
             opacity: 1;
             transform: scale(1);
-            background: linear-gradient(135deg, #10b981, #34d399);
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--success-color) 85%, var(--surface-color) 15%),
+                color-mix(in srgb, var(--success-color) 55%, var(--secondary-color) 45%));
         }
         @keyframes pulse {
             0% { transform: scale(0.9); opacity: 0.45; }
@@ -1700,7 +1823,7 @@
         }
         .login-help {
             font-size: 0.85rem;
-            color: #64748b;
+            color: var(--login-help-text);
         }
         .checkbox-grid {
             display: grid;
@@ -1726,21 +1849,21 @@
         .cards-hero {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(50px, 200px));
-            gap: 20px;
-            margin: 0 0 30px;
+            gap: var(--space-5);
+            margin: 0 0 var(--space-6);
             justify-content: flex-start;
             max-width: 1100px;
         }
         .card {
-            background: var(--surface-color);
+            background: var(--card-bg);
             color: var(--dark-color);
-            border-radius: 14px;
-            box-shadow: 0 8px 20px color-mix(in srgb, var(--shadow-color) 70%, transparent);
-            padding: 18px;
+            border-radius: var(--card-radius);
+            box-shadow: var(--card-shadow);
+            padding: var(--space-4);
             transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
             backdrop-filter: blur(10px);
-            border: 1px solid color-mix(in srgb, var(--primary-color) 10%, var(--border-color) 90%);
-            background: color-mix(in srgb, white 84%, var(--surface-color) 16%);
+            border: 1px solid var(--card-border);
+            background: color-mix(in srgb, var(--surface-color) 84%, var(--bg-color) 16%);
         }
         .cards-hero .card {
             display: flex;
@@ -1751,24 +1874,27 @@
         }
         .card:hover {
             transform: translateY(-6px);
-            box-shadow: 0 12px 26px color-mix(in srgb, var(--shadow-color) 72%, transparent);
+            box-shadow: var(--shadow-lg);
         }
+        .card--livre,
         .card.livre {
             border: 1px solid color-mix(in srgb, var(--livre-main) 35%, transparent);
             border-top: 5px solid var(--livre-main);
-            background: linear-gradient(160deg, color-mix(in srgb, var(--livre-glass) 80%, transparent), color-mix(in srgb, var(--livre-main) 8%, white 92%));
+            background: linear-gradient(160deg, color-mix(in srgb, var(--livre-glass) 80%, transparent), color-mix(in srgb, var(--livre-main) 8%, var(--surface-color) 92%));
             color: var(--livre-contrast);
             box-shadow: 0 10px 22px color-mix(in srgb, var(--livre-main) 14%, var(--shadow-color) 86%);
         }
+        .card--em-uso,
         .card.em-uso {
             position: relative;
             border: 1px solid color-mix(in srgb, var(--em-uso-border-color) 55%, transparent);
             border-top: 4px solid color-mix(in srgb, var(--em-uso-border-color) 80%, transparent);
-            background: linear-gradient(135deg, color-mix(in srgb, var(--em-uso-card-bg) 80%, transparent), color-mix(in srgb, var(--em-uso-card-bg) 65%, white 35%));
+            background: linear-gradient(135deg, color-mix(in srgb, var(--em-uso-card-bg) 80%, transparent), color-mix(in srgb, var(--em-uso-card-bg) 65%, var(--surface-color) 35%));
             color: var(--em-uso-text);
             overflow: hidden;
             box-shadow: 0 10px 22px color-mix(in srgb, var(--em-uso-border-color) 20%, var(--shadow-color) 80%);
         }
+        .card--em-uso::before,
         .card.em-uso::before {
             content: "";
             position: absolute;
@@ -1780,22 +1906,25 @@
             opacity: 0.18;
             pointer-events: none;
         }
+        .card--proximo,
         .card.proximo {
             border: 1.5px solid color-mix(in srgb, var(--proximo-main) 70%, transparent);
-            background: linear-gradient(140deg, color-mix(in srgb, var(--proximo-main) 10%, white 90%), color-mix(in srgb, var(--proximo-main) 22%, white 78%));
+            background: linear-gradient(140deg, color-mix(in srgb, var(--proximo-main) 10%, var(--surface-color) 90%), color-mix(in srgb, var(--proximo-main) 22%, var(--surface-color) 78%));
             box-shadow: 0 12px 26px color-mix(in srgb, var(--proximo-main) 22%, var(--shadow-color) 78%);
             color: var(--proximo-contrast);
         }
+        .card--vencido,
         .card.vencido {
             border: 1.5px solid color-mix(in srgb, var(--vencido-strong) 70%, transparent);
-            background: linear-gradient(145deg, color-mix(in srgb, var(--vencido-main) 14%, white 86%), color-mix(in srgb, var(--vencido-main) 26%, white 74%));
+            background: linear-gradient(145deg, color-mix(in srgb, var(--vencido-main) 14%, var(--surface-color) 86%), color-mix(in srgb, var(--vencido-main) 26%, var(--surface-color) 74%));
             box-shadow: 0 12px 28px color-mix(in srgb, var(--vencido-main) 26%, var(--shadow-color) 74%);
-            color: color-mix(in srgb, var(--vencido-contrast) 76%, white 24%);
+            color: color-mix(in srgb, var(--vencido-contrast) 76%, var(--surface-color) 24%);
         }
+        .card--contingencia,
         .card.contingencia {
             border: 1px dashed color-mix(in srgb, var(--contingencia-main) 50%, transparent);
             border-top: 5px solid var(--contingencia-main);
-            background: linear-gradient(160deg, color-mix(in srgb, var(--contingencia-glass) 80%, transparent), color-mix(in srgb, var(--contingencia-main) 10%, white 90%));
+            background: linear-gradient(160deg, color-mix(in srgb, var(--contingencia-glass) 80%, transparent), color-mix(in srgb, var(--contingencia-main) 10%, var(--surface-color) 90%));
             color: var(--contingencia-contrast);
             box-shadow: 0 10px 22px color-mix(in srgb, var(--contingencia-main) 18%, var(--shadow-color) 82%);
         }
@@ -1817,10 +1946,15 @@
             font-size: 1.6rem;
             color: var(--primary-color);
         }
+        .card--livre .card-icon,
         .card.livre .card-icon   { color: var(--livre-main); }
+        .card--em-uso .card-icon,
         .card.em-uso .card-icon  { color: var(--em-uso-icon); }
+        .card--proximo .card-icon,
         .card.proximo .card-icon { color: var(--proximo-main); }
+        .card--vencido .card-icon,
         .card.vencido .card-icon { color: var(--vencido-main); }
+        .card--contingencia .card-icon,
         .card.contingencia .card-icon { color: var(--contingencia-main); }
         .card-value {
             font-size: 2rem;
@@ -1832,16 +1966,21 @@
             font-size: 0.9rem;
             color: var(--muted-color);
         }
+        .card--em-uso .card-title,
+        .card--em-uso .card-value,
         .card.em-uso .card-title,
         .card.em-uso .card-value {
             color: var(--em-uso-text);
         }
+        .card--em-uso .card-icon .fa-user-clock,
+        .card--em-uso .card-icon .fas.fa-user-clock,
         .card.em-uso .card-icon .fa-user-clock,
         .card.em-uso .card-icon .fas.fa-user-clock,
         .armario-card.em-uso .fa-user-clock,
         .armario-card.em-uso .fas.fa-user-clock {
             color: var(--em-uso-icon);
         }
+        .card--em-uso .card-description,
         .card.em-uso .card-description {
             color: color-mix(in srgb, var(--em-uso-text) 75%, transparent);
         }
@@ -1865,8 +2004,10 @@
             align-items: center;
             gap: 8px;
             padding: 10px 18px;
-            border: 1.5px solid color-mix(in srgb, var(--border-color) 70%, #d8dde6 30%);
-            background: linear-gradient(135deg, color-mix(in srgb, var(--surface-color) 96%, #f5f7fb 4%), color-mix(in srgb, var(--surface-color) 92%, #eef2f9 8%));
+            border: 1.5px solid color-mix(in srgb, var(--border-color) 85%, var(--surface-color) 15%);
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--surface-color) 96%, var(--light-color) 4%),
+                color-mix(in srgb, var(--surface-color) 92%, var(--bg-color) 8%));
             border-radius: 999px;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
@@ -1886,32 +2027,38 @@
             box-shadow: 0 0 0 6px var(--focus-ring), 0 14px 32px color-mix(in srgb, var(--primary-color) 14%, var(--shadow-color) 86%);
         }
         .filter-btn.active {
-            color: white;
+            color: var(--color-neutral-0);
             border-color: transparent;
             box-shadow: 0 14px 36px color-mix(in srgb, var(--primary-color) 22%, var(--shadow-color) 78%);
         }
         .filter-btn[data-filter="todos"].active {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 90%, white 10%), color-mix(in srgb, var(--primary-dark) 68%, var(--primary-color) 32%));
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 90%, var(--surface-color) 10%), color-mix(in srgb, var(--primary-dark) 68%, var(--primary-color) 32%));
         }
         .filter-btn[data-filter="livre"].active {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--livre-main) 20%, transparent), color-mix(in srgb, var(--livre-main) 28%, #ffffff));
+            background: linear-gradient(135deg, color-mix(in srgb, var(--livre-main) 20%, transparent), color-mix(in srgb, var(--livre-main) 28%, var(--surface-color)));
             border-color: color-mix(in srgb, var(--livre-main) 55%, transparent);
             color: var(--livre-main);
             box-shadow: 0 14px 28px color-mix(in srgb, var(--livre-main) 18%, var(--shadow-color) 82%);
         }
         .filter-btn[data-filter="em-uso"].active {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--em-uso-card-bg) 70%, white 30%), color-mix(in srgb, var(--em-uso-border-color) 52%, var(--em-uso-card-bg) 48%));
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--em-uso-card-bg) 70%, var(--surface-color) 30%),
+                color-mix(in srgb, var(--em-uso-border-color) 52%, var(--em-uso-card-bg) 48%));
             border-color: color-mix(in srgb, var(--em-uso-border-color) 65%, transparent);
             color: var(--em-uso-text);
             box-shadow: 0 14px 28px color-mix(in srgb, var(--em-uso-border-color) 24%, var(--shadow-color) 76%);
         }
         .filter-btn[data-filter="proximo"].active {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--proximo-main) 84%, white 16%), color-mix(in srgb, var(--proximo-main) 70%, #7c480f 30%));
-            color: color-mix(in srgb, #4b2c08 46%, white 54%);
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--proximo-main) 84%, var(--surface-color) 16%),
+                color-mix(in srgb, var(--proximo-main) 70%, var(--proximo-contrast) 30%));
+            color: color-mix(in srgb, var(--proximo-contrast) 46%, var(--surface-color) 54%);
         }
         .filter-btn[data-filter="vencido"].active {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--vencido-main) 90%, white 10%), color-mix(in srgb, var(--vencido-strong) 78%, var(--vencido-main) 22%));
-            color: color-mix(in srgb, var(--vencido-contrast) 60%, white 40%);
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--vencido-main) 90%, var(--surface-color) 10%),
+                color-mix(in srgb, var(--vencido-strong) 78%, var(--vencido-main) 22%));
+            color: color-mix(in srgb, var(--vencido-contrast) 60%, var(--surface-color) 40%);
         }
         .filter-btn[data-filter="contingencia"].active {
             background: color-mix(in srgb, var(--contingencia-main) 14%, var(--surface-color) 86%);
@@ -1925,7 +2072,7 @@
             align-items: center;
             gap: 10px;
             padding: 10px 16px;
-            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 8%, #ffffff 92%), #ffffff);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 8%, var(--surface-color) 92%), var(--surface-color));
             border: 1px solid color-mix(in srgb, var(--primary-color) 20%, var(--border-color) 80%);
             border-radius: 999px;
             box-shadow: 0 12px 30px color-mix(in srgb, var(--primary-color) 12%, var(--shadow-color) 88%);
@@ -1937,10 +2084,10 @@
         .filter-search i {
             color: var(--muted-color);
             font-size: 1rem;
-            background: color-mix(in srgb, var(--primary-color) 12%, #f3f4f6 88%);
+            background: color-mix(in srgb, var(--primary-color) 12%, var(--light-color) 88%);
             padding: 10px;
             border-radius: 50%;
-            box-shadow: inset 0 1px 0 #ffffff, 0 6px 14px rgba(0, 0, 0, 0.08);
+            box-shadow: inset 0 1px 0 var(--surface-color), 0 6px 14px color-mix(in srgb, var(--shadow-color) 70%, transparent);
         }
         .filter-search input {
             border: none;
@@ -1961,7 +2108,7 @@
             padding: 0 12px;
             border-radius: 999px;
             border: 1px solid color-mix(in srgb, var(--primary-color) 16%, var(--border-color) 84%);
-            background: linear-gradient(135deg, #ffffff, color-mix(in srgb, var(--primary-color) 6%, #f5f7fb 94%));
+            background: linear-gradient(135deg, var(--surface-color), color-mix(in srgb, var(--primary-color) 6%, var(--light-color) 94%));
             color: color-mix(in srgb, var(--primary-color) 50%, var(--dark-color) 50%);
             box-shadow: 0 10px 22px color-mix(in srgb, var(--primary-color) 12%, var(--shadow-color) 88%);
             cursor: pointer;
@@ -1975,7 +2122,7 @@
         .filter-search .filter-clear:hover,
         .filter-search .filter-clear:focus-visible {
             border-color: color-mix(in srgb, var(--primary-color) 40%, var(--border-color) 60%);
-            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 8%, #ffffff 92%), #ffffff);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 8%, var(--surface-color) 92%), var(--surface-color));
             box-shadow: 0 12px 26px color-mix(in srgb, var(--primary-color) 18%, var(--shadow-color) 82%);
             transform: translateY(-1px);
         }
@@ -1994,25 +2141,15 @@
             align-items: center;
         }
         .btn-contingencia {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            border-radius: 12px;
-            border: 1px dashed color-mix(in srgb, var(--primary-color) 30%, var(--border-color));
-            background: color-mix(in srgb, var(--primary-color) 10%, var(--surface-color) 90%);
-            color: color-mix(in srgb, var(--primary-color) 75%, var(--dark-color) 25%);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 10px 22px var(--shadow-color);
+            --btn-border: color-mix(in srgb, var(--primary-color) 30%, var(--border-color));
+            --btn-text: color-mix(in srgb, var(--primary-color) 75%, var(--dark-color) 25%);
+            border-style: dashed;
             white-space: nowrap;
         }
         .btn-contingencia i {
             color: color-mix(in srgb, var(--primary-color) 80%, var(--dark-color) 20%);
         }
         .btn-contingencia:hover, .btn-contingencia:focus-visible {
-            background: color-mix(in srgb, var(--primary-color) 16%, var(--surface-color) 84%);
-            border-color: var(--primary-color);
             transform: translateY(-1px);
         }
         /* Tabela de Armários */
@@ -2022,9 +2159,9 @@
             gap: 20px;
         }
         .armario-card {
-            background: color-mix(in srgb, white 86%, var(--surface-color) 14%);
-            border-radius: 12px;
-            box-shadow: 0 5px 12px color-mix(in srgb, var(--shadow-color) 70%, transparent);
+            background: color-mix(in srgb, var(--surface-color) 86%, var(--bg-color) 14%);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
             padding: 16px 16px 14px;
             transition: all 0.3s ease;
             cursor: pointer;
@@ -2041,13 +2178,13 @@
             overflow: hidden;
             cursor: default;
             border-left-color: color-mix(in srgb, var(--primary-color) 18%, transparent);
-            background: color-mix(in srgb, var(--surface-color) 90%, white 10%);
+            background: color-mix(in srgb, var(--surface-color) 90%, var(--bg-color) 10%);
         }
         .armario-card.skeleton::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.16) 50%, transparent 100%);
+            background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--surface-color) 20%, transparent) 50%, transparent 100%);
             transform: translateX(0);
             animation: none;
             opacity: 0.6;
@@ -2057,8 +2194,8 @@
         .skeleton-chip,
         .skeleton-status {
             display: block;
-            border-radius: 8px;
-            background: color-mix(in srgb, var(--border-color, #d8dce6) 35%, transparent);
+            border-radius: var(--radius-sm);
+            background: color-mix(in srgb, var(--border-color) 35%, transparent);
         }
         .skeleton-line {
             height: 12px;
@@ -2094,8 +2231,8 @@
             overflow: hidden;
             background: linear-gradient(125deg,
                     color-mix(in srgb, var(--em-uso-card-bg) 78%, transparent) 0%,
-                    color-mix(in srgb, var(--em-uso-card-bg) 70%, white 30%) 52%,
-                    color-mix(in srgb, var(--em-uso-card-bg) 64%, white 36%) 100%);
+                    color-mix(in srgb, var(--em-uso-card-bg) 70%, var(--surface-color) 30%) 52%,
+                    color-mix(in srgb, var(--em-uso-card-bg) 64%, var(--surface-color) 36%) 100%);
             color: var(--em-uso-text);
             box-shadow: 0 7px 16px color-mix(in srgb, var(--em-uso-border-color) 26%, transparent);
         }
@@ -2135,14 +2272,14 @@
             content: "";
             position: absolute;
             inset: 0;
-            background-image: radial-gradient(circle at 20% 20%, rgba(0,0,0,0.06) 1px, transparent 0),
-                radial-gradient(circle at 80% 60%, rgba(0,0,0,0.04) 1px, transparent 0);
+            background-image: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--shadow-color) 40%, transparent) 1px, transparent 0),
+                radial-gradient(circle at 80% 60%, color-mix(in srgb, var(--shadow-color) 30%, transparent) 1px, transparent 0);
             background-size: 18px 18px, 22px 22px;
             opacity: 0.38;
             pointer-events: none;
         }
         .armario-card.contingencia .armario-number {
-            color: color-mix(in srgb, var(--contingencia-contrast) 68%, white 32%);
+            color: color-mix(in srgb, var(--contingencia-contrast) 68%, var(--surface-color) 32%);
         }
         .armario-card.proximo {
             border-left-color: var(--proximo-main);
@@ -2164,7 +2301,7 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, color-mix(in srgb, var(--surface-color) 90%, white 10%), transparent 40%);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--surface-color) 90%, var(--bg-color) 10%), transparent 40%);
             opacity: 0.7;
             pointer-events: none;
             border-radius: 12px;
@@ -2361,67 +2498,73 @@
             font-weight: bold;
         }
         .status-livre {
-            background-color: color-mix(in srgb, var(--livre-main) 18%, transparent);
-            color: var(--livre-main);
+            --badge-bg: color-mix(in srgb, var(--livre-main) 18%, transparent);
+            --badge-text: var(--livre-main);
+            --badge-border: color-mix(in srgb, var(--livre-main) 35%, transparent);
         }
         .status-em-uso {
-            background-color: color-mix(in srgb, var(--em-uso-badge-bg) 22%, transparent);
-            color: var(--em-uso-badge-text);
+            --badge-bg: color-mix(in srgb, var(--em-uso-badge-bg) 22%, transparent);
+            --badge-text: var(--em-uso-badge-text);
+            --badge-border: color-mix(in srgb, var(--em-uso-badge-bg) 35%, transparent);
             box-shadow: 0 0 0 2px color-mix(in srgb, var(--em-uso-badge-bg) 40%, transparent);
         }
         .status-em-uso .fa-user-clock,
         .status-em-uso .fas.fa-user-clock {
-            color: #000929;
+            color: var(--color-neutral-900);
         }
         .armario-card.em-uso .status-em-uso {
-            background-color: color-mix(in srgb, var(--em-uso-card-bg) 15%, transparent);
-            color: var(--em-uso-text);
+            --badge-bg: color-mix(in srgb, var(--em-uso-card-bg) 15%, transparent);
+            --badge-text: var(--em-uso-text);
+            --badge-border: color-mix(in srgb, var(--em-uso-border-color) 35%, transparent);
             box-shadow: 0 0 0 2px color-mix(in srgb, var(--em-uso-border-color) 35%, transparent);
         }
         .status-proximo {
-            background-color: color-mix(in srgb, var(--proximo-main) 20%, transparent);
-            color: var(--proximo-main);
+            --badge-bg: color-mix(in srgb, var(--proximo-main) 20%, transparent);
+            --badge-text: var(--proximo-main);
+            --badge-border: color-mix(in srgb, var(--proximo-main) 35%, transparent);
         }
         .status-vencido {
-            background-color: color-mix(in srgb, var(--vencido-main) 18%, transparent);
-            color: var(--vencido-main);
+            --badge-bg: color-mix(in srgb, var(--vencido-main) 18%, transparent);
+            --badge-text: var(--vencido-main);
+            --badge-border: color-mix(in srgb, var(--vencido-main) 35%, transparent);
         }
         .status-contingencia {
-            background-color: color-mix(in srgb, var(--contingencia-main) 18%, transparent);
-            color: color-mix(in srgb, var(--contingencia-contrast) 80%, white 20%);
-            border: 1px dashed color-mix(in srgb, var(--contingencia-main) 45%, transparent);
+            --badge-bg: color-mix(in srgb, var(--contingencia-main) 18%, transparent);
+            --badge-text: color-mix(in srgb, var(--contingencia-contrast) 80%, var(--surface-color) 20%);
+            --badge-border: color-mix(in srgb, var(--contingencia-main) 45%, transparent);
+            border-style: dashed;
         }
         .armario-status-icon {
             width: 42px;
             height: 42px;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: color-mix(in srgb, var(--livre-main) 16%, white 84%);
+            background: color-mix(in srgb, var(--livre-main) 16%, var(--surface-color) 84%);
             color: var(--livre-main);
             box-shadow: 0 10px 22px var(--shadow-color);
         }
         .armario-status-icon.status-em-uso {
-            background: color-mix(in srgb, var(--em-uso-card-bg) 40%, white 60%);
+            background: color-mix(in srgb, var(--em-uso-card-bg) 40%, var(--surface-color) 60%);
             color: var(--em-uso-border-color);
         }
         .armario-status-icon.status-proximo {
-            background: color-mix(in srgb, var(--proximo-main) 20%, white 80%);
+            background: color-mix(in srgb, var(--proximo-main) 20%, var(--surface-color) 80%);
             color: var(--proximo-main);
         }
         .armario-status-icon.status-vencido {
-            background: color-mix(in srgb, var(--vencido-main) 18%, white 82%);
+            background: color-mix(in srgb, var(--vencido-main) 18%, var(--surface-color) 82%);
             color: var(--vencido-main);
         }
         .armario-status-icon.status-contingencia {
-            background: color-mix(in srgb, var(--contingencia-main) 28%, white 72%);
-            color: color-mix(in srgb, var(--contingencia-contrast) 82%, white 18%);
+            background: color-mix(in srgb, var(--contingencia-main) 28%, var(--surface-color) 72%);
+            color: color-mix(in srgb, var(--contingencia-contrast) 82%, var(--surface-color) 18%);
         }
         .armario-paciente-line {
             font-size: 1.05rem;
             font-weight: 700;
-            color: var(--dark-color);
+            color: var(--text-color);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -2502,16 +2645,16 @@
         }
         /* Tabelas de dados */
         .data-table {
-            background-color: var(--surface-color);
-            border-radius: 14px;
-            box-shadow: 0 12px 28px var(--shadow-color);
+            background-color: var(--table-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
             overflow: hidden;
-            border: 1px solid color-mix(in srgb, var(--dark-color) 6%, transparent);
+            border: 1px solid var(--table-border);
         }
         .table-header {
-            padding: 18px 24px;
-            background-color: color-mix(in srgb, var(--light-color) 75%, white 25%);
-            border-bottom: 1px solid var(--border-color);
+            padding: var(--space-4) var(--space-5);
+            background-color: var(--table-header-bg);
+            border-bottom: 1px solid var(--table-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -2552,18 +2695,18 @@
         .table-header-controls input[type="text"],
         .table-header-controls select {
             padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background-color: white;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--input-border);
+            background-color: var(--input-bg);
             font-size: 0.95rem;
-            color: var(--text-color);
+            color: var(--input-text);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
         .table-header-controls input[type="date"]:focus,
         .table-header-controls input[type="text"]:focus,
         .table-header-controls select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px var(--focus-ring);
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 3px var(--input-focus-ring);
             outline: none;
         }
         .table-subtitle {
@@ -2579,9 +2722,9 @@
             border-collapse: collapse;
         }
         th, td {
-            padding: 12px 16px;
+            padding: var(--space-3) var(--space-4);
             text-align: left;
-            border-bottom: 1px solid color-mix(in srgb, var(--dark-color) 6%, transparent);
+            border-bottom: 1px solid var(--table-row-border);
         }
         .table-empty,
         .table-loading,
@@ -2602,12 +2745,12 @@
             font-weight: 600;
         }
         th {
-            background-color: color-mix(in srgb, var(--light-color) 85%, white 15%);
+            background-color: var(--table-header-bg);
             font-weight: 600;
-            color: var(--dark-color);
+            color: var(--table-header-text);
         }
         tr:hover {
-            background-color: color-mix(in srgb, var(--light-color) 65%, white 35%);
+            background-color: var(--table-row-hover);
         }
         #tabela-visitantes tbody tr.visita-estendida {
             background-color: var(--extended-row-bg);
@@ -2626,16 +2769,16 @@
             padding: 5px 10px;
             font-size: 0.8rem;
             border: none;
-            border-radius: 3px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
         }
         .btn-edit {
             background-color: var(--warning-color);
-            color: white;
+            color: var(--color-neutral-0);
         }
         .btn-delete {
             background-color: var(--danger-color);
-            color: white;
+            color: var(--color-neutral-0);
         }
         /* Modal */
         .modal {
@@ -2645,18 +2788,18 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
+            background-color: var(--modal-overlay);
             z-index: var(--z-modal-overlay);
             align-items: center;
             justify-content: center;
         }
         .modal-content {
-            background-color: var(--surface-color);
-            border-radius: 16px;
+            background-color: var(--modal-bg);
+            border-radius: var(--modal-radius);
             width: 90%;
             max-width: 500px;
-            box-shadow: 0 24px 48px var(--shadow-color);
-            border: 1px solid color-mix(in srgb, var(--dark-color) 6%, transparent);
+            box-shadow: var(--modal-shadow);
+            border: 1px solid var(--modal-border);
             max-height: calc(100vh - 32px);
             display: flex;
             flex-direction: column;
@@ -2664,8 +2807,8 @@
             position: relative;
         }
         .modal-header {
-            padding: 18px 24px;
-            border-bottom: 1px solid var(--border-color);
+            padding: var(--space-4) var(--space-5);
+            border-bottom: 1px solid var(--modal-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -2673,7 +2816,7 @@
         .modal-title {
             font-size: 1.2rem;
             font-weight: 600;
-            color: var(--dark-color);
+            color: var(--text-color);
         }
         .modal-close {
             background: none;
@@ -2684,10 +2827,10 @@
             transition: color 0.2s ease;
         }
         .modal-close:hover {
-            color: var(--dark-color);
+            color: var(--text-color);
         }
         .modal-body {
-            padding: 20px;
+            padding: var(--space-5);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -2724,11 +2867,11 @@
         .modal .form-actions {
             position: sticky;
             bottom: 0;
-            background: linear-gradient(180deg, transparent 0%, var(--surface-color) 18%);
+            background: linear-gradient(180deg, transparent 0%, var(--modal-bg) 18%);
             padding-top: 14px;
             padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
             margin-top: auto;
-            border-top: 1px solid color-mix(in srgb, var(--dark-color) 6%, transparent);
+            border-top: 1px solid var(--modal-border);
         }
         .mov-signature-wrapper .form-actions {
             background: transparent;
@@ -2741,9 +2884,9 @@
             display: flex;
             justify-content: flex-end;
             gap: 12px;
-            padding: 18px 22px;
-            border-top: 1px solid color-mix(in srgb, var(--dark-color) 6%, transparent);
-            background: color-mix(in srgb, var(--light-color) 85%, white 15%);
+            padding: var(--space-4) var(--space-5);
+            border-top: 1px solid var(--modal-border);
+            background: var(--table-header-bg);
         }
         .modal-actions .btn-primary {
             min-width: 140px;
@@ -3722,11 +3865,6 @@
             padding: 12px 18px;
             font-weight: 600;
         }
-        .btn-ghost {
-            background: transparent;
-            color: var(--primary-color);
-            border: 1px dashed color-mix(in srgb, var(--primary-color) 45%, transparent);
-        }
         /* Movimentações */
         .mov-modal-hero {
             display: grid;
@@ -4345,30 +4483,35 @@
         .form-control {
             width: 100%;
             padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border: 1px solid var(--input-border);
+            border-radius: var(--input-radius);
             font-size: 1rem;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            background-color: var(--surface-color);
+            background-color: var(--input-bg);
+            color: var(--input-text);
         }
         .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px var(--focus-ring);
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 4px var(--input-focus-ring);
             outline: none;
+        }
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--input-placeholder);
         }
         .form-static {
             width: 100%;
             padding: 10px;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background-color: color-mix(in srgb, var(--light-color) 70%, white 30%);
+            border-radius: var(--input-radius);
+            background-color: color-mix(in srgb, var(--light-color) 70%, var(--surface-color) 30%);
             font-size: 0.95rem;
             color: var(--muted-color);
         }
         .form-static.is-warning {
-            background-color: color-mix(in srgb, var(--warning-color) 18%, white 82%);
+            background-color: color-mix(in srgb, var(--warning-color) 18%, var(--surface-color) 82%);
             border-color: color-mix(in srgb, var(--warning-color) 42%, var(--border-color) 58%);
-            color: color-mix(in srgb, var(--warning-color) 65%, black 35%);
+            color: color-mix(in srgb, var(--warning-color) 65%, var(--color-neutral-900) 35%);
         }
         .form-actions {
             display: flex;
@@ -4377,33 +4520,52 @@
             margin-top: 20px;
         }
         .btn {
+            --btn-bg: transparent;
+            --btn-bg-hover: var(--btn-bg);
+            --btn-text: var(--text-color);
+            --btn-border: transparent;
+            --btn-shadow: none;
             position: relative;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 999px;
+            min-height: var(--btn-height);
+            padding: 0 var(--btn-padding-x);
+            border: var(--btn-border-width) solid var(--btn-border);
+            border-radius: var(--btn-radius);
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            font-weight: var(--btn-font-weight);
+            font-size: var(--btn-font-size);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            box-shadow: var(--btn-shadow);
+            transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.2s ease;
+        }
+        .btn:hover,
+        .btn:focus-visible {
+            background: var(--btn-bg-hover);
+            outline: none;
+        }
+        .btn:focus-visible {
+            box-shadow: 0 0 0 3px var(--btn-focus-ring), var(--btn-shadow);
         }
         .btn-cta-mov {
             font-size: 1.05rem;
             padding: 14px 28px;
-            border-radius: 16px;
             letter-spacing: 0.01em;
-            background: linear-gradient(135deg, #4f8df5 0%, #2f6fe4 100%);
-            border: 1px solid color-mix(in srgb, #2f6fe4 60%, white 40%);
-            color: #f8fbff;
-            box-shadow: 0 16px 36px rgba(47, 111, 228, 0.28);
+            --btn-bg: var(--btn-cta-bg);
+            --btn-bg-hover: var(--btn-cta-bg-hover);
+            --btn-border: var(--btn-cta-border);
+            --btn-text: var(--btn-cta-text);
+            --btn-shadow: var(--btn-cta-shadow);
+            border-radius: var(--radius-lg);
         }
         .btn-cta-mov:hover,
         .btn-cta-mov:focus-visible {
             transform: translateY(-1px);
-            box-shadow: 0 20px 44px rgba(47, 111, 228, 0.36), 0 0 0 3px rgba(47, 111, 228, 0.18);
-            outline: none;
+            box-shadow: 0 20px 44px color-mix(in srgb, var(--primary-dark) 35%, transparent),
+                0 0 0 3px color-mix(in srgb, var(--primary-color) 18%, transparent);
         }
         .btn.btn-disabled {
             opacity: 0.55;
@@ -4456,43 +4618,56 @@
             to { transform: translateY(-50%) rotate(360deg); }
         }
         .btn-primary {
-            background: linear-gradient(135deg,
-                    color-mix(in srgb, var(--primary-color) 12%, #7fb1ff 18%),
-                    color-mix(in srgb, var(--primary-color) 92%, var(--primary-dark) 8%));
-            color: white;
-            border: 1px solid color-mix(in srgb, var(--primary-color) 70%, white 30%);
-            box-shadow: 0 14px 28px color-mix(in srgb, var(--primary-color) 40%, transparent);
+            --btn-bg: var(--btn-primary-bg);
+            --btn-bg-hover: var(--btn-primary-bg-hover);
+            --btn-text: var(--btn-primary-text);
+            --btn-border: var(--btn-primary-border);
+            --btn-shadow: var(--btn-primary-shadow);
         }
         .btn-primary.btn-cta-mov {
-            background: linear-gradient(135deg, #4f8df5 0%, #2f6fe4 100%);
-            border-color: color-mix(in srgb, #2f6fe4 62%, white 38%);
-            color: #f8fbff;
-            box-shadow: 0 16px 36px rgba(47, 111, 228, 0.28);
+            --btn-bg: var(--btn-cta-bg);
+            --btn-bg-hover: var(--btn-cta-bg-hover);
+            --btn-border: var(--btn-cta-border);
+            --btn-text: var(--btn-cta-text);
+            --btn-shadow: var(--btn-cta-shadow);
         }
-        .status-label {
+        .badge,
+        .status-label,
+        .status-livre,
+        .status-em-uso,
+        .status-proximo,
+        .status-vencido,
+        .status-contingencia {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 12px;
-            border-radius: 999px;
-            font-size: 0.75rem;
+            padding: var(--badge-padding-y) var(--badge-padding-x);
+            border-radius: var(--badge-radius);
+            font-size: var(--badge-font-size);
             font-weight: 600;
             letter-spacing: 0.4px;
             text-transform: uppercase;
-            background-color: rgba(59, 130, 246, 0.12);
-            color: var(--primary-color);
+            background-color: var(--badge-bg);
+            color: var(--badge-text);
+            border: 1px solid var(--badge-border);
         }
+        .badge--success,
         .status-label.aplicado {
-            background-color: rgba(16, 185, 129, 0.14);
-            color: var(--secondary-color);
+            --badge-bg: color-mix(in srgb, var(--success-color) 16%, var(--surface-color) 84%);
+            --badge-text: var(--success-color);
+            --badge-border: color-mix(in srgb, var(--success-color) 30%, transparent);
         }
+        .badge--warning,
         .status-label.pendente {
-            background-color: rgba(245, 158, 11, 0.14);
-            color: var(--warning-color);
+            --badge-bg: color-mix(in srgb, var(--warning-color) 16%, var(--surface-color) 84%);
+            --badge-text: var(--warning-color);
+            --badge-border: color-mix(in srgb, var(--warning-color) 30%, transparent);
         }
+        .badge--info,
         .status-label.andamento {
-            background-color: rgba(59, 130, 246, 0.14);
-            color: var(--primary-color);
+            --badge-bg: color-mix(in srgb, var(--primary-color) 16%, var(--surface-color) 84%);
+            --badge-text: var(--primary-color);
+            --badge-border: color-mix(in srgb, var(--primary-color) 30%, transparent);
         }
         .text-muted {
             color: var(--muted-color);
@@ -4678,34 +4853,27 @@
             color: color-mix(in srgb, var(--muted-color) 85%, black 15%);
             margin-top: 2px;
         }
-        .btn-primary:hover,
-        .btn-primary:focus-visible {
-            background: linear-gradient(135deg,
-                    color-mix(in srgb, var(--primary-color) 10%, #8abcff 22%),
-                    color-mix(in srgb, var(--primary-dark) 25%, var(--primary-color) 75%));
-            box-shadow: 0 18px 36px color-mix(in srgb, var(--primary-color) 42%, transparent),
-                0 0 0 3px color-mix(in srgb, var(--primary-color) 28%, white 72%);
-        }
-        .btn-primary.btn-cta-mov:hover,
-        .btn-primary.btn-cta-mov:focus-visible {
-            background: linear-gradient(135deg, #5c9afc 0%, #2d63db 100%);
-            box-shadow: 0 20px 44px rgba(47, 111, 228, 0.36), 0 0 0 3px rgba(47, 111, 228, 0.18);
-        }
         .btn-secondary {
-            background-color: color-mix(in srgb, var(--dark-color) 65%, white 35%);
-            color: white;
-            box-shadow: 0 12px 24px color-mix(in srgb, var(--dark-color) 25%, transparent);
-        }
-        .btn-secondary:hover {
-            background-color: color-mix(in srgb, var(--dark-color) 75%, black 25%);
+            --btn-bg: var(--btn-secondary-bg);
+            --btn-bg-hover: var(--btn-secondary-bg-hover);
+            --btn-text: var(--btn-secondary-text);
+            --btn-border: var(--btn-secondary-border);
+            --btn-shadow: var(--btn-secondary-shadow);
         }
         .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-            box-shadow: 0 12px 24px color-mix(in srgb, var(--danger-color) 35%, transparent);
+            --btn-bg: var(--btn-danger-bg);
+            --btn-bg-hover: var(--btn-danger-bg-hover);
+            --btn-text: var(--btn-danger-text);
+            --btn-border: var(--btn-danger-border);
+            --btn-shadow: var(--btn-danger-shadow);
         }
-        .btn-danger:hover {
-            background-color: color-mix(in srgb, var(--danger-color) 85%, var(--danger-dark) 15%);
+        .btn-ghost,
+        .btn.ghost {
+            --btn-bg: var(--btn-ghost-bg);
+            --btn-bg-hover: var(--btn-ghost-bg-hover);
+            --btn-text: var(--btn-ghost-text);
+            --btn-border: var(--btn-ghost-border);
+            --btn-shadow: var(--btn-ghost-shadow);
         }
         /* Notificações */
         .notification-panel {
@@ -4873,213 +5041,6 @@
             text-align: center;
             color: var(--muted-color);
             padding: 18px 0;
-        }
-        /* Refinos do tema escuro */
-        [data-theme="dark"] .login-wrapper {
-            background: radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 62%),
-                linear-gradient(135deg, #0b1120 0%, #0f172a 100%);
-        }
-        [data-theme="dark"] .login-card {
-            background: #0f172a;
-            border: 1px solid #1f2937;
-            box-shadow: 0 30px 60px rgba(2, 6, 23, 0.6);
-        }
-        [data-theme="dark"] .login-card h2 {
-            color: var(--primary-color);
-        }
-        [data-theme="dark"] .login-card h3 {
-            color: var(--text-color);
-        }
-        [data-theme="dark"] .login-card img {
-            filter: brightness(0) invert(1);
-        }
-        [data-theme="dark"] .login-form label {
-            color: var(--muted-color);
-        }
-        [data-theme="dark"] .login-form input {
-            background-color: #0b1220;
-            border-color: #1f2937;
-            color: var(--text-color);
-        }
-        [data-theme="dark"] .login-form input:focus {
-            background-color: #111827;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
-        }
-        [data-theme="dark"] .login-feedback {
-            background: rgba(15, 23, 42, 0.55);
-            color: var(--text-color);
-        }
-        [data-theme="dark"] input::placeholder,
-        [data-theme="dark"] textarea::placeholder {
-            color: color-mix(in srgb, var(--muted-color) 85%, white 15%);
-            opacity: 1;
-        }
-        [data-theme="dark"] .selector-control {
-            background: linear-gradient(135deg,
-                    color-mix(in srgb, #0f172a 85%, var(--primary-color) 15%),
-                    color-mix(in srgb, #0b1220 90%, var(--primary-color) 10%));
-            border-color: color-mix(in srgb, var(--primary-color) 25%, #1f2937 75%);
-            box-shadow: 0 12px 26px rgba(2, 6, 23, 0.6);
-        }
-        [data-theme="dark"] .selector-control:hover {
-            border-color: color-mix(in srgb, var(--primary-color) 45%, #1f2937 55%);
-            box-shadow: 0 16px 30px rgba(2, 6, 23, 0.7);
-        }
-        [data-theme="dark"] .selector-trigger:hover,
-        [data-theme="dark"] .selector-trigger:focus-visible {
-            background: color-mix(in srgb, var(--primary-color) 18%, #0b1220 82%);
-        }
-        [data-theme="dark"] .selector-dropdown {
-            background: #0f172a;
-            border-color: #1f2937;
-            box-shadow: 0 22px 40px rgba(2, 6, 23, 0.7);
-        }
-        [data-theme="dark"] .selector-dropdown::before {
-            border-bottom-color: color-mix(in srgb, var(--primary-color) 25%, #1f2937 75%);
-        }
-        [data-theme="dark"] .selector-dropdown::after {
-            border-bottom-color: #0f172a;
-        }
-        [data-theme="dark"] .selector-option-button {
-            color: var(--text-color);
-        }
-        [data-theme="dark"] .selector-option-button:hover:not(.is-disabled),
-        [data-theme="dark"] .selector-option-button:focus-visible:not(.is-disabled) {
-            background: color-mix(in srgb, var(--primary-color) 18%, #0b1220 82%);
-            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 35%, transparent);
-        }
-        [data-theme="dark"] .selector-option-button.is-selected {
-            background: color-mix(in srgb, var(--primary-color) 22%, #0b1220 78%);
-            box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary-color) 50%, transparent);
-        }
-        [data-theme="dark"] .selector-option-icon,
-        [data-theme="dark"] .selector-option-bullet {
-            background: color-mix(in srgb, var(--primary-color) 22%, #0b1220 78%);
-            color: var(--primary-color);
-        }
-        [data-theme="dark"] .selector-option-description {
-            color: color-mix(in srgb, var(--muted-color) 82%, #0b1220 18%);
-        }
-        [data-theme="dark"] .btn-secondary {
-            background-color: color-mix(in srgb, #0f172a 88%, var(--primary-color) 12%);
-            color: var(--text-color);
-            border: 1px solid color-mix(in srgb, var(--primary-color) 30%, #1f2937 70%);
-            box-shadow: 0 12px 24px rgba(2, 6, 23, 0.5);
-        }
-        [data-theme="dark"] .btn-secondary:hover {
-            background-color: color-mix(in srgb, #0f172a 78%, var(--primary-color) 22%);
-        }
-        [data-theme="dark"] .card {
-            background: linear-gradient(150deg,
-                    color-mix(in srgb, #0f172a 88%, var(--surface-color) 12%),
-                    color-mix(in srgb, #111827 85%, var(--primary-color) 15%));
-            border-color: color-mix(in srgb, var(--primary-color) 22%, #1f2937 78%);
-            box-shadow: 0 14px 28px rgba(2, 6, 23, 0.65);
-            color: var(--text-color);
-        }
-        [data-theme="dark"] .card.livre {
-            background: linear-gradient(160deg,
-                    color-mix(in srgb, var(--livre-main) 22%, #0b1220 78%),
-                    color-mix(in srgb, var(--livre-main) 10%, #0f172a 90%));
-            border-color: color-mix(in srgb, var(--livre-main) 45%, #1f2937 55%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--livre-main) 35%, transparent),
-                0 16px 30px rgba(2, 6, 23, 0.6);
-            color: var(--text-color);
-        }
-        [data-theme="dark"] .card.em-uso {
-            background: linear-gradient(145deg,
-                    color-mix(in srgb, var(--em-uso-card-bg) 30%, #0b1220 70%),
-                    color-mix(in srgb, var(--em-uso-border-color) 20%, #0f172a 80%));
-            border-color: color-mix(in srgb, var(--em-uso-border-color) 55%, #1f2937 45%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--em-uso-border-color) 35%, transparent),
-                0 16px 30px rgba(2, 6, 23, 0.6);
-        }
-        [data-theme="dark"] .card.em-uso::before {
-            opacity: 0.08;
-        }
-        [data-theme="dark"] .card.proximo {
-            background: linear-gradient(145deg,
-                    color-mix(in srgb, var(--proximo-main) 18%, #0b1220 82%),
-                    color-mix(in srgb, var(--proximo-main) 8%, #0f172a 92%));
-            border-color: color-mix(in srgb, var(--proximo-main) 45%, #1f2937 55%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--proximo-main) 35%, transparent),
-                0 16px 30px rgba(2, 6, 23, 0.6);
-            color: var(--text-color);
-        }
-        [data-theme="dark"] .card.vencido {
-            background: linear-gradient(145deg,
-                    color-mix(in srgb, var(--vencido-main) 20%, #0b1220 80%),
-                    color-mix(in srgb, var(--vencido-main) 10%, #0f172a 90%));
-            border-color: color-mix(in srgb, var(--vencido-main) 45%, #1f2937 55%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--vencido-main) 35%, transparent),
-                0 16px 30px rgba(2, 6, 23, 0.6);
-            color: var(--text-color);
-        }
-        [data-theme="dark"] .card.contingencia {
-            background: linear-gradient(150deg,
-                    color-mix(in srgb, var(--contingencia-main) 20%, #0b1220 80%),
-                    color-mix(in srgb, var(--contingencia-main) 10%, #0f172a 90%));
-            border-color: color-mix(in srgb, var(--contingencia-main) 45%, #1f2937 55%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--contingencia-main) 32%, transparent),
-                0 16px 30px rgba(2, 6, 23, 0.6);
-            color: var(--text-color);
-        }
-        [data-theme="dark"] .armario-card {
-            background: linear-gradient(155deg, #0f172a 0%, #0b1220 100%);
-            border: 1px solid #1f2937;
-            box-shadow: 0 12px 24px rgba(2, 6, 23, 0.6);
-        }
-        [data-theme="dark"] .armario-card.livre {
-            border-color: color-mix(in srgb, var(--livre-main) 40%, #1f2937 60%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--livre-main) 45%, transparent),
-                0 14px 28px rgba(2, 6, 23, 0.6);
-        }
-        [data-theme="dark"] .armario-card.em-uso {
-            border-color: color-mix(in srgb, var(--em-uso-border-color) 45%, #1f2937 55%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--em-uso-border-color) 40%, transparent),
-                0 14px 28px rgba(2, 6, 23, 0.6);
-        }
-        [data-theme="dark"] .armario-card.proximo {
-            border-color: color-mix(in srgb, var(--proximo-main) 45%, #1f2937 55%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--proximo-main) 35%, transparent),
-                0 14px 28px rgba(2, 6, 23, 0.6);
-        }
-        [data-theme="dark"] .armario-card.vencido {
-            border-color: color-mix(in srgb, var(--vencido-main) 45%, #1f2937 55%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--vencido-main) 35%, transparent),
-                0 14px 28px rgba(2, 6, 23, 0.6);
-        }
-        [data-theme="dark"] .armario-card.contingencia {
-            border-color: color-mix(in srgb, var(--contingencia-main) 45%, #1f2937 55%);
-            box-shadow: 0 0 0 1px color-mix(in srgb, var(--contingencia-main) 32%, transparent),
-                0 14px 28px rgba(2, 6, 23, 0.6);
-        }
-        [data-theme="dark"] .armario-status-icon {
-            background: color-mix(in srgb, var(--livre-main) 18%, #0b1220 82%);
-            color: var(--livre-main);
-            border: 1px solid color-mix(in srgb, var(--livre-main) 40%, transparent);
-            box-shadow: 0 10px 22px rgba(2, 6, 23, 0.7);
-        }
-        [data-theme="dark"] .armario-status-icon.status-em-uso {
-            background: color-mix(in srgb, var(--em-uso-card-bg) 30%, #0b1220 70%);
-            color: var(--em-uso-icon);
-            border-color: color-mix(in srgb, var(--em-uso-border-color) 40%, transparent);
-        }
-        [data-theme="dark"] .armario-status-icon.status-proximo {
-            background: color-mix(in srgb, var(--proximo-main) 18%, #0b1220 82%);
-            color: var(--proximo-main);
-            border-color: color-mix(in srgb, var(--proximo-main) 40%, transparent);
-        }
-        [data-theme="dark"] .armario-status-icon.status-vencido {
-            background: color-mix(in srgb, var(--vencido-main) 18%, #0b1220 82%);
-            color: var(--vencido-main);
-            border-color: color-mix(in srgb, var(--vencido-main) 40%, transparent);
-        }
-        [data-theme="dark"] .armario-status-icon.status-contingencia {
-            background: color-mix(in srgb, var(--contingencia-main) 22%, #0b1220 78%);
-            color: color-mix(in srgb, var(--contingencia-main) 85%, #f8fafc 15%);
-            border-color: color-mix(in srgb, var(--contingencia-main) 40%, transparent);
         }
         /* Responsividade */
         @media (min-width: 1025px) {
