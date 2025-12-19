@@ -822,6 +822,13 @@
         .sidebar-toggle i {
             font-size: 1.1rem;
         }
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
         .header-title h1 {
             font-size: 1.8rem;
             color: var(--dark-color);
@@ -1176,12 +1183,13 @@
             align-items: center;
             gap: 8px;
             flex-shrink: 1;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             min-width: 0;
         }
         .header-quick-actions .header-selectors {
             flex: 0 0 auto;
             gap: 8px;
+            flex-wrap: nowrap;
         }
         .header-quick-actions .header-selectors.compact {
             align-items: center;
