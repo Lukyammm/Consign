@@ -839,20 +839,22 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 10px 12px;
-            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 12%, white 88%), white);
-            border: 1px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
+            padding: 8px 10px;
+            background: color-mix(in srgb, var(--surface-color) 70%, var(--bg-color) 30%);
             border-radius: 14px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
             color: var(--dark-color);
             font-weight: 600;
             min-width: 0;
         }
-        .greeting-label {
-            color: var(--muted-color);
-            font-weight: 500;
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 25%, transparent);
+            flex-shrink: 0;
         }
-        .greeting-name {
+        .greeting-role {
             color: var(--primary-dark);
             font-size: 1rem;
             white-space: nowrap;
@@ -860,6 +862,15 @@
             overflow: hidden;
             max-width: 200px;
             display: inline-block;
+        }
+        .greeting-shift {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--primary-color) 18%, var(--surface-color) 82%);
+            color: var(--primary-dark);
         }
         .header-selectors {
             display: flex;
@@ -1167,6 +1178,16 @@
             flex-shrink: 1;
             flex-wrap: wrap;
             min-width: 0;
+        }
+        .header-quick-actions .header-selectors {
+            flex: 0 0 auto;
+            gap: 8px;
+        }
+        .header-quick-actions .header-selectors.compact {
+            align-items: center;
+        }
+        .header-quick-actions .selector-group.compact {
+            flex: 0 0 auto;
         }
         .theme-toggle {
             position: relative;
@@ -5427,18 +5448,19 @@
             }
             .header-actions {
                 width: 100%;
-                flex-direction: column;
-                align-items: stretch;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
                 gap: 12px;
             }
             .table-header-controls button {
                 width: 100%;
             }
             .header-selectors {
-                width: 100%;
-                flex-direction: column;
-                align-items: stretch;
-                gap: 10px;
+                width: auto;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
             }
             .header-quick-actions {
                 width: 100%;
@@ -5447,30 +5469,26 @@
                 order: -1;
             }
             .selector-group {
-                width: 100%;
+                width: auto;
             }
             .selector-control {
-                width: 100%;
+                width: auto;
             }
             .header-selectors.compact {
-                flex-direction: column;
-                align-items: stretch;
-                width: 100%;
-                gap: 10px;
+                flex-direction: row;
+                align-items: center;
+                width: auto;
+                gap: 8px;
             }
             .selector-group.compact {
-                width: 100%;
+                width: auto;
             }
             .selector-control.compact {
-                width: 100%;
+                width: 46px;
             }
             .selector-control.compact .selector-trigger-text,
             .selector-control.compact .selector-arrow {
-                display: flex;
-            }
-            .selector-control.compact .selector-arrow {
-                align-items: center;
-                justify-content: center;
+                display: none;
             }
             .selector-control .selector-dropdown {
                 position: fixed;
