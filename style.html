@@ -68,6 +68,54 @@
             --z-critical-overlay: 1200;
             --z-alert: 1250;
         }
+        [data-theme="dark"] {
+            --primary-color: #60A5FA;
+            --secondary-color: #34D399;
+            --success-color: #6FC7A5;
+            --warning-color: #F4A261;
+            --danger-color: #F87171;
+            --primary-dark: #1D4ED8;
+            --danger-dark: #B91C1C;
+
+            --dark-color: #E5E7EB;
+            --light-color: #0B1220;
+            --text-color: #E5E7EB;
+            --muted-color: #94A3B8;
+            --surface-color: #111827;
+            --bg-color: #0B1120;
+            --border-color: #1F2937;
+            --shadow-color: rgba(2, 6, 23, 0.65);
+
+            --livre-main: #5FBF9C;
+            --livre-contrast: #0E1C16;
+            --livre-glass: color-mix(in srgb, var(--livre-main) 18%, #0f172a 82%);
+
+            --em-uso-base: #6B8BC7;
+            --em-uso-contrast: #0B1220;
+            --em-uso-border-color: color-mix(in srgb, var(--primary-color) 55%, #0b1220 45%);
+            --em-uso-card-bg: color-mix(in srgb, var(--primary-color) 20%, #0b1220 80%);
+            --em-uso-badge-bg: color-mix(in srgb, var(--em-uso-base) 55%, #0b1220 45%);
+            --em-uso-badge-text: color-mix(in srgb, #e2e8f0 70%, #0b1220 30%);
+            --em-uso-icon: color-mix(in srgb, var(--em-uso-base) 70%, #cbd5f5 30%);
+            --em-uso-text: color-mix(in srgb, #e2e8f0 68%, #0b1220 32%);
+
+            --proximo-main: #F59E0B;
+            --proximo-contrast: #1F1303;
+            --proximo-glow: color-mix(in srgb, var(--proximo-main) 35%, transparent);
+
+            --vencido-main: #F87171;
+            --vencido-contrast: #2A0D0D;
+            --vencido-strong: color-mix(in srgb, var(--vencido-main) 55%, #2a0d0d 45%);
+
+            --contingencia-main: #8B7AD5;
+            --contingencia-contrast: #1A1235;
+            --contingencia-glass: color-mix(in srgb, var(--contingencia-main) 16%, #0b1220 84%);
+
+            --extended-badge-bg: color-mix(in srgb, var(--primary-color) 22%, #0b1220 78%);
+            --extended-badge-text: color-mix(in srgb, var(--primary-color) 70%, #e2e8f0 30%);
+            --extended-row-bg: color-mix(in srgb, var(--primary-color) 12%, #0b1220 88%);
+            --extended-border-color: color-mix(in srgb, var(--primary-color) 35%, #0b1220 65%);
+        }
 
         /* Achados e Perdidos */
         .glass-card {
@@ -1005,6 +1053,29 @@
             flex-shrink: 1;
             flex-wrap: wrap;
             min-width: 0;
+        }
+        .theme-toggle {
+            position: relative;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--dark-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in srgb, var(--light-color) 82%, white 18%);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+        .theme-toggle:hover,
+        .theme-toggle:focus-visible {
+            background: color-mix(in srgb, var(--primary-color) 10%, var(--light-color) 90%);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+            transform: translateY(-1px);
+            outline: none;
         }
         .notification-bell {
             position: relative;

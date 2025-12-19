@@ -82,7 +82,8 @@
             sessaoUsuario: 'locknac_sessao_usuario',
             rascunhoArmario: 'locknac_rascunho_armario',
             rascunhoTermo: 'locknac_rascunho_termo',
-            preferenciasCabecalho: 'locknac_preferencias_cabecalho'
+            preferenciasCabecalho: 'locknac_preferencias_cabecalho',
+            tema: 'locknac_tema'
         };
         const CAMADAS = {
             modal: 850,
@@ -187,6 +188,59 @@
             }
             armazenamentoLocalDisponivel = null;
             return armazenamentoLocalDisponivel;
+        }
+        function obterTemaPreferido() {
+            const storage = obterArmazenamentoLocal();
+            if (storage) {
+                try {
+                    const temaSalvo = storage.getItem(STORAGE_KEYS.tema);
+                    if (temaSalvo === 'dark' || temaSalvo === 'light') {
+                        return temaSalvo;
+                    }
+                } catch (erro) {
+                    console.warn('Falha ao ler tema salvo:', erro);
+                }
+            }
+            if (typeof window !== 'undefined' && window.matchMedia) {
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            return 'light';
+        }
+        function atualizarBotaoTema(tema) {
+            const botaoTema = document.getElementById('theme-toggle');
+            if (!botaoTema) return;
+            const isDark = tema === 'dark';
+            const icone = botaoTema.querySelector('i');
+            if (icone) {
+                icone.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            }
+            botaoTema.setAttribute('aria-label', isDark ? 'Ativar tema claro' : 'Ativar tema escuro');
+            botaoTema.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+        }
+        function aplicarTema(tema, salvarPreferencia = true) {
+            const temaFinal = tema === 'dark' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', temaFinal);
+            atualizarBotaoTema(temaFinal);
+            if (!salvarPreferencia) return;
+            const storage = obterArmazenamentoLocal();
+            if (!storage) return;
+            try {
+                storage.setItem(STORAGE_KEYS.tema, temaFinal);
+            } catch (erro) {
+                console.warn('Falha ao salvar tema:', erro);
+            }
+        }
+        function inicializarTema() {
+            const temaInicial = obterTemaPreferido();
+            aplicarTema(temaInicial, true);
+            const botaoTema = document.getElementById('theme-toggle');
+            if (botaoTema) {
+                botaoTema.addEventListener('click', () => {
+                    const temaAtual = document.documentElement.getAttribute('data-theme') || 'light';
+                    const proximoTema = temaAtual === 'dark' ? 'light' : 'dark';
+                    aplicarTema(proximoTema, true);
+                });
+            }
         }
         function salvarSessaoUsuario(usuario) {
             const storage = obterArmazenamentoLocal();
@@ -1605,6 +1659,7 @@
         }
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
+            inicializarTema();
             atualizarOpcoesSetorTermo();
             atualizarResponsavelMovimentacaoInfo();
             inicializarLogin();
