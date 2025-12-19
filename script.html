@@ -611,6 +611,7 @@
             cardVencido: document.querySelector('.card.vencido'),
             cardEmUso: document.querySelector('.card.em-uso'),
             cardLivres: document.querySelector('.card.livre'),
+            cardContingencia: document.querySelector('.card.contingencia'),
             cardsCount: {
                 livres: document.getElementById('livres-count'),
                 emUso: document.getElementById('em-uso-count'),
@@ -2813,6 +2814,15 @@
                     renderizarArmarios();
                 });
             });
+            if (elementos.cardsHero) {
+                const cards = elementos.cardsHero.querySelectorAll('.card[data-filter]');
+                cards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        const filtro = card.dataset.filter || '';
+                        aplicarFiltroHeroDashboard(filtro);
+                    });
+                });
+            }
             if (elementos.dashboardSearch) {
                 elementos.dashboardSearch.addEventListener('input', () => {
                     estado.buscaDashboard = elementos.dashboardSearch.value || '';
@@ -3368,6 +3378,7 @@
             const cardVencido = elementos.cardVencido;
             const cardEmUso = elementos.cardEmUso;
             const cardLivres = elementos.cardLivres;
+            const cardContingencia = elementos.cardContingencia;
             if (!containerHero) return;
 
             const perfilNormalizado = normalizarTexto(estado.perfilAtual);
@@ -3391,6 +3402,11 @@
 
             if (cardLivres) {
                 cardLivres.style.display = exibirHero ? '' : 'none';
+            }
+
+            if (cardContingencia) {
+                const exibirContingencia = exibirHero && perfilNormalizado !== 'visitante';
+                cardContingencia.style.display = exibirContingencia ? '' : 'none';
             }
         }
 
@@ -3760,6 +3776,15 @@
                 conjunto.add('todos');
             }
             estado.filtrosSelecionados = Array.from(conjunto);
+        }
+        function aplicarFiltroHeroDashboard(filtroSelecionado) {
+            const filtroNormalizado = normalizarTexto(filtroSelecionado);
+            if (!filtroNormalizado) return;
+            const permitidos = new Set(obterFiltrosPermitidosPorPerfil());
+            if (!permitidos.has(filtroNormalizado)) return;
+            estado.filtrosSelecionados = [filtroNormalizado];
+            atualizarBotoesFiltroDashboard();
+            renderizarArmarios();
         }
         function armarioPassaNosFiltrosSelecionados(armario, filtrosAtivos) {
             const filtrosNormalizados = new Set((filtrosAtivos || []).map(normalizarTexto));
