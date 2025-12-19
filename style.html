@@ -684,8 +684,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: color-mix(in srgb, var(--surface-color) 16%, transparent);
-            color: color-mix(in srgb, var(--text-color) 85%, var(--primary-dark) 15%);
+            background: color-mix(in srgb, #ffffff 18%, transparent);
+            color: var(--color-neutral-0);
             font-size: 28px;
             box-shadow: var(--shadow-md);
         }
@@ -5082,23 +5082,23 @@
             .sidebar-menu a.active::after {
                 content: "";
                 position: absolute;
-                width: 38px;
-                height: 38px;
-                border-radius: 14px;
+                width: 10px;
+                height: 10px;
+                border-radius: 999px;
                 left: 50%;
                 top: 50%;
-                transform: translate(-50%, -50%);
-                background: color-mix(in srgb, white 14%, transparent);
-                box-shadow: 0 0 14px rgba(255, 255, 255, 0.3);
+                transform: translate(-50%, 12px);
+                background: color-mix(in srgb, white 85%, transparent);
+                box-shadow: 0 0 10px rgba(255, 255, 255, 0.45);
                 z-index: -1;
             }
             .sidebar-menu a.active::before {
                 content: "";
                 position: absolute;
-                left: 12px;
+                left: 10px;
                 top: 50%;
                 width: 3px;
-                height: 26px;
+                height: 18px;
                 border-radius: 999px;
                 transform: translateY(-50%);
                 background: color-mix(in srgb, white 80%, transparent);
