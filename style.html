@@ -5630,25 +5630,30 @@
                 gap: 0;
             }
             .header {
+                flex-direction: column;
                 align-items: flex-start;
+                gap: 12px;
+            }
+            .sidebar-toggle {
+                align-self: flex-start;
             }
             .header-actions {
                 gap: 10px;
             }
             .header-quick-actions {
-                order: -1;
-                justify-content: flex-end;
-                align-self: flex-end;
+                order: 1;
+                justify-content: flex-start;
+                align-self: stretch;
             }
             .header-selectors {
                 align-items: flex-start;
             }
             .header-selector-pair {
-                padding: 4px;
+                padding: 8px;
             }
             .header-selector-pair .selector-control.compact {
-                width: 48px;
-                height: 48px;
+                width: 56px;
+                height: 56px;
             }
             .header-icon-actions {
                 gap: 8px;
