@@ -71,6 +71,7 @@
             busca: '',
             prontuario: ''
         };
+        let turnoIntervalId = null;
         function obterEstadoLiberacao() {
             if (!estado.liberacao) {
                 estado.liberacao = criarEstadoLiberacaoInicial();
@@ -626,7 +627,8 @@
             headerUserName: document.getElementById('header-user-name'),
             headerUserRole: document.getElementById('header-user-role'),
             headerUserGreeting: document.getElementById('header-user-greeting'),
-            headerUserGreetingName: document.getElementById('header-user-greeting-name'),
+            headerUserGreetingRole: document.getElementById('header-user-greeting-role'),
+            headerUserGreetingShift: document.getElementById('header-user-greeting-shift'),
             avatarModal: document.getElementById('avatar-modal'),
             avatarModalBackdrop: document.getElementById('avatar-modal-backdrop'),
             avatarModalClose: document.getElementById('avatar-modal-close'),
@@ -1470,6 +1472,18 @@
             });
             return nomes.join(', ');
         }
+        function obterTurnoAtual(dataAtual = new Date()) {
+            const minutos = dataAtual.getHours() * 60 + dataAtual.getMinutes();
+            const inicioManha = 7 * 60;
+            const fimManha = 19 * 60;
+            return minutos >= inicioManha && minutos <= fimManha ? 'MT' : 'SN';
+        }
+        function atualizarTurnoCabecalho() {
+            if (!elementos.headerUserGreetingShift) {
+                return;
+            }
+            elementos.headerUserGreetingShift.textContent = obterTurnoAtual();
+        }
         function atualizarCabecalhoUsuario() {
             if (!elementos.headerUserName || !elementos.headerUserAvatar || !elementos.headerUserRole) {
                 return;
@@ -1482,20 +1496,21 @@
                 elementos.headerUserAvatar.style.backgroundImage = '';
                 elementos.headerUserAvatar.classList.remove('has-image');
                 elementos.headerUserProfile?.setAttribute('aria-label', 'Perfil do usuário');
-                if (elementos.headerUserGreetingName) {
-                    elementos.headerUserGreetingName.textContent = 'Visitante';
+                if (elementos.headerUserGreetingRole) {
+                    elementos.headerUserGreetingRole.textContent = 'Visitante';
                 }
+                atualizarTurnoCabecalho();
                 atualizarResponsavelMovimentacaoInfo();
                 return;
             }
             const nomeLimpo = (usuario.nome || 'Usuário').toString().trim();
-            const saudacao = obterNomeSaudacao(nomeLimpo);
             elementos.headerUserName.textContent = nomeLimpo;
             elementos.headerUserRole.textContent = perfilAtualEhAdmin() ? 'Administrador' : 'Usuário';
             elementos.headerUserProfile?.setAttribute('aria-label', `Perfil do usuário ${nomeLimpo} (${elementos.headerUserRole.textContent})`);
-            if (elementos.headerUserGreetingName) {
-                elementos.headerUserGreetingName.textContent = saudacao;
+            if (elementos.headerUserGreetingRole) {
+                elementos.headerUserGreetingRole.textContent = perfilAtualEhAdmin() ? 'Administrador Geral' : 'Usuário';
             }
+            atualizarTurnoCabecalho();
             const avatarUrl = usuario.avatarUrl ? usuario.avatarUrl.toString().trim() : '';
             if (avatarUrl) {
                 elementos.headerUserAvatar.style.backgroundImage = `url("${avatarUrl.replace(/"/g, '\\"')}")`;
@@ -1776,6 +1791,9 @@
             if (aplicacaoInicializada) {
                 await carregarDadosIniciais();
                 atualizarCabecalhoUsuario();
+                if (!turnoIntervalId) {
+                    turnoIntervalId = setInterval(atualizarTurnoCabecalho, 60000);
+                }
                 aplicarPermissoesMenu();
                 atualizarInterface();
                 carregarDadosTabelas();
@@ -1790,6 +1808,9 @@
             inicializarEventos();
             await carregarDadosIniciais();
             atualizarCabecalhoUsuario();
+            if (!turnoIntervalId) {
+                turnoIntervalId = setInterval(atualizarTurnoCabecalho, 60000);
+            }
             aplicarPermissoesMenu();
             atualizarInterface();
             carregarDadosTabelas();
