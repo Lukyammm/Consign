@@ -4867,6 +4867,213 @@
             color: var(--muted-color);
             padding: 18px 0;
         }
+        /* Refinos do tema escuro */
+        [data-theme="dark"] .login-wrapper {
+            background: radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 62%),
+                linear-gradient(135deg, #0b1120 0%, #0f172a 100%);
+        }
+        [data-theme="dark"] .login-card {
+            background: #0f172a;
+            border: 1px solid #1f2937;
+            box-shadow: 0 30px 60px rgba(2, 6, 23, 0.6);
+        }
+        [data-theme="dark"] .login-card h2 {
+            color: var(--primary-color);
+        }
+        [data-theme="dark"] .login-card h3 {
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .login-card img {
+            filter: brightness(0) invert(1);
+        }
+        [data-theme="dark"] .login-form label {
+            color: var(--muted-color);
+        }
+        [data-theme="dark"] .login-form input {
+            background-color: #0b1220;
+            border-color: #1f2937;
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .login-form input:focus {
+            background-color: #111827;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
+        }
+        [data-theme="dark"] .login-feedback {
+            background: rgba(15, 23, 42, 0.55);
+            color: var(--text-color);
+        }
+        [data-theme="dark"] input::placeholder,
+        [data-theme="dark"] textarea::placeholder {
+            color: color-mix(in srgb, var(--muted-color) 85%, white 15%);
+            opacity: 1;
+        }
+        [data-theme="dark"] .selector-control {
+            background: linear-gradient(135deg,
+                    color-mix(in srgb, #0f172a 85%, var(--primary-color) 15%),
+                    color-mix(in srgb, #0b1220 90%, var(--primary-color) 10%));
+            border-color: color-mix(in srgb, var(--primary-color) 25%, #1f2937 75%);
+            box-shadow: 0 12px 26px rgba(2, 6, 23, 0.6);
+        }
+        [data-theme="dark"] .selector-control:hover {
+            border-color: color-mix(in srgb, var(--primary-color) 45%, #1f2937 55%);
+            box-shadow: 0 16px 30px rgba(2, 6, 23, 0.7);
+        }
+        [data-theme="dark"] .selector-trigger:hover,
+        [data-theme="dark"] .selector-trigger:focus-visible {
+            background: color-mix(in srgb, var(--primary-color) 18%, #0b1220 82%);
+        }
+        [data-theme="dark"] .selector-dropdown {
+            background: #0f172a;
+            border-color: #1f2937;
+            box-shadow: 0 22px 40px rgba(2, 6, 23, 0.7);
+        }
+        [data-theme="dark"] .selector-dropdown::before {
+            border-bottom-color: color-mix(in srgb, var(--primary-color) 25%, #1f2937 75%);
+        }
+        [data-theme="dark"] .selector-dropdown::after {
+            border-bottom-color: #0f172a;
+        }
+        [data-theme="dark"] .selector-option-button {
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .selector-option-button:hover:not(.is-disabled),
+        [data-theme="dark"] .selector-option-button:focus-visible:not(.is-disabled) {
+            background: color-mix(in srgb, var(--primary-color) 18%, #0b1220 82%);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 35%, transparent);
+        }
+        [data-theme="dark"] .selector-option-button.is-selected {
+            background: color-mix(in srgb, var(--primary-color) 22%, #0b1220 78%);
+            box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary-color) 50%, transparent);
+        }
+        [data-theme="dark"] .selector-option-icon,
+        [data-theme="dark"] .selector-option-bullet {
+            background: color-mix(in srgb, var(--primary-color) 22%, #0b1220 78%);
+            color: var(--primary-color);
+        }
+        [data-theme="dark"] .selector-option-description {
+            color: color-mix(in srgb, var(--muted-color) 82%, #0b1220 18%);
+        }
+        [data-theme="dark"] .btn-secondary {
+            background-color: color-mix(in srgb, #0f172a 88%, var(--primary-color) 12%);
+            color: var(--text-color);
+            border: 1px solid color-mix(in srgb, var(--primary-color) 30%, #1f2937 70%);
+            box-shadow: 0 12px 24px rgba(2, 6, 23, 0.5);
+        }
+        [data-theme="dark"] .btn-secondary:hover {
+            background-color: color-mix(in srgb, #0f172a 78%, var(--primary-color) 22%);
+        }
+        [data-theme="dark"] .card {
+            background: linear-gradient(150deg,
+                    color-mix(in srgb, #0f172a 88%, var(--surface-color) 12%),
+                    color-mix(in srgb, #111827 85%, var(--primary-color) 15%));
+            border-color: color-mix(in srgb, var(--primary-color) 22%, #1f2937 78%);
+            box-shadow: 0 14px 28px rgba(2, 6, 23, 0.65);
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .card.livre {
+            background: linear-gradient(160deg,
+                    color-mix(in srgb, var(--livre-main) 22%, #0b1220 78%),
+                    color-mix(in srgb, var(--livre-main) 10%, #0f172a 90%));
+            border-color: color-mix(in srgb, var(--livre-main) 45%, #1f2937 55%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--livre-main) 35%, transparent),
+                0 16px 30px rgba(2, 6, 23, 0.6);
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .card.em-uso {
+            background: linear-gradient(145deg,
+                    color-mix(in srgb, var(--em-uso-card-bg) 30%, #0b1220 70%),
+                    color-mix(in srgb, var(--em-uso-border-color) 20%, #0f172a 80%));
+            border-color: color-mix(in srgb, var(--em-uso-border-color) 55%, #1f2937 45%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--em-uso-border-color) 35%, transparent),
+                0 16px 30px rgba(2, 6, 23, 0.6);
+        }
+        [data-theme="dark"] .card.em-uso::before {
+            opacity: 0.08;
+        }
+        [data-theme="dark"] .card.proximo {
+            background: linear-gradient(145deg,
+                    color-mix(in srgb, var(--proximo-main) 18%, #0b1220 82%),
+                    color-mix(in srgb, var(--proximo-main) 8%, #0f172a 92%));
+            border-color: color-mix(in srgb, var(--proximo-main) 45%, #1f2937 55%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--proximo-main) 35%, transparent),
+                0 16px 30px rgba(2, 6, 23, 0.6);
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .card.vencido {
+            background: linear-gradient(145deg,
+                    color-mix(in srgb, var(--vencido-main) 20%, #0b1220 80%),
+                    color-mix(in srgb, var(--vencido-main) 10%, #0f172a 90%));
+            border-color: color-mix(in srgb, var(--vencido-main) 45%, #1f2937 55%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--vencido-main) 35%, transparent),
+                0 16px 30px rgba(2, 6, 23, 0.6);
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .card.contingencia {
+            background: linear-gradient(150deg,
+                    color-mix(in srgb, var(--contingencia-main) 20%, #0b1220 80%),
+                    color-mix(in srgb, var(--contingencia-main) 10%, #0f172a 90%));
+            border-color: color-mix(in srgb, var(--contingencia-main) 45%, #1f2937 55%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--contingencia-main) 32%, transparent),
+                0 16px 30px rgba(2, 6, 23, 0.6);
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .armario-card {
+            background: linear-gradient(155deg, #0f172a 0%, #0b1220 100%);
+            border: 1px solid #1f2937;
+            box-shadow: 0 12px 24px rgba(2, 6, 23, 0.6);
+        }
+        [data-theme="dark"] .armario-card.livre {
+            border-color: color-mix(in srgb, var(--livre-main) 40%, #1f2937 60%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--livre-main) 45%, transparent),
+                0 14px 28px rgba(2, 6, 23, 0.6);
+        }
+        [data-theme="dark"] .armario-card.em-uso {
+            border-color: color-mix(in srgb, var(--em-uso-border-color) 45%, #1f2937 55%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--em-uso-border-color) 40%, transparent),
+                0 14px 28px rgba(2, 6, 23, 0.6);
+        }
+        [data-theme="dark"] .armario-card.proximo {
+            border-color: color-mix(in srgb, var(--proximo-main) 45%, #1f2937 55%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--proximo-main) 35%, transparent),
+                0 14px 28px rgba(2, 6, 23, 0.6);
+        }
+        [data-theme="dark"] .armario-card.vencido {
+            border-color: color-mix(in srgb, var(--vencido-main) 45%, #1f2937 55%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--vencido-main) 35%, transparent),
+                0 14px 28px rgba(2, 6, 23, 0.6);
+        }
+        [data-theme="dark"] .armario-card.contingencia {
+            border-color: color-mix(in srgb, var(--contingencia-main) 45%, #1f2937 55%);
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--contingencia-main) 32%, transparent),
+                0 14px 28px rgba(2, 6, 23, 0.6);
+        }
+        [data-theme="dark"] .armario-status-icon {
+            background: color-mix(in srgb, var(--livre-main) 18%, #0b1220 82%);
+            color: var(--livre-main);
+            border: 1px solid color-mix(in srgb, var(--livre-main) 40%, transparent);
+            box-shadow: 0 10px 22px rgba(2, 6, 23, 0.7);
+        }
+        [data-theme="dark"] .armario-status-icon.status-em-uso {
+            background: color-mix(in srgb, var(--em-uso-card-bg) 30%, #0b1220 70%);
+            color: var(--em-uso-icon);
+            border-color: color-mix(in srgb, var(--em-uso-border-color) 40%, transparent);
+        }
+        [data-theme="dark"] .armario-status-icon.status-proximo {
+            background: color-mix(in srgb, var(--proximo-main) 18%, #0b1220 82%);
+            color: var(--proximo-main);
+            border-color: color-mix(in srgb, var(--proximo-main) 40%, transparent);
+        }
+        [data-theme="dark"] .armario-status-icon.status-vencido {
+            background: color-mix(in srgb, var(--vencido-main) 18%, #0b1220 82%);
+            color: var(--vencido-main);
+            border-color: color-mix(in srgb, var(--vencido-main) 40%, transparent);
+        }
+        [data-theme="dark"] .armario-status-icon.status-contingencia {
+            background: color-mix(in srgb, var(--contingencia-main) 22%, #0b1220 78%);
+            color: color-mix(in srgb, var(--contingencia-main) 85%, #f8fafc 15%);
+            border-color: color-mix(in srgb, var(--contingencia-main) 40%, transparent);
+        }
         /* Responsividade */
         @media (min-width: 1025px) {
             .sidebar {
