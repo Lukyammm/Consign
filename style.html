@@ -1185,14 +1185,39 @@
             width: auto;
             order: 0;
             flex-shrink: 0;
+            margin-left: auto;
         }
         .header-actions {
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: 8px;
+            gap: 16px;
             flex-wrap: nowrap;
             min-width: 0;
+            justify-content: flex-end;
+        }
+        .header-selector-pair {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            border-radius: 16px;
+            background: color-mix(in srgb, var(--surface-color) 82%, var(--bg-color) 18%);
+            border: 1px solid color-mix(in srgb, var(--dark-color) 8%, transparent);
+            box-shadow: inset 0 1px 0 color-mix(in srgb, white 30%, transparent);
+        }
+        .header-selector-pair .selector-control.compact {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+        }
+        .header-selector-pair .selector-control.compact .selector-icon {
+            font-size: 1.15rem;
+        }
+        .header-icon-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         .header-quick-actions .header-selectors {
             flex: 0 0 auto;
@@ -5507,6 +5532,16 @@
             .selector-control.compact {
                 width: 46px;
             }
+            .header-selector-pair {
+                padding: 4px;
+            }
+            .header-selector-pair .selector-control.compact {
+                width: 50px;
+                height: 50px;
+            }
+            .header-icon-actions {
+                gap: 8px;
+            }
             .selector-control.compact .selector-trigger-text,
             .selector-control.compact .selector-arrow {
                 display: none;
@@ -5607,6 +5642,16 @@
             }
             .header-selectors {
                 align-items: flex-start;
+            }
+            .header-selector-pair {
+                padding: 4px;
+            }
+            .header-selector-pair .selector-control.compact {
+                width: 48px;
+                height: 48px;
+            }
+            .header-icon-actions {
+                gap: 8px;
             }
             .cards-hero {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
