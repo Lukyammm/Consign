@@ -1308,7 +1308,7 @@ function handlePost(e) {
   try {
     switch(action) {
       case 'getArmarios':
-        return ContentService.createTextOutput(JSON.stringify(getArmarios(e.parameter.tipo)))
+        return ContentService.createTextOutput(JSON.stringify(getArmarios(e.parameter.tipo, e.parameter.incluirInternacoes)))
           .setMimeType(ContentService.MimeType.JSON);
       
       case 'cadastrarArmario':
@@ -1780,22 +1780,23 @@ function buscarPacienteBaseVitae(dados) {
   }
 }
 
-function getArmarios(tipo) {
+function getArmarios(tipo, incluirInternacoes) {
   var tipoNormalizadoOriginal = normalizarTextoBasico(tipo);
   if (!tipoNormalizadoOriginal) {
     tipoNormalizadoOriginal = 'geral';
   }
 
+  var incluirInternacoesNormalizado = converterParaBoolean(incluirInternacoes);
   var chaveCacheTipo = tipoNormalizadoOriginal;
   if (chaveCacheTipo === 'admin' || chaveCacheTipo === 'ambos' || chaveCacheTipo === 'todos') {
     chaveCacheTipo = 'geral';
   }
 
-  var chaveCache = montarChaveCache('armarios', chaveCacheTipo);
+  var chaveCache = montarChaveCache('armarios', chaveCacheTipo, incluirInternacoesNormalizado ? 'com-internacoes' : 'sem-internacoes');
 
   return executarComCache(chaveCache, CACHE_TTL_ARMARIOS, function() {
     try {
-      var mapaInternacoes = obterMapaInternacoesBaseVitae();
+      var mapaInternacoes = incluirInternacoesNormalizado ? obterMapaInternacoesBaseVitae() : null;
       var tipoNormalizado = tipoNormalizadoOriginal;
       var incluirTermos = tipoNormalizado === 'acompanhante' || tipoNormalizado === 'admin' ||
         tipoNormalizado === 'ambos' || tipoNormalizado === 'todos' || tipoNormalizado === 'geral';
