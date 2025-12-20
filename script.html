@@ -1986,6 +1986,7 @@
             fecharModalAvatar({ focusTrigger: false });
         }
         const ARMARIOS_CACHE_KEY = 'dashboard-armarios-cache';
+        const ARMARIOS_CACHE_TTL_MS = 60 * 1000;
         function agendarAtualizacaoResumoDashboard() {
             const atualizar = () => atualizarResumoDashboardLocal();
             if (typeof requestAnimationFrame === 'function') {
@@ -2010,7 +2011,11 @@
                 if (!dados) {
                     return false;
                 }
-                const { armarios } = JSON.parse(dados);
+                const { armarios, atualizadoEm } = JSON.parse(dados);
+                if (!atualizadoEm || (Date.now() - atualizadoEm) > ARMARIOS_CACHE_TTL_MS) {
+                    sessionStorage.removeItem(ARMARIOS_CACHE_KEY);
+                    return false;
+                }
                 if (!Array.isArray(armarios) || !armarios.length) {
                     return false;
                 }
