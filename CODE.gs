@@ -658,11 +658,14 @@ function limparCaches(chaves) {
 }
 
 function limparCacheArmarios() {
-  limparCaches([
-    montarChaveCache('armarios', 'visitante'),
-    montarChaveCache('armarios', 'acompanhante'),
-    montarChaveCache('armarios', 'geral')
-  ]);
+  var tipos = ['visitante', 'acompanhante', 'geral'];
+  var chaves = [];
+  tipos.forEach(function(tipo) {
+    chaves.push(montarChaveCache('armarios', tipo));
+    chaves.push(montarChaveCache('armarios', tipo, 'com-internacoes'));
+    chaves.push(montarChaveCache('armarios', tipo, 'sem-internacoes'));
+  });
+  limparCaches(chaves);
 }
 
 function limparCacheUsuarios() {
@@ -688,15 +691,27 @@ function limparCacheMovimentacoes(armarioId, numeroArmario, tipo) {
   var idTexto = armarioId !== undefined && armarioId !== null ? armarioId.toString().trim() : '';
   var numeroTexto = normalizarNumeroArmario(numeroArmario);
   var tipoTexto = tipo ? normalizarTextoBasico(tipo) : '';
-  var chaveEspecifica = idTexto ? montarChaveCache('movimentacoes', [idTexto, numeroTexto, tipoTexto].join('|')) : null;
-  var chaveLegado = idTexto ? montarChaveCache('movimentacoes', idTexto) : null;
-  var chaveNumero = numeroTexto ? montarChaveCache('movimentacoes', ['numero', numeroTexto, tipoTexto].join('|')) : null;
-  limparCaches([
-    chaveEspecifica,
-    chaveLegado,
-    chaveNumero,
-    montarChaveCache('movimentacoes', 'todos')
-  ]);
+  var statusVariantes = ['ativos', 'finalizados'];
+  var chaves = [];
+
+  if (idTexto) {
+    chaves.push(montarChaveCache('movimentacoes', [idTexto, numeroTexto, tipoTexto].join('|')));
+    statusVariantes.forEach(function(status) {
+      chaves.push(montarChaveCache('movimentacoes', [idTexto, numeroTexto, tipoTexto, status].join('|')));
+    });
+    chaves.push(montarChaveCache('movimentacoes', idTexto));
+  }
+
+  if (numeroTexto) {
+    chaves.push(montarChaveCache('movimentacoes', ['numero', numeroTexto, tipoTexto].join('|')));
+    statusVariantes.forEach(function(status) {
+      chaves.push(montarChaveCache('movimentacoes', ['numero', numeroTexto, tipoTexto, status].join('|')));
+    });
+  }
+
+  chaves.push(montarChaveCache('movimentacoes', 'todos'));
+  chaves.push(montarChaveCache('movimentacoes', 'todos_finalizados'));
+  limparCaches(chaves);
 }
 
 function limparCacheIndiceArmarios(sheetName) {
