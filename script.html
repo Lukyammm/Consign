@@ -1710,6 +1710,12 @@
                 ? opcoes.intervaloInicial
                 : 400;
             const payload = { ...(data || {}) };
+            if (!Object.prototype.hasOwnProperty.call(payload, 'usuarioId')) {
+                const usuarioAtual = obterUsuarioAutenticado();
+                if (usuarioAtual && usuarioAtual.id !== undefined && usuarioAtual.id !== null) {
+                    payload.usuarioId = usuarioAtual.id;
+                }
+            }
             if (!Object.prototype.hasOwnProperty.call(payload, 'usuarioResponsavel')) {
                 const responsavelAtual = obterDescricaoResponsavelAtual();
                 if (responsavelAtual) {
@@ -5100,7 +5106,7 @@
             document.getElementById('usuario-nome').value = usuario.nome || '';
             document.getElementById('usuario-email').value = usuario.email || '';
             if (elementos.usuarioSenha) {
-                elementos.usuarioSenha.value = usuario.senha || '';
+                elementos.usuarioSenha.value = '';
             }
             if (elementos.usuarioStatus) {
                 elementos.usuarioStatus.value = usuario.status || 'ativo';
