@@ -1231,6 +1231,132 @@ function converterParaDataHoraIso(valor, padrao) {
   return padrao !== undefined ? padrao : '';
 }
 
+var MAX_TENTATIVAS_LOGIN = 5;
+var BLOQUEIO_LOGIN_MINUTOS = 10;
+
+function gerarSaltSenha() {
+  return Utilities.getUuid();
+}
+
+function bytesParaHex(bytes) {
+  return bytes.map(function(byte) {
+    var valor = byte < 0 ? byte + 256 : byte;
+    return ('0' + valor.toString(16)).slice(-2);
+  }).join('');
+}
+
+function calcularHashSenha(senha, salt) {
+  var material = (salt || '') + senha;
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, material, Utilities.Charset.UTF_8);
+  return bytesParaHex(digest);
+}
+
+function criarHashSenha(senha) {
+  var salt = gerarSaltSenha();
+  var hash = calcularHashSenha(senha, salt);
+  return salt + ':' + hash;
+}
+
+function senhaEhHashValido(valor) {
+  return valor && valor.toString().indexOf(':') > -1;
+}
+
+function validarSenha(senhaInformada, senhaArmazenada) {
+  if (!senhaArmazenada) {
+    return false;
+  }
+  var texto = senhaArmazenada.toString().trim();
+  if (!texto) {
+    return false;
+  }
+  if (!senhaEhHashValido(texto)) {
+    return senhaInformada === texto;
+  }
+  var partes = texto.split(':');
+  if (partes.length < 2) {
+    return false;
+  }
+  var salt = partes[0];
+  var hash = partes.slice(1).join(':');
+  return calcularHashSenha(senhaInformada, salt) === hash;
+}
+
+function obterCacheLogin() {
+  return CacheService.getScriptCache();
+}
+
+function obterChaveTentativasLogin(login) {
+  return 'login_tentativas:' + normalizarTextoBasico(login);
+}
+
+function obterChaveBloqueioLogin(login) {
+  return 'login_bloqueio:' + normalizarTextoBasico(login);
+}
+
+function verificarLoginBloqueado(login) {
+  var cache = obterCacheLogin();
+  return cache.get(obterChaveBloqueioLogin(login)) === '1';
+}
+
+function registrarFalhaLogin(login) {
+  var cache = obterCacheLogin();
+  var chaveTentativas = obterChaveTentativasLogin(login);
+  var tentativas = parseInt(cache.get(chaveTentativas) || '0', 10);
+  tentativas += 1;
+  cache.put(chaveTentativas, tentativas.toString(), BLOQUEIO_LOGIN_MINUTOS * 60);
+  if (tentativas >= MAX_TENTATIVAS_LOGIN) {
+    cache.put(obterChaveBloqueioLogin(login), '1', BLOQUEIO_LOGIN_MINUTOS * 60);
+  }
+  return tentativas;
+}
+
+function limparTentativasLogin(login) {
+  var cache = obterCacheLogin();
+  cache.remove(obterChaveTentativasLogin(login));
+  cache.remove(obterChaveBloqueioLogin(login));
+}
+
+function obterUsuarioPorId(id, estrutura, valores) {
+  if (!id) {
+    return null;
+  }
+  var idIndex = obterIndiceColuna(estrutura, 'id', 0);
+  for (var i = 0; i < valores.length; i++) {
+    if (parseInt(valores[i][idIndex], 10) === id) {
+      return { linha: valores[i], indice: i };
+    }
+  }
+  return null;
+}
+
+function validarPermissaoAdmin(parametros) {
+  var id = parseInt(parametros && parametros.usuarioId, 10);
+  if (!id) {
+    return { ok: false, error: 'Acesso negado' };
+  }
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Usuários');
+  if (!sheet || sheet.getLastRow() < 2) {
+    return { ok: false, error: 'Acesso negado' };
+  }
+  var estrutura = obterEstruturaPlanilha(sheet);
+  var totalColunas = estrutura.ultimaColuna || 10;
+  var valores = sheet.getRange(2, 1, sheet.getLastRow() - 1, totalColunas).getValues();
+  var usuarioEncontrado = obterUsuarioPorId(id, estrutura, valores);
+  if (!usuarioEncontrado) {
+    return { ok: false, error: 'Acesso negado' };
+  }
+  var perfil = obterValorLinha(usuarioEncontrado.linha, estrutura, 'perfil', '');
+  var status = obterValorLinha(usuarioEncontrado.linha, estrutura, 'status', '');
+  if (normalizarTextoBasico(status) !== 'ativo') {
+    return { ok: false, error: 'Acesso negado' };
+  }
+  if (normalizarTextoBasico(perfil) !== 'admin') {
+    return { ok: false, error: 'Acesso negado' };
+  }
+  return { ok: true };
+}
+
 // Adicionar dados iniciais de exemplo
 function adicionarDadosIniciais() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1261,8 +1387,9 @@ function adicionarDadosIniciais() {
   var usuariosSheet = ss.getSheetByName('Usuários');
   if (usuariosSheet.getLastRow() === 1) {
     var dataCadastroUsuario = obterDataHoraAtualFormatada().dataHoraIso;
+    var senhaAdmin = criarHashSenha('admin123');
     usuariosSheet.getRange(2, 1, 1, 10)
-      .setValues([[1, 'Administrador', 'admin', 'admin', true, true, dataCadastroUsuario, 'ativo', 'admin123', 'all']]);
+      .setValues([[1, 'Administrador', 'admin', 'admin', true, true, dataCadastroUsuario, 'ativo', senhaAdmin, 'all']]);
   }
 
   // Cadastrar unidades iniciais
@@ -1279,12 +1406,24 @@ function adicionarDadosIniciais() {
 
 // Função principal para lidar com requisições POST
 var usuarioContextoRequisicao = '';
+var usuarioContextoRequisicaoId = null;
 
 function definirContextoUsuario(parametros) {
   usuarioContextoRequisicao = '';
+  usuarioContextoRequisicaoId = null;
   try {
     if (!parametros) {
       return;
+    }
+
+    if (parametros.usuarioId !== undefined && parametros.usuarioId !== null) {
+      var idTexto = parametros.usuarioId.toString().trim();
+      if (idTexto) {
+        var idNumero = parseInt(idTexto, 10);
+        if (!isNaN(idNumero)) {
+          usuarioContextoRequisicaoId = idNumero;
+        }
+      }
     }
 
     var camposCandidatos = [
@@ -1308,11 +1447,13 @@ function definirContextoUsuario(parametros) {
     }
   } catch (erroContexto) {
     usuarioContextoRequisicao = '';
+    usuarioContextoRequisicaoId = null;
   }
 }
 
 function limparContextoUsuario() {
   usuarioContextoRequisicao = '';
+  usuarioContextoRequisicaoId = null;
 }
 
 function handlePost(e) {
@@ -2897,6 +3038,11 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
 function getUsuarios() {
   return executarComCache(montarChaveCache('usuarios'), CACHE_TTL_PADRAO, function() {
     try {
+      var permissao = validarPermissaoAdmin({ usuarioId: usuarioContextoRequisicaoId });
+      if (!permissao.ok) {
+        return { success: false, error: permissao.error };
+      }
+
       var ss = SpreadsheetApp.getActiveSpreadsheet();
       var sheet = ss.getSheetByName('Usuários');
 
@@ -2936,7 +3082,6 @@ function getUsuarios() {
           acessoAcompanhantes: converterParaBoolean(obterValorLinha(linha, estrutura, 'acesso acompanhantes', false)),
           dataCadastro: obterValorLinha(linha, estrutura, 'data cadastro', ''),
           status: obterValorLinha(linha, estrutura, 'status', ''),
-          senha: obterValorLinha(linha, estrutura, 'senha', ''),
           unidades: unidadesUnicas
         });
       });
@@ -2952,6 +3097,11 @@ function getUsuarios() {
 
 function cadastrarUsuario(dados) {
   try {
+    var permissao = validarPermissaoAdmin(dados);
+    if (!permissao.ok) {
+      return { success: false, error: permissao.error };
+    }
+
     var nome = (dados.nome || '').toString().trim();
     var email = (dados.email || '').toString().trim();
     var perfil = (dados.perfil || '').toString().trim().toLowerCase();
@@ -3036,7 +3186,7 @@ function cadastrarUsuario(dados) {
     definirValorLinha(novaLinha, estrutura, 'acesso acompanhantes', acessoAcompanhantes);
     definirValorLinha(novaLinha, estrutura, 'data cadastro', dataCadastro);
     definirValorLinha(novaLinha, estrutura, 'status', 'ativo');
-    definirValorLinha(novaLinha, estrutura, 'senha', senha);
+    definirValorLinha(novaLinha, estrutura, 'senha', criarHashSenha(senha));
     if (!definirValorLinhaFlexivel(novaLinha, estrutura, ['unidades', 'unidade', 'acesso unidades'], unidadesTexto)) {
       definirValorLinha(novaLinha, estrutura, 'unidades', unidadesTexto);
     }
@@ -3060,7 +3210,6 @@ function cadastrarUsuario(dados) {
         acessoAcompanhantes: acessoAcompanhantes,
         dataCadastro: dataCadastro,
         status: 'ativo',
-        senha: senha,
         unidades: unidadesUnicas.slice()
       }
     };
@@ -3073,6 +3222,11 @@ function cadastrarUsuario(dados) {
 
 function atualizarUsuario(dados) {
   try {
+    var permissao = validarPermissaoAdmin(dados);
+    if (!permissao.ok) {
+      return { success: false, error: permissao.error };
+    }
+
     var id = parseInt(dados.id, 10);
     if (!id) {
       return { success: false, error: 'ID do usuário inválido' };
@@ -3150,7 +3304,7 @@ function atualizarUsuario(dados) {
         definirValorLinha(valores[i], estrutura, 'acesso visitantes', acessoVisitantes);
         definirValorLinha(valores[i], estrutura, 'acesso acompanhantes', acessoAcompanhantes);
         definirValorLinha(valores[i], estrutura, 'status', status);
-        definirValorLinha(valores[i], estrutura, 'senha', senha);
+        definirValorLinha(valores[i], estrutura, 'senha', criarHashSenha(senha));
         if (!definirValorLinhaFlexivel(valores[i], estrutura, ['unidades', 'unidade', 'acesso unidades'], unidadesTexto)) {
           definirValorLinha(valores[i], estrutura, 'unidades', unidadesTexto);
         }
@@ -3180,7 +3334,6 @@ function atualizarUsuario(dados) {
         acessoVisitantes: acessoVisitantes,
         acessoAcompanhantes: acessoAcompanhantes,
         status: status,
-        senha: senha,
         unidades: unidadesUnicas.slice()
       }
     };
@@ -3193,6 +3346,11 @@ function atualizarUsuario(dados) {
 
 function excluirUsuario(dados) {
   try {
+    var permissao = validarPermissaoAdmin(dados);
+    if (!permissao.ok) {
+      return { success: false, error: permissao.error };
+    }
+
     var id = parseInt(dados.id, 10);
     if (!id) {
       return { success: false, error: 'ID inválido' };
@@ -3247,6 +3405,10 @@ function autenticarUsuario(dados) {
       return { success: false, error: 'Informe usuário e senha' };
     }
 
+    if (verificarLoginBloqueado(login)) {
+      return { success: false, error: 'Usuário bloqueado temporariamente. Tente novamente mais tarde.' };
+    }
+
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('Usuários');
     if (!sheet || sheet.getLastRow() < 2) {
@@ -3287,11 +3449,13 @@ function autenticarUsuario(dados) {
     }
 
     if (!linhaUsuario) {
+      registrarFalhaLogin(login);
       return { success: false, error: 'Usuário não encontrado' };
     }
 
     var status = obterValorLinha(linhaUsuario, estrutura, 'status', '');
     if (normalizarTextoBasico(status) !== 'ativo') {
+      registrarFalhaLogin(login);
       return { success: false, error: 'Usuário inativo' };
     }
 
@@ -3302,9 +3466,20 @@ function autenticarUsuario(dados) {
       senhaArmazenada = '';
     }
 
-    if (senhaInformada !== senhaArmazenada) {
+    if (!validarSenha(senhaInformada, senhaArmazenada)) {
+      registrarFalhaLogin(login);
       return { success: false, error: 'Senha incorreta' };
     }
+
+    if (!senhaEhHashValido(senhaArmazenada)) {
+      var indiceSenha = obterIndiceColuna(estrutura, 'senha', null);
+      if (indiceSenha !== null && indiceSenha !== undefined) {
+        var linhaAtualizacao = indiceLinhaUsuario + 2;
+        sheet.getRange(linhaAtualizacao, indiceSenha + 1).setValue(criarHashSenha(senhaInformada));
+      }
+    }
+
+    limparTentativasLogin(login);
 
     var unidadesTexto = obterValorLinhaFlexivel(linhaUsuario, estrutura, ['unidades', 'unidade', 'acesso unidades'], '');
     var unidadesLista = resolverIdsUnidadesArmazenadas(unidadesTexto, mapasUnidades);
@@ -6812,6 +6987,11 @@ function registrarLog(acao, detalhes) {
 
 function getLogs() {
   try {
+    var permissao = validarPermissaoAdmin({ usuarioId: usuarioContextoRequisicaoId });
+    if (!permissao.ok) {
+      return { success: false, error: permissao.error };
+    }
+
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('LOGS');
     
