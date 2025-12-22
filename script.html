@@ -2598,10 +2598,10 @@
                 nascimento: campoNascimento?.value || '',
                 setor: campoSetor?.value || ''
             };
-            const prontuario = (campoProntuarioBusca?.value || campoProntuario?.value || '').trim();
+            const prontuario = (campoProntuarioBusca?.value || '').trim();
             if (!prontuario) {
                 atualizarFeedbackBuscaProntuarioTermo('Informe o prontuário para buscar.', 'is-error');
-                (campoProntuarioBusca || campoProntuario)?.focus();
+                campoProntuarioBusca?.focus();
                 return;
             }
             const prontuarioNormalizado = prontuario.replace(/\D/g, '') || prontuario;
@@ -3032,9 +3032,8 @@
             if (elementos.termoProntuarioBuscaBtn) {
                 elementos.termoProntuarioBuscaBtn.addEventListener('click', buscarPacientePorProntuarioTermo);
             }
-            const termoProntuarioInput = document.getElementById('termo-prontuario');
             const termoProntuarioBuscaInput = elementos.termoProntuarioBusca;
-            [termoProntuarioInput, termoProntuarioBuscaInput].filter(Boolean).forEach(input => {
+            [termoProntuarioBuscaInput].filter(Boolean).forEach(input => {
                 input.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') {
                         event.preventDefault();
