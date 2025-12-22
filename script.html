@@ -1710,6 +1710,12 @@
                 ? opcoes.intervaloInicial
                 : 400;
             const payload = { ...(data || {}) };
+            if (!Object.prototype.hasOwnProperty.call(payload, 'sessaoToken')) {
+                const usuarioAtual = obterUsuarioAutenticado();
+                if (usuarioAtual && usuarioAtual.sessaoToken) {
+                    payload.sessaoToken = usuarioAtual.sessaoToken;
+                }
+            }
             if (!Object.prototype.hasOwnProperty.call(payload, 'usuarioId')) {
                 const usuarioAtual = obterUsuarioAutenticado();
                 if (usuarioAtual && usuarioAtual.id !== undefined && usuarioAtual.id !== null) {
