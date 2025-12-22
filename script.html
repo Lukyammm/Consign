@@ -469,6 +469,7 @@
             if (!elementos.avatarModal || !elementos.avatarModalBackdrop) {
                 return;
             }
+            garantirPortaisCabecalho();
             if (!avatarModalAberto()) {
                 travaRolagem.aplicar();
             }
@@ -2503,6 +2504,9 @@
         function configurarBotaoAcao(botao, acao) {
             if (!botao) return;
             botao.addEventListener('click', async (event) => {
+                if (event) {
+                    event.preventDefault();
+                }
                 const finalizar = iniciarLoadingBotao(event.currentTarget);
                 try {
                     await acao();
@@ -3715,6 +3719,7 @@
             if (elementos.achadoHistorico) elementos.achadoHistorico.value = item.historicoContato || '';
         }
         function abrirModalAchado(item) {
+            garantirPortaisCabecalho();
             limparFormularioAchado();
             if (elementos.achadoModalTitle) {
                 elementos.achadoModalTitle.textContent = item ? 'Editar pertence' : 'Registrar pertence';
@@ -5601,6 +5606,7 @@
             }
         }
         function abrirModalArmario(armario) {
+            garantirPortaisCabecalho();
             if (armario.status === 'livre') {
                 if (normalizarTexto(armario.tipo) === 'acompanhante') {
                     limparRascunhoArmario();
@@ -6402,6 +6408,7 @@
                 mostrarErro('Apenas administradores podem cadastrar usuários.');
                 return;
             }
+            garantirPortaisCabecalho();
             elementos.usuarioForm.reset();
             elementos.usuarioForm.dataset.id = '';
             if (elementos.usuarioModalTitle) {
@@ -7095,6 +7102,7 @@
             `;
         }
         function abrirModalImpressaoReserva(dados) {
+            garantirPortaisCabecalho();
             estadoImpressaoReserva.dados = dados || null;
             preencherModalImpressaoReserva(dados || {});
             sincronizarAreaImpressaoReserva();
@@ -7476,6 +7484,7 @@
             }
         }
         async function abrirTermoWizard(id) {
+            garantirPortaisCabecalho();
             let armario = obterArmarioPorId(id);
             if (!armario) {
                 armario = estado.armarios.find(item => normalizarIdentificador(item.idPlanilha) === normalizarIdentificador(id));
@@ -8822,6 +8831,7 @@
             }
         }
         async function abrirMovimentacoes(id) {
+            garantirPortaisCabecalho();
             const armario = obterArmarioPorId(id);
             if (!armario) return;
             movimentacaoArmarioAtual = id;

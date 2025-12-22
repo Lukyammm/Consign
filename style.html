@@ -205,8 +205,8 @@
             --z-sidebar: 120;
             --z-header: 200;
             --z-dropdown: 920;
-            --z-modal-overlay: 1040;
-            --z-modal-content: 1050;
+            --z-modal-overlay: 1150;
+            --z-modal-content: 1160;
             --z-overlay: 1100;
             --z-critical-overlay: 1200;
             --z-alert: 1250;
@@ -2895,6 +2895,7 @@
             flex-direction: column;
             overflow: hidden;
             position: relative;
+            z-index: var(--z-modal-content);
         }
         .modal-header {
             padding: 20px 24px;
