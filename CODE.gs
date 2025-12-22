@@ -6396,15 +6396,6 @@ function getMovimentacoesResumo(dados) {
   return { success: true, data: contagens };
 }
 
-      return { success: true, data: movimentacoes };
-
-    } catch (error) {
-      registrarLog('ERRO', `Erro ao buscar movimentações: ${error.toString()}`);
-      return { success: false, error: error.toString() };
-    }
-    });
-}
-
 function salvarMovimentacao(dados) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
