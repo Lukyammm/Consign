@@ -5230,9 +5230,11 @@ function finalizarTermo(dados) {
       throw new Error(resultadoPDF.error || 'Falha ao gerar PDF');
     }
 
-    termosInfo.sheet.getRange(termoEncontrado.linha, 18).setValue(resultadoPDF.pdfUrl);
-    termosInfo.sheet.getRange(termoEncontrado.linha, 19).setValue(JSON.stringify(assinaturas));
-    termosInfo.sheet.getRange(termoEncontrado.linha, 20).setValue('Finalizado');
+    termosInfo.sheet.getRange(termoEncontrado.linha, 18, 1, 3).setValues([[
+      resultadoPDF.pdfUrl,
+      JSON.stringify(assinaturas),
+      'Finalizado'
+    ]]);
 
     termoEncontrado.status = 'Finalizado';
 
@@ -6223,70 +6225,37 @@ function getMovimentacoes(dados) {
         return { success: true, data: [] };
       }
 
-      var linhasEncontradas = [];
-      var largura = Math.max(estruturaMov.ultimaColuna, sheet.getLastColumn(), colunaItens, colunaVolume, colunaAssinaturaMime, colunaFotoId);
-      var intervaloIds = sheet.getRange(2, 2, totalLinhas, 1);
-      var textoFinder = intervaloIds.createTextFinder(armarioIdTexto).useRegularExpression(false);
-      var correspondencias = textoFinder.findAll();
-
-      if (correspondencias && correspondencias.length) {
-        linhasEncontradas = correspondencias.map(function(celula) { return celula.getRow(); });
-      }
-
-      if (!linhasEncontradas.length) {
-        var valoresId = intervaloIds.getValues();
-        for (var indiceId = 0; indiceId < valoresId.length; indiceId++) {
-          if (String(valoresId[indiceId][0]).trim() === armarioIdTexto) {
-            linhasEncontradas.push(indiceId + 2);
-          }
-        }
-      }
-
-      if (!linhasEncontradas.length && numeroInformado) {
-        var intervaloNumeros = sheet.getRange(2, 3, totalLinhas, 1);
-        var finderNumero = intervaloNumeros.createTextFinder(numeroInformado).useRegularExpression(false);
-        var correspondenciasNumero = finderNumero.findAll();
-        if (correspondenciasNumero && correspondenciasNumero.length) {
-          linhasEncontradas = correspondenciasNumero.map(function(celula) { return celula.getRow(); });
-        }
-
-        if (!linhasEncontradas.length) {
-          var valoresNumero = intervaloNumeros.getValues();
-          for (var indiceNumero = 0; indiceNumero < valoresNumero.length; indiceNumero++) {
-            if (normalizarNumeroArmario(valoresNumero[indiceNumero][0]) === numeroInformado) {
-              linhasEncontradas.push(indiceNumero + 2);
-            }
-          }
-        }
-      }
-
-      if (!linhasEncontradas.length) {
-        return { success: true, data: [] };
-      }
-
-      var linhasFiltradas = [];
-      for (var i = 0; i < linhasEncontradas.length; i++) {
-        var linhaAtual = linhasEncontradas[i];
-        var numeroLinha = sheet.getRange(linhaAtual, 3).getValue();
-        if (numeroInformado && normalizarNumeroArmario(numeroLinha) !== numeroInformado) {
+      var largura = Math.max(
+        estruturaMov.ultimaColuna,
+        sheet.getLastColumn(),
+        colunaStatus,
+        colunaItens,
+        colunaVolume,
+        colunaAssinatura,
+        colunaAssinaturaMime,
+        colunaFotoUrl,
+        colunaFotoId
+      );
+      var dadosMovimentacoes = sheet.getRange(2, 1, totalLinhas, largura).getValues();
+      var movimentacoes = [];
+      for (var j = 0; j < dadosMovimentacoes.length; j++) {
+        var linhaDados = dadosMovimentacoes[j];
+        var idLinha = linhaDados[1];
+        var idLinhaTexto = idLinha !== null && idLinha !== undefined ? idLinha.toString().trim() : '';
+        if (armarioIdTexto && idLinhaTexto !== armarioIdTexto) {
           continue;
         }
 
-        var tipoLinha = sheet.getRange(linhaAtual, 4).getValue();
+        var numeroLinhaNormalizado = normalizarNumeroArmario(linhaDados[2]);
+        if (numeroInformado && numeroLinhaNormalizado !== numeroInformado) {
+          continue;
+        }
+
+        var tipoLinha = linhaDados[3];
         if (deveFiltrarPorTipoMovimentacao && normalizarTextoBasico(tipoLinha) !== tipoInformado) {
           continue;
         }
 
-        linhasFiltradas.push(linhaAtual);
-      }
-
-      if (!linhasFiltradas.length) {
-        return { success: true, data: [] };
-      }
-
-      var movimentacoes = [];
-      for (var j = 0; j < linhasFiltradas.length; j++) {
-        var linhaDados = sheet.getRange(linhasFiltradas[j], 1, 1, largura).getValues()[0];
         var statusLinha = colunaStatus ? linhaDados[colunaStatus - 1] : '';
         var statusNormalizado = normalizarTextoBasico(statusLinha);
         if (!incluirFinalizados && statusNormalizado === 'finalizado') {
@@ -6334,6 +6303,15 @@ function getMovimentacoes(dados) {
           fotoUrl: colunaFotoUrl && colunaFotoUrl <= linhaDados.length ? linhaDados[colunaFotoUrl - 1] : '',
           fotoId: colunaFotoId && colunaFotoId <= linhaDados.length ? linhaDados[colunaFotoId - 1] : ''
         });
+      }
+
+      return { success: true, data: movimentacoes };
+
+    } catch (error) {
+      registrarLog('ERRO', 'Erro ao buscar movimentações: ' + error.toString());
+      return { success: false, error: error.toString() };
+    }
+  });
 }
 
 function getMovimentacoesResumo(dados) {
@@ -6660,49 +6638,33 @@ function finalizarMovimentacoesArmario(armarioId, numeroArmario, tipo) {
 
     var idTexto = armarioId !== undefined && armarioId !== null ? armarioId.toString().trim() : '';
     var numeroNormalizado = normalizarNumeroArmario(numeroArmario);
-    var intervaloIds = sheet.getRange(2, 2, totalLinhas, 1);
-    var linhasAlvo = [];
-    var finderIds = intervaloIds.createTextFinder(idTexto).useRegularExpression(false);
-    var correspondencias = finderIds.findAll();
+    var valoresId = sheet.getRange(2, 2, totalLinhas, 1).getValues();
+    var valoresNumero = sheet.getRange(2, 3, totalLinhas, 1).getValues();
+    var valoresStatus = sheet.getRange(2, colunaStatus, totalLinhas, 1).getValues();
+    var houveAtualizacao = false;
 
-    if (correspondencias && correspondencias.length) {
-      linhasAlvo = correspondencias.map(function(celula) { return celula.getRow(); });
-    }
-
-    if (!linhasAlvo.length) {
-      var valoresId = intervaloIds.getValues();
-      for (var indice = 0; indice < valoresId.length; indice++) {
-        if (String(valoresId[indice][0]).trim() === idTexto) {
-          linhasAlvo.push(indice + 2);
-        }
-      }
-    }
-
-    if (!linhasAlvo.length) {
-      return;
-    }
-
-    var linhasParaAtualizar = [];
-    for (var i = 0; i < linhasAlvo.length; i++) {
-      var linhaNumero = linhasAlvo[i];
-      var numeroLinha = sheet.getRange(linhaNumero, 3).getValue();
-      if (numeroNormalizado && normalizarNumeroArmario(numeroLinha) !== numeroNormalizado) {
+    for (var i = 0; i < totalLinhas; i++) {
+      var idLinha = valoresId[i][0];
+      var idLinhaTexto = idLinha !== null && idLinha !== undefined ? idLinha.toString().trim() : '';
+      if (idLinhaTexto !== idTexto) {
         continue;
       }
 
-      var statusAtual = normalizarTextoBasico(sheet.getRange(linhaNumero, colunaStatus).getValue());
+      if (numeroNormalizado && normalizarNumeroArmario(valoresNumero[i][0]) !== numeroNormalizado) {
+        continue;
+      }
+
+      var statusAtual = normalizarTextoBasico(valoresStatus[i][0]);
       if (statusAtual === 'finalizado') {
         continue;
       }
 
-      linhasParaAtualizar.push(linhaNumero);
+      valoresStatus[i][0] = 'finalizado';
+      houveAtualizacao = true;
     }
 
-    if (linhasParaAtualizar.length) {
-      var intervalosStatus = linhasParaAtualizar.map(function(linhaNumero) {
-        return sheet.getRange(linhaNumero, colunaStatus).getA1Notation();
-      });
-      sheet.getRangeList(intervalosStatus).setValue('finalizado');
+    if (houveAtualizacao) {
+      sheet.getRange(2, colunaStatus, totalLinhas, 1).setValues(valoresStatus);
       limparCacheMovimentacoes(armarioId, numeroArmario, tipo);
     }
 
