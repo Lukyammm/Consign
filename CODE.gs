@@ -1234,6 +1234,7 @@ function converterParaDataHoraIso(valor, padrao) {
 var MAX_TENTATIVAS_LOGIN = 5;
 var BLOQUEIO_LOGIN_MINUTOS = 10;
 var SESSAO_TTL_MINUTOS = 60 * 8;
+var CACHE_TTL_MAX_SEGUNDOS = 21600;
 
 function gerarSaltSenha() {
   return Utilities.getUuid();
@@ -1309,7 +1310,8 @@ function registrarSessaoUsuario(usuario) {
     perfil: usuario.perfil || 'usuario',
     status: usuario.status || 'ativo'
   };
-  cache.put(obterChaveSessao(token), JSON.stringify(dadosSessao), SESSAO_TTL_MINUTOS * 60);
+  var ttlSegundos = Math.min(SESSAO_TTL_MINUTOS * 60, CACHE_TTL_MAX_SEGUNDOS);
+  cache.put(obterChaveSessao(token), JSON.stringify(dadosSessao), ttlSegundos);
   return token;
 }
 
