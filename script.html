@@ -7806,6 +7806,8 @@
                 mostrarErro('Armário não encontrado para registrar o termo.');
                 return;
             }
+            const snapshotArmario = clonarArmario(armarioAtual);
+            const armarioIdLocal = armarioAtual.id;
             const identificadores = montarIdentificadoresArmario(armarioAtual);
             // Capturar a assinatura do canvas
             const canvas = elementos.termoAssinaturaCanvas;
@@ -7845,6 +7847,42 @@
                 };
             }
             dadosTermo.tipo = identificadores?.tipo || 'acompanhante';
+            if (armarioIdLocal) {
+                const agoraIso = new Date().toISOString();
+                const termoInfoAtualizado = {
+                    ...(armarioAtual.termoInfo || {}),
+                    aplicadoEm: agoraIso,
+                    acompanhante: dadosTermo.acompanhante,
+                    paciente: dadosTermo.paciente,
+                    prontuario: dadosTermo.prontuario,
+                    leito: dadosTermo.leito,
+                    status: 'Em andamento'
+                };
+                const atualizacoesLocais = {
+                    termoAplicado: true,
+                    termoFinalizado: false,
+                    termoStatus: 'em andamento',
+                    termoInfo: termoInfoAtualizado
+                };
+                if (dadosTermo.acompanhante) {
+                    atualizacoesLocais.nomeVisitante = dadosTermo.acompanhante;
+                }
+                if (dadosTermo.paciente) {
+                    atualizacoesLocais.nomePaciente = dadosTermo.paciente;
+                }
+                if (dadosTermo.leito) {
+                    atualizacoesLocais.leito = dadosTermo.leito;
+                }
+                if (dadosTermo.prontuario) {
+                    atualizacoesLocais.prontuario = dadosTermo.prontuario;
+                }
+                atualizarArmarioLocal(armarioIdLocal, atualizacoesLocais);
+                atualizarResumoDashboardLocal();
+                atualizarInterface();
+                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
+                    console.error('Erro ao atualizar tabelas localmente após aplicar termo:', erro);
+                });
+            }
             const promessaSalvamento = callGoogleScript('salvarTermoCompleto', dadosTermo);
             notificarReservaEmSegundoPlano();
             fecharTermoModal();
@@ -7854,6 +7892,9 @@
             } catch (erroSalvar) {
                 console.error('Erro ao salvar termo:', erroSalvar);
                 mostrarErro('Não foi possível registrar o termo agora. Tente novamente.');
+                if (armarioIdLocal) {
+                    restaurarArmarioLocal(armarioIdLocal, snapshotArmario);
+                }
                 return;
             }
             if (resultado?.success) {
@@ -7872,6 +7913,9 @@
                 }
             } else {
                 notificarErroPadrao(resultado);
+                if (armarioIdLocal) {
+                    restaurarArmarioLocal(armarioIdLocal, snapshotArmario);
+                }
             }
         }
         function fecharTermoModal() {
@@ -9320,6 +9364,8 @@
             const confirmacao = '';
             let mensagemSucesso = 'Termo finalizado e armário liberado com sucesso';
             const usuarioResponsavel = obterDescricaoResponsavelAtual();
+            const snapshotArmario = clonarArmario(armario);
+            let liberacaoConfirmada = false;
 
             const notificarProcessamentoEmSegundoPlano = () => {
                 Swal.fire({
@@ -9382,6 +9428,7 @@
                         mensagemSucesso = 'Armário liberado com sucesso. Termo não localizado para finalização.';
                     }
 
+                    liberacaoConfirmada = true;
                     garantirArmarioLiberadoLocal(id, metodo, confirmacao);
                     atualizarResumoDashboardLocal();
                     atualizarInterface();
@@ -9398,9 +9445,21 @@
                 } catch (erro) {
                     console.error('Erro ao liberar armário de acompanhante:', erro);
                     mostrarErro('Não foi possível concluir a liberação. Tente novamente.');
+                } finally {
+                    if (!liberacaoConfirmada && snapshotArmario) {
+                        restaurarArmarioLocal(id, snapshotArmario);
+                    }
                 }
             };
 
+            const atualizouLocal = garantirArmarioLiberadoLocal(id, metodo, confirmacao);
+            if (atualizouLocal) {
+                atualizarResumoDashboardLocal();
+                atualizarInterface();
+                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
+                    console.error('Erro ao atualizar tabelas localmente após liberação:', erro);
+                });
+            }
             notificarProcessamentoEmSegundoPlano();
             executarLiberacaoAssincrona();
         }
