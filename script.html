@@ -815,6 +815,11 @@
                     document.body.appendChild(elemento);
                 }
             });
+            document.querySelectorAll('.modal').forEach(modal => {
+                if (modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+            });
         }
         function aprimorarSeletoresCabecalho() {
             document.querySelectorAll('.selector-control .selector-input').forEach(select => criarSelectorPersonalizado(select));
@@ -858,7 +863,10 @@
                     trigger.setAttribute('aria-expanded', 'false');
                 }
             });
-            trigger.addEventListener('click', () => toggleSelectorDropdown(instance));
+            trigger.addEventListener('click', event => {
+                event.preventDefault();
+                toggleSelectorDropdown(instance);
+            });
             trigger.addEventListener('keydown', event => handleTriggerKeydown(event, instance));
             optionsList.addEventListener('click', event => handleOptionClick(event, instance));
             optionsList.addEventListener('keydown', event => handleOptionKeydown(event, instance));
@@ -2804,7 +2812,8 @@
                 });
             }
             if (elementos.headerUserProfile) {
-                elementos.headerUserProfile.addEventListener('click', () => {
+                elementos.headerUserProfile.addEventListener('click', event => {
+                    event.preventDefault();
                     if (avatarModalAberto()) {
                         fecharModalAvatar({ focusTrigger: false });
                     } else {
