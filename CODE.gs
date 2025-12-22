@@ -1233,6 +1233,7 @@ function converterParaDataHoraIso(valor, padrao) {
 
 var MAX_TENTATIVAS_LOGIN = 5;
 var BLOQUEIO_LOGIN_MINUTOS = 10;
+var SESSAO_TTL_MINUTOS = 60 * 8;
 
 function gerarSaltSenha() {
   return Utilities.getUuid();
@@ -1285,6 +1286,49 @@ function obterCacheLogin() {
   return CacheService.getScriptCache();
 }
 
+function obterCacheSessao() {
+  return CacheService.getScriptCache();
+}
+
+function obterChaveSessao(token) {
+  return 'sessao_usuario:' + token;
+}
+
+function gerarTokenSessao() {
+  return Utilities.getUuid() + '-' + Utilities.getUuid();
+}
+
+function registrarSessaoUsuario(usuario) {
+  if (!usuario || !usuario.id) {
+    return null;
+  }
+  var token = gerarTokenSessao();
+  var cache = obterCacheSessao();
+  var dadosSessao = {
+    id: usuario.id,
+    perfil: usuario.perfil || 'usuario',
+    status: usuario.status || 'ativo'
+  };
+  cache.put(obterChaveSessao(token), JSON.stringify(dadosSessao), SESSAO_TTL_MINUTOS * 60);
+  return token;
+}
+
+function obterSessaoUsuario(token) {
+  if (!token) {
+    return null;
+  }
+  var cache = obterCacheSessao();
+  var dados = cache.get(obterChaveSessao(token));
+  if (!dados) {
+    return null;
+  }
+  try {
+    return JSON.parse(dados);
+  } catch (erro) {
+    return null;
+  }
+}
+
 function obterChaveTentativasLogin(login) {
   return 'login_tentativas:' + normalizarTextoBasico(login);
 }
@@ -1330,7 +1374,15 @@ function obterUsuarioPorId(id, estrutura, valores) {
 }
 
 function validarPermissaoAdmin(parametros) {
-  var id = parseInt(parametros && parametros.usuarioId, 10);
+  var token = parametros && parametros.sessaoToken ? parametros.sessaoToken.toString().trim() : '';
+  if (!token) {
+    return { ok: false, error: 'Acesso negado' };
+  }
+  var sessao = obterSessaoUsuario(token);
+  if (!sessao || !sessao.id) {
+    return { ok: false, error: 'Acesso negado' };
+  }
+  var id = parseInt(sessao.id, 10);
   if (!id) {
     return { ok: false, error: 'Acesso negado' };
   }
@@ -1407,10 +1459,12 @@ function adicionarDadosIniciais() {
 // Função principal para lidar com requisições POST
 var usuarioContextoRequisicao = '';
 var usuarioContextoRequisicaoId = null;
+var usuarioContextoSessaoToken = '';
 
 function definirContextoUsuario(parametros) {
   usuarioContextoRequisicao = '';
   usuarioContextoRequisicaoId = null;
+  usuarioContextoSessaoToken = '';
   try {
     if (!parametros) {
       return;
@@ -1423,6 +1477,13 @@ function definirContextoUsuario(parametros) {
         if (!isNaN(idNumero)) {
           usuarioContextoRequisicaoId = idNumero;
         }
+      }
+    }
+
+    if (parametros.sessaoToken !== undefined && parametros.sessaoToken !== null) {
+      var tokenTexto = parametros.sessaoToken.toString().trim();
+      if (tokenTexto) {
+        usuarioContextoSessaoToken = tokenTexto;
       }
     }
 
@@ -1448,12 +1509,14 @@ function definirContextoUsuario(parametros) {
   } catch (erroContexto) {
     usuarioContextoRequisicao = '';
     usuarioContextoRequisicaoId = null;
+    usuarioContextoSessaoToken = '';
   }
 }
 
 function limparContextoUsuario() {
   usuarioContextoRequisicao = '';
   usuarioContextoRequisicaoId = null;
+  usuarioContextoSessaoToken = '';
 }
 
 function handlePost(e) {
@@ -3038,7 +3101,7 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
 function getUsuarios() {
   return executarComCache(montarChaveCache('usuarios'), CACHE_TTL_PADRAO, function() {
     try {
-      var permissao = validarPermissaoAdmin({ usuarioId: usuarioContextoRequisicaoId });
+      var permissao = validarPermissaoAdmin({ sessaoToken: usuarioContextoSessaoToken });
       if (!permissao.ok) {
         return { success: false, error: permissao.error };
       }
@@ -3496,6 +3559,11 @@ function autenticarUsuario(dados) {
       unidades: unidadesLista,
       status: status
     };
+
+    var sessaoToken = registrarSessaoUsuario(usuarioEncontrado);
+    if (sessaoToken) {
+      usuarioEncontrado.sessaoToken = sessaoToken;
+    }
 
     registrarLog('LOGIN', 'Usuário ' + usuarioEncontrado.nome + ' autenticado');
 
@@ -6987,7 +7055,7 @@ function registrarLog(acao, detalhes) {
 
 function getLogs() {
   try {
-    var permissao = validarPermissaoAdmin({ usuarioId: usuarioContextoRequisicaoId });
+    var permissao = validarPermissaoAdmin({ sessaoToken: usuarioContextoSessaoToken });
     if (!permissao.ok) {
       return { success: false, error: permissao.error };
     }
