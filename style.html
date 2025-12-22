@@ -1033,8 +1033,8 @@
         .selector-dropdown {
             position: absolute;
             top: calc(100% + 12px);
-            left: 50%;
-            transform: translate(-50%, -8px);
+            left: 0;
+            transform: translateY(-8px);
             min-width: min(320px, calc(100% + 48px));
             width: max(260px, 100%);
             max-width: 360px;
@@ -1056,8 +1056,8 @@
             content: "";
             position: absolute;
             top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 24px;
+            transform: none;
             border-left: 10px solid transparent;
             border-right: 10px solid transparent;
             pointer-events: none;
@@ -1072,7 +1072,7 @@
         .selector-control.open .selector-dropdown {
             opacity: 1;
             pointer-events: auto;
-            transform: translate(-50%, 0);
+            transform: translateY(0);
             z-index: var(--z-dropdown);
         }
         .selector-options {
