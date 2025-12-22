@@ -962,6 +962,7 @@
         .selector-control:focus-within {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 4px var(--focus-ring);
+            z-index: calc(var(--z-dropdown) + 1);
         }
         .selector-icon {
             color: var(--primary-color);
@@ -1061,6 +1062,15 @@
             border-left: 10px solid transparent;
             border-right: 10px solid transparent;
             pointer-events: none;
+        }
+        .header-selector-pair .selector-dropdown {
+            left: auto;
+            right: 0;
+        }
+        .header-selector-pair .selector-dropdown::before,
+        .header-selector-pair .selector-dropdown::after {
+            left: auto;
+            right: 24px;
         }
         .selector-dropdown::before {
             border-bottom: 10px solid color-mix(in srgb, var(--primary-color) 12%, var(--border-color) 88%);
