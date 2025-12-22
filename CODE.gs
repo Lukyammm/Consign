@@ -1905,13 +1905,7 @@ function buscarPacienteBaseVitae(dados) {
     }
 
     var prontuarioSemZeros = prontuarioEntrada.replace(/^0+/, '') || prontuarioEntrada;
-    var mapaResultado = obterMapaPacientesBaseVitae();
-    if (!mapaResultado || !mapaResultado.success) {
-      return { success: false, error: 'Não foi possível consultar o prontuário no momento' };
-    }
-
-    var mapa = mapaResultado.data || {};
-    var registroMaisRecente = mapa[prontuarioEntrada] || mapa[prontuarioSemZeros];
+    var registroMaisRecente = obterRegistroBaseVitaePorProntuario(prontuarioEntrada, prontuarioSemZeros);
 
     if (!registroMaisRecente) {
       return { success: false, error: 'Prontuário não localizado. Insira Manualmente os dados' };
@@ -1933,6 +1927,98 @@ function buscarPacienteBaseVitae(dados) {
   } catch (erroBusca) {
     registrarLog('ERRO', 'Falha ao buscar paciente na Base Vitae: ' + erroBusca.toString());
     return { success: false, error: 'Erro ao buscar paciente na Base Vitae' };
+  }
+}
+
+function obterRegistroBaseVitaePorProntuario(prontuarioEntrada, prontuarioSemZeros) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Base Vitae 1');
+    if (!sheet || sheet.getLastRow() < 2) {
+      return null;
+    }
+
+    var estrutura = obterEstruturaPlanilha(sheet);
+    var prontuarioIndex = obterIndiceColuna(estrutura, ['prontuario'], 0);
+    if (prontuarioIndex === null || prontuarioIndex === undefined) {
+      return null;
+    }
+
+    var totalLinhas = sheet.getLastRow() - 1;
+    var totalColunas = estrutura.ultimaColuna || sheet.getLastColumn();
+    var colunaProntuario = sheet.getRange(2, prontuarioIndex + 1, totalLinhas, 1);
+
+    var encontrarMatches = function(valor) {
+      if (!valor) {
+        return [];
+      }
+      return colunaProntuario
+        .createTextFinder(valor)
+        .matchEntireCell(true)
+        .findAll();
+    };
+
+    var matches = encontrarMatches(prontuarioEntrada);
+    if (!matches.length && prontuarioSemZeros && prontuarioSemZeros !== prontuarioEntrada) {
+      matches = encontrarMatches(prontuarioSemZeros);
+    }
+
+    if (!matches.length) {
+      return null;
+    }
+
+    var nomeIndex = obterIndiceColuna(estrutura, ['nome'], 1);
+    var setorIndex = obterIndiceColuna(estrutura, ['setor'], 6);
+    var leitoAIndex = obterIndiceColuna(estrutura, ['parte leito a', 'leito a'], 9);
+    var leitoBIndex = obterIndiceColuna(estrutura, ['parte leito b', 'leito b'], 10);
+    var referenciaIndex = obterIndiceColuna(estrutura, ['data referencia', 'referencia', 'referência'], 12);
+
+    var registroMaisRecente = null;
+    var referenciaMaisRecente = 0;
+
+    matches.forEach(function(match) {
+      var row = match.getRow();
+      var linha = sheet.getRange(row, 1, 1, totalColunas).getValues()[0];
+      var prontuarioValor = obterValorLinhaFlexivel(linha, estrutura, ['prontuario'], linha[prontuarioIndex]);
+      var prontuarioLinha = normalizarIdentificador(prontuarioValor);
+      if (!prontuarioLinha) {
+        return;
+      }
+
+      var dataReferencia = obterDataValida(linha[referenciaIndex]);
+      var timestampReferencia = dataReferencia ? dataReferencia.getTime() : 0;
+      if (registroMaisRecente && referenciaMaisRecente > timestampReferencia) {
+        return;
+      }
+
+      var leitoA = linha[leitoAIndex] ? linha[leitoAIndex].toString().trim() : '';
+      var leitoB = linha[leitoBIndex] ? linha[leitoBIndex].toString().trim() : '';
+
+      registroMaisRecente = {
+        prontuario: prontuarioLinha,
+        nome: linha[nomeIndex] ? linha[nomeIndex].toString().trim() : '',
+        leito: [leitoA, leitoB].filter(Boolean).join(' - '),
+        setor: linha[setorIndex] ? linha[setorIndex].toString().trim() : '',
+        dataReferencia: timestampReferencia
+      };
+      referenciaMaisRecente = timestampReferencia;
+    });
+
+    if (!registroMaisRecente) {
+      return null;
+    }
+
+    if (prontuarioSemZeros && registroMaisRecente.prontuario && registroMaisRecente.prontuario !== prontuarioSemZeros) {
+      var prontuarioSemZerosLinha = registroMaisRecente.prontuario.replace(/^0+/, '') || registroMaisRecente.prontuario;
+      if (prontuarioSemZerosLinha === prontuarioSemZeros) {
+        registroMaisRecente.prontuario = prontuarioSemZerosLinha;
+      }
+    }
+
+    return registroMaisRecente;
+  } catch (erro) {
+    registrarLog('ERRO', 'Falha ao buscar prontuário na Base Vitae: ' + erro.toString());
+    return null;
   }
 }
 
