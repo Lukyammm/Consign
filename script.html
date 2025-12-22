@@ -195,7 +195,7 @@
             if (storage) {
                 try {
                     const temaSalvo = storage.getItem(STORAGE_KEYS.tema);
-                    if (temaSalvo === 'dark' || temaSalvo === 'light') {
+                    if (temaSalvo === 'dark' || temaSalvo === 'light' || temaSalvo === 'pink') {
                         return temaSalvo;
                     }
                 } catch (erro) {
@@ -207,19 +207,37 @@
             }
             return 'light';
         }
+        function obterProximoTema(temaAtual) {
+            const ordem = ['light', 'dark', 'pink'];
+            const indiceAtual = ordem.indexOf(temaAtual);
+            if (indiceAtual === -1) return 'light';
+            return ordem[(indiceAtual + 1) % ordem.length];
+        }
         function atualizarBotaoTema(tema) {
             const botaoTema = document.getElementById('theme-toggle');
             if (!botaoTema) return;
-            const isDark = tema === 'dark';
             const icone = botaoTema.querySelector('i');
+            const temaAtual = tema === 'dark' || tema === 'pink' ? tema : 'light';
+            const proximoTema = obterProximoTema(temaAtual);
+            const labelMap = {
+                light: 'Ativar tema escuro',
+                dark: 'Ativar tema rosa',
+                pink: 'Ativar tema claro'
+            };
+            const iconMap = {
+                light: 'fas fa-moon',
+                dark: 'fas fa-heart',
+                pink: 'fas fa-sun'
+            };
             if (icone) {
-                icone.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+                icone.className = iconMap[temaAtual] || 'fas fa-moon';
             }
-            botaoTema.setAttribute('aria-label', isDark ? 'Ativar tema claro' : 'Ativar tema escuro');
-            botaoTema.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            botaoTema.setAttribute('aria-label', labelMap[temaAtual] || 'Alternar tema');
+            botaoTema.setAttribute('aria-pressed', temaAtual === 'dark' || temaAtual === 'pink' ? 'true' : 'false');
+            botaoTema.dataset.nextTheme = proximoTema;
         }
         function aplicarTema(tema, salvarPreferencia = true) {
-            const temaFinal = tema === 'dark' ? 'dark' : 'light';
+            const temaFinal = tema === 'dark' || tema === 'pink' ? tema : 'light';
             document.documentElement.setAttribute('data-theme', temaFinal);
             atualizarBotaoTema(temaFinal);
             if (!salvarPreferencia) return;
@@ -238,7 +256,7 @@
             if (botaoTema) {
                 botaoTema.addEventListener('click', () => {
                     const temaAtual = document.documentElement.getAttribute('data-theme') || 'light';
-                    const proximoTema = temaAtual === 'dark' ? 'light' : 'dark';
+                    const proximoTema = obterProximoTema(temaAtual);
                     aplicarTema(proximoTema, true);
                 });
             }
