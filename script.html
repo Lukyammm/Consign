@@ -2586,6 +2586,18 @@
         async function buscarPacientePorProntuarioTermo() {
             const campoProntuarioBusca = document.getElementById('termo-prontuario-busca');
             const campoProntuario = document.getElementById('termo-prontuario');
+            const campoPaciente = document.getElementById('termo-paciente');
+            const campoLeito = document.getElementById('termo-leito');
+            const campoNascimento = elementos.termoNascimento;
+            const campoSetor = elementos.termoSetor;
+            const snapshotCampos = {
+                paciente: campoPaciente?.value || '',
+                leito: campoLeito?.value || '',
+                prontuario: campoProntuario?.value || '',
+                prontuarioBusca: campoProntuarioBusca?.value || '',
+                nascimento: campoNascimento?.value || '',
+                setor: campoSetor?.value || ''
+            };
             const prontuario = (campoProntuarioBusca?.value || campoProntuario?.value || '').trim();
             if (!prontuario) {
                 atualizarFeedbackBuscaProntuarioTermo('Informe o prontuário para buscar.', 'is-error');
@@ -2619,10 +2631,46 @@
                     termoUltimaBuscaPreencheu = true;
                     atualizarFeedbackBuscaProntuarioTermo('Dados encontrados e preenchidos automaticamente.', 'is-success');
                 } else {
+                    if (campoPaciente && !campoPaciente.value && snapshotCampos.paciente) {
+                        campoPaciente.value = snapshotCampos.paciente;
+                    }
+                    if (campoLeito && !campoLeito.value && snapshotCampos.leito) {
+                        campoLeito.value = snapshotCampos.leito;
+                    }
+                    if (campoProntuario && !campoProntuario.value && snapshotCampos.prontuario) {
+                        campoProntuario.value = snapshotCampos.prontuario;
+                    }
+                    if (campoProntuarioBusca && !campoProntuarioBusca.value && snapshotCampos.prontuarioBusca) {
+                        campoProntuarioBusca.value = snapshotCampos.prontuarioBusca;
+                    }
+                    if (campoNascimento && !campoNascimento.value && snapshotCampos.nascimento) {
+                        campoNascimento.value = snapshotCampos.nascimento;
+                    }
+                    if (campoSetor && !campoSetor.value && snapshotCampos.setor) {
+                        campoSetor.value = snapshotCampos.setor;
+                    }
                     ultimoProntuarioBuscadoTermo = '';
                     atualizarFeedbackBuscaProntuarioTermo('Prontuário não localizado. Verifique o número ou preencha manualmente.', 'is-error');
                 }
             } catch (erroBusca) {
+                if (campoPaciente && !campoPaciente.value && snapshotCampos.paciente) {
+                    campoPaciente.value = snapshotCampos.paciente;
+                }
+                if (campoLeito && !campoLeito.value && snapshotCampos.leito) {
+                    campoLeito.value = snapshotCampos.leito;
+                }
+                if (campoProntuario && !campoProntuario.value && snapshotCampos.prontuario) {
+                    campoProntuario.value = snapshotCampos.prontuario;
+                }
+                if (campoProntuarioBusca && !campoProntuarioBusca.value && snapshotCampos.prontuarioBusca) {
+                    campoProntuarioBusca.value = snapshotCampos.prontuarioBusca;
+                }
+                if (campoNascimento && !campoNascimento.value && snapshotCampos.nascimento) {
+                    campoNascimento.value = snapshotCampos.nascimento;
+                }
+                if (campoSetor && !campoSetor.value && snapshotCampos.setor) {
+                    campoSetor.value = snapshotCampos.setor;
+                }
                 ultimoProntuarioBuscadoTermo = '';
                 console.error('Erro ao buscar prontuário na Base Vitae (termo):', erroBusca);
                 atualizarFeedbackBuscaProntuarioTermo('Não foi possível buscar o prontuário agora.', 'is-error');
