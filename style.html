@@ -1063,6 +1063,15 @@
             border-right: 10px solid transparent;
             pointer-events: none;
         }
+        .header-selector-pair .selector-dropdown {
+            left: auto;
+            right: 0;
+        }
+        .header-selector-pair .selector-dropdown::before,
+        .header-selector-pair .selector-dropdown::after {
+            left: auto;
+            right: 24px;
+        }
         .selector-dropdown::before {
             border-bottom: 10px solid color-mix(in srgb, var(--primary-color) 12%, var(--border-color) 88%);
         }
