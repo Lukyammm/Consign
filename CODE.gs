@@ -558,12 +558,12 @@ const TERMOS_CACHE_KEY = 'termos_registrados_cache_v1';
 const TERMOS_CACHE_META_KEY = 'termos_registrados_cache_meta_v1';
 const TERMOS_CACHE_CHUNK_PREFIX = 'termos_registrados_cache_chunk_v1';
 const TERMOS_CACHE_CHUNK_TAMANHO_MAX = 75000; // ~75 KB para manter margem
-const TERMOS_CACHE_TTL = 120; // segundos
+const TERMOS_CACHE_TTL = 300; // segundos
 
 // Configurações gerais de cache para otimizar leituras
 const CACHE_PREFIXO = 'locknac_cache_v1';
 const CACHE_TTL_PADRAO = 60; // segundos
-const CACHE_TTL_ARMARIOS = 45;
+const CACHE_TTL_ARMARIOS = 120;
 const CACHE_TTL_HISTORICO = 90;
 const CACHE_TTL_MOVIMENTACOES = 45;
 const CACHE_TTL_INDICE_ARMARIOS = 30;

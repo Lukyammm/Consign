@@ -2019,7 +2019,7 @@
             fecharModalAvatar({ focusTrigger: false });
         }
         const ARMARIOS_CACHE_KEY = 'dashboard-armarios-cache';
-        const ARMARIOS_CACHE_TTL_MS = 60 * 1000;
+        const ARMARIOS_CACHE_TTL_MS = 3 * 60 * 1000;
         function agendarAtualizacaoResumoDashboard() {
             const atualizar = () => atualizarResumoDashboardLocal();
             if (typeof requestAnimationFrame === 'function') {
