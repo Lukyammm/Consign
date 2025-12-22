@@ -3876,7 +3876,7 @@
             renderizarArmariosAgendamento = { tipo: 'timeout', id };
         }
         // Renderizar lista de armários no dashboard
-        function renderizarArmarios() {
+        function renderizarArmarios(opcoes = {}) {
             if (!elementos.armariosContainer) return;
             cancelarRenderizacaoArmarios();
             renderizarArmariosVersao += 1;
@@ -3944,6 +3944,16 @@
                 card.addEventListener('click', () => abrirModalArmario(armario));
                 return card;
             };
+
+            if (opcoes.imediato) {
+                const fragment = document.createDocumentFragment();
+                armariosParaExibir.forEach(armario => {
+                    fragment.appendChild(criarCardArmario(armario));
+                });
+                elementos.armariosContainer.appendChild(fragment);
+                renderizarArmariosAgendamento = null;
+                return;
+            }
 
             const processarLote = (deadline) => {
                 if (versaoExecucao !== renderizarArmariosVersao) return;
@@ -4024,6 +4034,16 @@
             elementos.cardsCount.proximo.textContent = totais.proximo;
             elementos.cardsCount.contingencia.textContent = totais.contingencia;
             elementos.cardsCount.vencidos.textContent = totais.vencidos;
+        }
+
+        function atualizarDashboardImediato() {
+            atualizarResumoDashboardLocal();
+            ajustarFiltrosDashboardParaPerfil();
+            atualizarVisibilidadeContingencia();
+            atualizarVisibilidadeCardsHero();
+            if (estado.paginaAtual === 'dashboard') {
+                renderizarArmarios({ imediato: true });
+            }
         }
 
         function atualizarArmarioLocal(id, atualizacoes) {
@@ -7877,8 +7897,7 @@
                     atualizacoesLocais.prontuario = dadosTermo.prontuario;
                 }
                 atualizarArmarioLocal(armarioIdLocal, atualizacoesLocais);
-                atualizarResumoDashboardLocal();
-                atualizarInterface();
+                atualizarDashboardImediato();
                 carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
                     console.error('Erro ao atualizar tabelas localmente após aplicar termo:', erro);
                 });
@@ -9454,8 +9473,7 @@
 
             const atualizouLocal = garantirArmarioLiberadoLocal(id, metodo, confirmacao);
             if (atualizouLocal) {
-                atualizarResumoDashboardLocal();
-                atualizarInterface();
+                atualizarDashboardImediato();
                 carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
                     console.error('Erro ao atualizar tabelas localmente após liberação:', erro);
                 });
