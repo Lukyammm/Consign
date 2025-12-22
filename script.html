@@ -6448,52 +6448,71 @@
                         ocultarOverlay();
                     }
                 } else {
-                    const resultado = await callGoogleScript('cadastrarArmario', dados);
-                    if (resultado.success) {
-                        fecharModalArmario();
-                        limparRascunhoArmario();
-
-                        let idParaAtualizacao = armarioChave;
-                        if (!idParaAtualizacao && idPlanilha) {
-                            const armarioEstado = estado.armarios.find(item => normalizarIdentificador(item.idPlanilha) === idPlanilha);
-                            if (armarioEstado) {
-                                idParaAtualizacao = armarioEstado.id;
-                            }
+                    let idParaAtualizacao = armarioChave;
+                    if (!idParaAtualizacao && idPlanilha) {
+                        const armarioEstado = estado.armarios.find(item => normalizarIdentificador(item.idPlanilha) === idPlanilha);
+                        if (armarioEstado) {
+                            idParaAtualizacao = armarioEstado.id;
                         }
-
-                        if (idParaAtualizacao) {
-                            const agora = new Date();
-                            const horaInicioLocal = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                            const atualizacoesLocais = {
-                                status: 'em-uso',
-                                nomeVisitante: dados.nomeVisitante,
-                                nomePaciente: dados.nomePaciente,
-                                leito: dados.leito,
-                                volumes: volumesInformados,
-                                whatsapp: dados.whatsapp,
-                                horaInicio: horaInicioLocal,
-                                horaPrevista: dados.horaPrevista || '',
-                                visitaEstendida: visitaEstendida,
-                                dataRegistro: agora.toISOString(),
-                                tipo: tipo
-                            };
-                            const atualizado = atualizarArmarioLocal(idParaAtualizacao, atualizacoesLocais);
-                            if (!atualizado) {
-                                console.warn('Armário não encontrado no estado local para atualização imediata:', idParaAtualizacao);
-                            }
-                        }
-
-                        atualizarResumoDashboardLocal();
-                        atualizarInterface();
-                        carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
-                            console.error('Erro ao atualizar tabelas localmente após cadastro:', erro);
-                        });
-
-                        mostrarSucesso('Armário cadastrado com sucesso');
-                        sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
-                    } else {
-                        notificarErroPadrao(resultado);
                     }
+
+                    const snapshotArmario = idParaAtualizacao ? clonarArmario(obterArmarioPorId(idParaAtualizacao)) : null;
+                    if (idParaAtualizacao) {
+                        const agora = new Date();
+                        const horaInicioLocal = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                        const atualizacoesLocais = {
+                            status: 'em-uso',
+                            nomeVisitante: dados.nomeVisitante,
+                            nomePaciente: dados.nomePaciente,
+                            leito: dados.leito,
+                            volumes: volumesInformados,
+                            whatsapp: dados.whatsapp,
+                            horaInicio: horaInicioLocal,
+                            horaPrevista: dados.horaPrevista || '',
+                            visitaEstendida: visitaEstendida,
+                            dataRegistro: agora.toISOString(),
+                            tipo: tipo
+                        };
+                        const atualizado = atualizarArmarioLocal(idParaAtualizacao, atualizacoesLocais);
+                        if (!atualizado) {
+                            console.warn('Armário não encontrado no estado local para atualização imediata:', idParaAtualizacao);
+                        }
+                    }
+
+                    fecharModalArmario();
+                    limparRascunhoArmario();
+                    atualizarDashboardImediato();
+                    carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
+                        console.error('Erro ao atualizar tabelas localmente após cadastro:', erro);
+                    });
+                    mostrarSucesso('Armário cadastrado com sucesso');
+
+                    callGoogleScript('cadastrarArmario', dados)
+                        .then(resultado => {
+                            if (resultado.success) {
+                                sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
+                                return;
+                            }
+                            notificarErroPadrao(resultado);
+                            if (idParaAtualizacao && snapshotArmario) {
+                                restaurarArmarioLocal(idParaAtualizacao, snapshotArmario);
+                                atualizarDashboardImediato();
+                                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
+                                    console.error('Erro ao atualizar tabelas após rollback do cadastro:', erro);
+                                });
+                            }
+                        })
+                        .catch(erro => {
+                            console.error('Erro ao cadastrar armário:', erro);
+                            mostrarErro('Não foi possível cadastrar o armário. Tente novamente.');
+                            if (idParaAtualizacao && snapshotArmario) {
+                                restaurarArmarioLocal(idParaAtualizacao, snapshotArmario);
+                                atualizarDashboardImediato();
+                                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
+                                    console.error('Erro ao atualizar tabelas após rollback do cadastro:', erro);
+                                });
+                            }
+                        });
                 }
             } finally {
                 finalizarLoading();
