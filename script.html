@@ -72,6 +72,7 @@
             prontuario: ''
         };
         let turnoIntervalId = null;
+        let carregamentoContingenciaId = 0;
         function obterEstadoLiberacao() {
             if (!estado.liberacao) {
                 estado.liberacao = criarEstadoLiberacaoInicial();
@@ -5494,12 +5495,17 @@
                 unidade: estado.unidadeAtual === 'todas' ? '' : estado.unidadeAtual,
                 usuarioResponsavel: obterDescricaoResponsavelAtual()
             };
-
-            const finalizar = mostrarOverlayCarregamento('Preparando termo de responsabilidade...');
+            const requestId = ++carregamentoContingenciaId;
+            let sucesso = false;
+            abrirModalTermoCarregando('Preparando termo de responsabilidade...');
             try {
                 const resposta = await callGoogleScript('registrarContingenciaTermo', payload);
+                if (carregamentoContingenciaId !== requestId) {
+                    return;
+                }
                 if (!resposta.success) {
                     notificarErroPadrao(resposta, 'Não foi possível iniciar a contingência.');
+                    fecharTermoModal();
                     return;
                 }
 
@@ -5521,12 +5527,15 @@
                 estado.armarios.push(armarioNormalizado);
                 estado.armariosCarregados = true;
                 abrirTermoWizard(armarioNormalizado.id);
+                sucesso = true;
                 atualizarResumoDashboardLocal();
                 atualizarInterface();
                 carregarDadosTabelas({ recarregarArmarios: false }).catch(console.error);
                 sincronizarDadosArmariosEmSegundoPlano({ recarregarArmarios: true });
             } finally {
-                finalizar();
+                if (!sucesso && carregamentoContingenciaId === requestId) {
+                    setEstadoCarregamentoTermo(false);
+                }
             }
         }
         function abrirModalArmario(armario) {
@@ -7370,6 +7379,39 @@
             if (elementos.termoModal) {
                 elementos.termoModal.setAttribute('aria-busy', ativo ? 'true' : 'false');
             }
+            if (ativo) {
+                if (elementos.termoBtnAvancar) {
+                    elementos.termoBtnAvancar.disabled = true;
+                }
+                if (elementos.termoBtnVoltar) {
+                    elementos.termoBtnVoltar.disabled = true;
+                }
+            } else {
+                if (elementos.termoBtnAvancar) {
+                    elementos.termoBtnAvancar.disabled = false;
+                }
+                if (elementos.termoBtnVoltar) {
+                    elementos.termoBtnVoltar.disabled = termoPassoAtual === 0;
+                }
+            }
+        }
+        function abrirModalTermoCarregando(mensagem) {
+            garantirPortaisCabecalho();
+            termoArmarioAtual = null;
+            termoPreCadastro = null;
+            termoCadastroArmario = null;
+            termoPassoAtual = 0;
+            if (elementos.termoArmario) {
+                elementos.termoArmario.textContent = '...';
+            }
+            if (elementos.termoForm) {
+                elementos.termoForm.reset();
+            }
+            if (elementos.termoModal.style.display !== 'flex') {
+                travaRolagem.aplicar();
+            }
+            elementos.termoModal.style.display = 'flex';
+            setEstadoCarregamentoTermo(true, mensagem);
         }
         function sincronizarCienciaOrientacoes(confirmado) {
             ['ori1', 'ori2', 'ori3'].forEach(chave => {
@@ -7469,6 +7511,7 @@
                 delete elementos.termoNascimento.dataset.isoValue;
             }
             sincronizarCienciaOrientacoes(false);
+            setEstadoCarregamentoTermo(true);
             const preCadastro = termoPreCadastro && identificadores && normalizarIdentificador(termoPreCadastro.id) === identificadores.idPlanilha
                 ? termoPreCadastro
                 : null;
@@ -7993,6 +8036,8 @@
                 travaRolagem.remover();
             }
             elementos.termoModal.style.display = 'none';
+            carregamentoContingenciaId = 0;
+            setEstadoCarregamentoTermo(false);
             termoArmarioAtual = null;
             termoPreCadastro = null;
             termoCadastroArmario = null;
