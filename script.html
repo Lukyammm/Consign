@@ -5497,7 +5497,7 @@
             };
             const requestId = ++carregamentoContingenciaId;
             let sucesso = false;
-            abrirModalTermoCarregando('Preparando termo de responsabilidade...');
+            abrirModalTermoCarregando();
             try {
                 const resposta = await callGoogleScript('registrarContingenciaTermo', payload);
                 if (carregamentoContingenciaId !== requestId) {
