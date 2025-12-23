@@ -5733,7 +5733,10 @@
                     : '';
                 const termoHtml = armario.tipo === 'acompanhante'
                     ? `<div class="armario-modal-termo">
-                        <div class="armario-modal-termo-title">${termoTitulo}</div>
+                        <div class="armario-modal-termo-title">
+                            <span class="armario-modal-termo-icon" aria-hidden="true">⚠️</span>
+                            ${termoTitulo}
+                        </div>
                         <div class="armario-modal-termo-text">${termoAviso}</div>
                     </div>`
                     : '';
@@ -5778,9 +5781,11 @@
                                         ${armario.prontuario ? `Prontuário ${armario.prontuario}` : 'Sem prontuário'}
                                         ${armario.leito ? ` • Leito ${armario.leito}` : ''}
                                     </span>
+                                    <span class="armario-modal-visitor">
+                                        ${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}: ${armario.nomeVisitante || '-'}
+                                    </span>
                                 </div>
                                 <div class="armario-modal-chips">
-                                    <span class="armario-modal-chip">${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}: ${armario.nomeVisitante || '-'}</span>
                                     <span class="armario-modal-chip">Volumes: ${formatarVolumeParaExibicao(armario.volumes)}</span>
                                     ${armario.whatsapp ? `<span class="armario-modal-chip">WhatsApp: ${armario.whatsapp}</span>` : ''}
                                     <span class="armario-modal-chip">Desde ${armario.horaInicio || '-'}</span>
