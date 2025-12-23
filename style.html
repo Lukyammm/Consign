@@ -3035,6 +3035,242 @@
             flex-direction: column;
             border-radius: calc(var(--modal-radius) + 4px);
         }
+        .armario-modal-popup {
+            padding: 0;
+            border-radius: 24px;
+            background: color-mix(in srgb, var(--modal-bg) 92%, #ffffff 8%);
+            border: 1px solid var(--modal-divider);
+            box-shadow: 0 28px 70px rgba(15, 23, 42, 0.25);
+            max-width: min(680px, 92vw);
+        }
+
+        .armario-modal-popup .swal2-html-container {
+            margin: 0;
+            padding: 0;
+            text-align: left;
+            color: var(--text-color);
+            font-family: inherit;
+        }
+
+        .armario-modal-popup .swal2-actions {
+            padding: 16px 24px 24px;
+            gap: 12px;
+            margin: 0;
+            flex-wrap: wrap;
+        }
+
+        .armario-modal-popup .swal2-actions button {
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: -0.01em;
+        }
+
+        .armario-modal-card {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .armario-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .armario-modal-eyebrow {
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            letter-spacing: 0.12em;
+            color: color-mix(in srgb, var(--text-color) 45%, transparent);
+            font-weight: 600;
+        }
+
+        .armario-modal-title {
+            margin: 6px 0 4px;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .armario-modal-subtitle {
+            margin: 0;
+            font-size: 0.95rem;
+            color: color-mix(in srgb, var(--text-color) 60%, transparent);
+        }
+
+        .armario-modal-status {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.82rem;
+            background: color-mix(in srgb, var(--color-neutral-100) 70%, transparent);
+            color: var(--text-color);
+            white-space: nowrap;
+        }
+
+        .armario-modal-status.status-em-uso {
+            background: color-mix(in srgb, #22c55e 16%, transparent);
+            color: #15803d;
+        }
+
+        .armario-modal-status.status-proximo {
+            background: color-mix(in srgb, #f59e0b 18%, transparent);
+            color: #b45309;
+        }
+
+        .armario-modal-status.status-vencido {
+            background: color-mix(in srgb, #ef4444 18%, transparent);
+            color: #b91c1c;
+        }
+
+        .armario-modal-status.status-contingencia {
+            background: color-mix(in srgb, #0ea5e9 18%, transparent);
+            color: #0369a1;
+        }
+
+        .armario-modal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px 20px;
+            padding: 16px;
+            border-radius: 16px;
+            background: color-mix(in srgb, var(--color-neutral-100) 70%, transparent);
+            border: 1px solid color-mix(in srgb, var(--color-neutral-900) 8%, transparent);
+        }
+
+        .armario-modal-label {
+            display: block;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: color-mix(in srgb, var(--text-color) 50%, transparent);
+            font-weight: 600;
+        }
+
+        .armario-modal-value {
+            display: block;
+            font-size: 0.98rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-top: 4px;
+        }
+
+        .armario-modal-section {
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--color-neutral-100) 60%, transparent);
+            border: 1px solid color-mix(in srgb, var(--color-neutral-900) 8%, transparent);
+        }
+
+        .armario-modal-section .info-box {
+            margin: 0;
+        }
+
+        .armario-modal-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .armario-modal-action-btn,
+        .armario-modal-primary-inline {
+            border: none;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .armario-modal-action-btn {
+            background: color-mix(in srgb, var(--color-neutral-900) 10%, transparent);
+            color: var(--text-color);
+        }
+
+        .armario-modal-primary-inline {
+            background: #2563eb;
+            color: #fff;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
+        }
+
+        .armario-modal-primary,
+        .armario-modal-secondary,
+        .armario-modal-tertiary {
+            border-radius: 999px !important;
+            padding: 10px 20px !important;
+            font-weight: 600 !important;
+            box-shadow: none !important;
+        }
+
+        .armario-modal-primary {
+            background: #16a34a !important;
+        }
+
+        .armario-modal-secondary {
+            background: color-mix(in srgb, #2563eb 18%, transparent) !important;
+            color: #1d4ed8 !important;
+        }
+
+        .armario-modal-tertiary {
+            background: color-mix(in srgb, var(--color-neutral-900) 10%, transparent) !important;
+            color: var(--text-color) !important;
+        }
+
+        .armario-modal-popup .swal2-close {
+            color: var(--text-color);
+        }
+
+        @media (max-width: 640px) {
+            .armario-modal-popup {
+                border-radius: 20px;
+                max-width: 94vw;
+            }
+
+            .armario-modal-card {
+                padding: 20px;
+            }
+
+            .armario-modal-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .armario-modal-title {
+                font-size: 1.4rem;
+            }
+
+            .armario-modal-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .armario-modal-popup .swal2-actions {
+                padding: 12px 16px 20px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .armario-modal-popup .swal2-actions button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .armario-modal-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .armario-modal-action-btn,
+            .armario-modal-primary-inline {
+                width: 100%;
+                text-align: center;
+            }
+        }
         .modal-scrollable {
             overflow-y: auto;
             max-height: calc(100vh - 160px);

@@ -5730,43 +5730,82 @@
                     ? `<div class="info-box" style="margin-top:12px;">Termo de responsabilidade: <strong>${termoStatusTexto}</strong>${termoAviso}</div>`
                     : '';
                 const dataRegistroFormatada = formatarDataComDiaSemana(armario.dataRegistro);
-                const dataRegistroHtml = `<p><strong>Data:</strong> ${dataRegistroFormatada}</p>`;
+                const dataRegistroHtml = `<p><span class="armario-modal-label">Data</span><span class="armario-modal-value">${dataRegistroFormatada}</span></p>`;
+                const statusNormalizado = normalizarTexto(armario.status).replace(/\s+/g, '-');
                 const botoesApoio = `
-                    <div class="swal-extra-actions">
-                        <button id="btn-imagens-armario" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#475569;">Registros em imagens</button>
-                        ${armario.tipo === 'visitante' ? '<button id="btn-editar-horario" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#2c6e8f;">Editar horário/visita</button>' : ''}
+                    <div class="armario-modal-actions">
+                        <button id="btn-imagens-armario" class="armario-modal-action-btn" type="button">Registros em imagens</button>
+                        ${armario.tipo === 'visitante' ? '<button id="btn-editar-horario" class="armario-modal-action-btn" type="button">Editar horário/visita</button>' : ''}
                     </div>`;
                 const moverContingenciaHtml = ehContingencia
-                    ? `<div class="swal-extra-actions" style="margin-top:8px;"><button id="btn-mover-contingencia" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#0f766e;">Mover para armário livre</button></div>`
+                    ? `<div class="armario-modal-actions"><button id="btn-mover-contingencia" class="armario-modal-action-btn" type="button">Mover para armário livre</button></div>`
                     : '';
                 const reimpressaoHtml = armario.tipo === 'acompanhante'
-                    ? `<div class="swal-extra-actions" style="margin-top:8px;"><button id="btn-reimprimir-ticket" class="swal2-confirm swal2-styled swal2-secondary-action" type="button" style="background-color:#1f2937;">Reimprimir comprovante</button></div>`
+                    ? `<div class="armario-modal-actions"><button id="btn-reimprimir-ticket" class="armario-modal-action-btn" type="button">Reimprimir comprovante</button></div>`
                     : '';
                 Swal.fire({
-                    title: `Armário ${armario.numero}`,
                     html: `
-                        <p><strong>Status:</strong> ${formatarStatusArmario(armario.status)}</p>
-                        <p class="armario-unidade">
-                            <span class="label">Unidade</span>
-                            <span class="value">${armario.unidade || '-'}</span>
-                        </p>
-                        <p><strong>${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}:</strong> ${armario.nomeVisitante}</p>
-                        <p><strong>Paciente:</strong> ${armario.nomePaciente}</p>
-                        <p><strong>Prontuário:</strong> ${armario.prontuario || '-'}</p>
-                        <p><strong>Leito:</strong> ${armario.leito}</p>
-                        <p><strong>Volumes:</strong> ${formatarVolumeParaExibicao(armario.volumes)}</p>
-                        ${armario.whatsapp ? `<p><strong>WhatsApp:</strong> ${armario.whatsapp}</p>` : ''}
-                        <p><strong>Início:</strong> ${armario.horaInicio}</p>
-                        ${armario.visitaEstendida
-                            ? '<p><strong>Visita:</strong> Estendida</p>'
-                            : (armario.horaPrevista ? `<p><strong>Previsão de saída:</strong> ${armario.horaPrevista}</p>` : '')}
-                        ${dataRegistroHtml}
-                        ${ehContingencia ? fotoContingenciaHtml : ''}
-                        ${termoHtml}
-                        ${botoesApoio}
-                        ${moverContingenciaHtml}
-                        ${reimpressaoHtml}
-                        ${armario.tipo === 'acompanhante' && termoPendente ? `<div style="margin-top:16px;"><button id="btn-aplicar-termo" class="swal2-confirm swal2-styled" style="background-color:#2c6e8f;">Aplicar termo agora</button></div>` : ''}
+                        <div class="armario-modal-card">
+                            <header class="armario-modal-header">
+                                <div>
+                                    <div class="armario-modal-eyebrow">${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}</div>
+                                    <h2 class="armario-modal-title">Armário ${armario.numero}</h2>
+                                    <p class="armario-modal-subtitle">${armario.unidade || '-'}</p>
+                                </div>
+                                <span class="armario-modal-status status-${statusNormalizado}">
+                                    ${formatarStatusArmario(armario.status)}
+                                </span>
+                            </header>
+                            <div class="armario-modal-grid">
+                                <div>
+                                    <span class="armario-modal-label">${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}</span>
+                                    <span class="armario-modal-value">${armario.nomeVisitante || '-'}</span>
+                                </div>
+                                <div>
+                                    <span class="armario-modal-label">Paciente</span>
+                                    <span class="armario-modal-value">${armario.nomePaciente || '-'}</span>
+                                </div>
+                                <div>
+                                    <span class="armario-modal-label">Prontuário</span>
+                                    <span class="armario-modal-value">${armario.prontuario || '-'}</span>
+                                </div>
+                                <div>
+                                    <span class="armario-modal-label">Leito</span>
+                                    <span class="armario-modal-value">${armario.leito || '-'}</span>
+                                </div>
+                                <div>
+                                    <span class="armario-modal-label">Volumes</span>
+                                    <span class="armario-modal-value">${formatarVolumeParaExibicao(armario.volumes)}</span>
+                                </div>
+                                ${armario.whatsapp ? `
+                                <div>
+                                    <span class="armario-modal-label">WhatsApp</span>
+                                    <span class="armario-modal-value">${armario.whatsapp}</span>
+                                </div>` : ''}
+                                <div>
+                                    <span class="armario-modal-label">Início</span>
+                                    <span class="armario-modal-value">${armario.horaInicio || '-'}</span>
+                                </div>
+                                ${armario.visitaEstendida
+                                    ? `<div>
+                                        <span class="armario-modal-label">Visita</span>
+                                        <span class="armario-modal-value">Estendida</span>
+                                    </div>`
+                                    : (armario.horaPrevista ? `<div>
+                                        <span class="armario-modal-label">Previsão de saída</span>
+                                        <span class="armario-modal-value">${armario.horaPrevista}</span>
+                                    </div>` : '')}
+                            </div>
+                            <div class="armario-modal-section">
+                                ${dataRegistroHtml}
+                            </div>
+                            ${ehContingencia ? `<div class="armario-modal-section">${fotoContingenciaHtml}</div>` : ''}
+                            ${termoHtml ? `<div class="armario-modal-section">${termoHtml}</div>` : ''}
+                            ${botoesApoio}
+                            ${moverContingenciaHtml}
+                            ${reimpressaoHtml}
+                            ${armario.tipo === 'acompanhante' && termoPendente ? `<div class="armario-modal-actions"><button id="btn-aplicar-termo" class="armario-modal-primary-inline" type="button">Aplicar termo agora</button></div>` : ''}
+                        </div>
                     `,
                     icon: 'info',
                     showCancelButton: true,
@@ -5776,6 +5815,12 @@
                     cancelButtonText: 'Fechar',
                     confirmButtonColor: '#28a745',
                     reverseButtons: true,
+                    customClass: {
+                        popup: 'armario-modal-popup',
+                        confirmButton: 'armario-modal-primary',
+                        denyButton: 'armario-modal-secondary',
+                        cancelButton: 'armario-modal-tertiary'
+                    },
                     didOpen: () => {
                         const confirmButton = Swal.getConfirmButton();
                         if (confirmButton) {
