@@ -5719,15 +5719,26 @@
                         </div>
                     </div>`
                 : '';
+                const termoTitulo = termoEmAndamento
+                    ? 'Termo em andamento'
+                    : termoPendente
+                        ? 'Termo pendente'
+                        : 'Termo finalizado';
                 const termoAviso = armario.tipo === 'acompanhante'
                     ? (termoEmAndamento
-                        ? '<br><small>Finalize o termo durante a liberação do armário.</small>'
+                        ? 'Finalize o termo durante a liberação do armário.'
                         : termoPendente
-                            ? '<br><small>Preencha o termo para ocupar este armário.</small>'
-                            : '')
+                            ? 'Preencha o termo para ocupar este armário.'
+                            : 'Termo concluído para este armário.')
                     : '';
                 const termoHtml = armario.tipo === 'acompanhante'
-                    ? `<div class="info-box" style="margin-top:12px;">Termo de responsabilidade: <strong>${termoStatusTexto}</strong>${termoAviso}</div>`
+                    ? `<div class="armario-modal-termo">
+                        <div class="armario-modal-termo-title">
+                            <span class="armario-modal-termo-icon" aria-hidden="true">⚠️</span>
+                            ${termoTitulo}
+                        </div>
+                        <div class="armario-modal-termo-text">${termoAviso}</div>
+                    </div>`
                     : '';
                 const dataRegistroFormatada = formatarDataComDiaSemana(armario.dataRegistro);
                 const dataRegistroHtml = `<p><span class="armario-modal-label">Data</span><span class="armario-modal-value">${dataRegistroFormatada}</span></p>`;
@@ -5747,54 +5758,41 @@
                     html: `
                         <div class="armario-modal-card">
                             <header class="armario-modal-header">
-                                <div>
-                                    <div class="armario-modal-eyebrow">${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}</div>
-                                    <h2 class="armario-modal-title">Armário ${armario.numero}</h2>
-                                    <p class="armario-modal-subtitle">${armario.unidade || '-'}</p>
+                                <div class="armario-modal-hero">
+                                    <div class="armario-modal-icon">
+                                        <i class="fas fa-lock" aria-hidden="true"></i>
+                                    </div>
+                                    <div>
+                                        <div class="armario-modal-eyebrow">${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}</div>
+                                        <h2 class="armario-modal-title">Armário ${armario.numero}</h2>
+                                        <p class="armario-modal-subtitle">${armario.unidade || '-'}</p>
+                                    </div>
                                 </div>
                                 <span class="armario-modal-status status-${statusNormalizado}">
+                                    <span class="armario-modal-status-dot" aria-hidden="true"></span>
                                     ${formatarStatusArmario(armario.status)}
                                 </span>
                             </header>
                             <div class="armario-modal-grid">
-                                <div>
-                                    <span class="armario-modal-label">${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}</span>
-                                    <span class="armario-modal-value">${armario.nomeVisitante || '-'}</span>
-                                </div>
-                                <div>
+                                <div class="armario-modal-patient">
                                     <span class="armario-modal-label">Paciente</span>
-                                    <span class="armario-modal-value">${armario.nomePaciente || '-'}</span>
+                                    <span class="armario-modal-patient-name">${armario.nomePaciente || '-'}</span>
+                                    <span class="armario-modal-patient-sub">
+                                        ${armario.prontuario ? `Prontuário ${armario.prontuario}` : 'Sem prontuário'}
+                                        ${armario.leito ? ` • Leito ${armario.leito}` : ''}
+                                    </span>
+                                    <span class="armario-modal-visitor">
+                                        ${armario.tipo === 'acompanhante' ? 'Acompanhante' : 'Visitante'}: ${armario.nomeVisitante || '-'}
+                                    </span>
                                 </div>
-                                <div>
-                                    <span class="armario-modal-label">Prontuário</span>
-                                    <span class="armario-modal-value">${armario.prontuario || '-'}</span>
+                                <div class="armario-modal-chips">
+                                    <span class="armario-modal-chip">Volumes: ${formatarVolumeParaExibicao(armario.volumes)}</span>
+                                    ${armario.whatsapp ? `<span class="armario-modal-chip">WhatsApp: ${armario.whatsapp}</span>` : ''}
+                                    <span class="armario-modal-chip">Desde ${armario.horaInicio || '-'}</span>
+                                    ${armario.visitaEstendida
+                                        ? `<span class="armario-modal-chip">Visita estendida</span>`
+                                        : (armario.horaPrevista ? `<span class="armario-modal-chip">Prev. saída ${armario.horaPrevista}</span>` : '')}
                                 </div>
-                                <div>
-                                    <span class="armario-modal-label">Leito</span>
-                                    <span class="armario-modal-value">${armario.leito || '-'}</span>
-                                </div>
-                                <div>
-                                    <span class="armario-modal-label">Volumes</span>
-                                    <span class="armario-modal-value">${formatarVolumeParaExibicao(armario.volumes)}</span>
-                                </div>
-                                ${armario.whatsapp ? `
-                                <div>
-                                    <span class="armario-modal-label">WhatsApp</span>
-                                    <span class="armario-modal-value">${armario.whatsapp}</span>
-                                </div>` : ''}
-                                <div>
-                                    <span class="armario-modal-label">Início</span>
-                                    <span class="armario-modal-value">${armario.horaInicio || '-'}</span>
-                                </div>
-                                ${armario.visitaEstendida
-                                    ? `<div>
-                                        <span class="armario-modal-label">Visita</span>
-                                        <span class="armario-modal-value">Estendida</span>
-                                    </div>`
-                                    : (armario.horaPrevista ? `<div>
-                                        <span class="armario-modal-label">Previsão de saída</span>
-                                        <span class="armario-modal-value">${armario.horaPrevista}</span>
-                                    </div>` : '')}
                             </div>
                             <div class="armario-modal-section">
                                 ${dataRegistroHtml}
