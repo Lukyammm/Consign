@@ -1631,6 +1631,10 @@ function handlePost(e) {
       case 'registrarContatoPertence':
         return ContentService.createTextOutput(JSON.stringify(registrarContatoPertence(e.parameter)))
           .setMimeType(ContentService.MimeType.JSON);
+      
+      case 'excluirPertencePerdido':
+        return ContentService.createTextOutput(JSON.stringify(excluirPertencePerdido(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
 
       default:
         return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Ação não reconhecida: ' + action }))
@@ -7085,6 +7089,29 @@ function registrarContatoPertence(parametros) {
     return { success: true, historicoContato: novoHistorico };
   } catch (erro) {
     registrarLog('ERRO', 'Erro ao registrar contato de pertence: ' + erro.toString());
+    return { success: false, error: erro.toString() };
+  }
+}
+
+function excluirPertencePerdido(parametros) {
+  try {
+    var idLinha = parseInt(parametros.idLinha || parametros.id || parametros.linha, 10);
+    if (!idLinha || idLinha <= PLANILHA_PERTENCES_PERDIDOS_LINHA_CABECALHO) {
+      return { success: false, error: 'Linha inválida' };
+    }
+
+    var sheet = obterSheetPertencesPerdidos();
+    var ultimaLinha = sheet.getLastRow();
+    if (idLinha > ultimaLinha) {
+      return { success: false, error: 'Registro não encontrado' };
+    }
+
+    sheet.deleteRow(idLinha);
+
+    registrarLog('ACHADOS', 'Pertence excluído na linha ' + idLinha);
+    return { success: true };
+  } catch (erro) {
+    registrarLog('ERRO', 'Erro ao excluir pertence perdido: ' + erro.toString());
     return { success: false, error: erro.toString() };
   }
 }
