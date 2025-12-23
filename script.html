@@ -9512,9 +9512,33 @@
             notificarProcessamentoEmSegundoPlano();
             executarLiberacaoAssincrona();
         }
+        function obterListaNotificacoesPerfil() {
+            if (elementos.profileNotificationList) {
+                return elementos.profileNotificationList;
+            }
+            const listaDireta = document.getElementById('profile-notification-list');
+            if (listaDireta) {
+                elementos.profileNotificationList = listaDireta;
+                return listaDireta;
+            }
+            const container = document.querySelector('.profile-modal-notifications');
+            if (!container) {
+                return null;
+            }
+            const listaExistente = container.querySelector('.notification-list');
+            const lista = listaExistente || document.createElement('div');
+            lista.className = 'notification-list';
+            lista.id = 'profile-notification-list';
+            if (!listaExistente) {
+                container.appendChild(lista);
+            }
+            elementos.profileNotificationList = lista;
+            return lista;
+        }
         // Atualizar painel de notificações
         function renderizarPainelNotificacoes() {
-            if (!elementos.profileNotificationList) {
+            const notificationList = obterListaNotificacoesPerfil();
+            if (!notificationList) {
                 return;
             }
             elementos.profileNotificationList.innerHTML = '';
