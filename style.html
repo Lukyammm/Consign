@@ -5992,11 +5992,52 @@
             #tabela-achados td {
                 padding: 10px 12px;
             }
+            #tabela-achados thead {
+                display: none;
+            }
+            #tabela-achados,
+            #tabela-achados tbody,
+            #tabela-achados tr,
+            #tabela-achados th,
             #tabela-achados td {
-                word-break: break-word;
+                display: block;
+                width: 100%;
             }
             #tabela-achados {
-                border-spacing: 0 8px;
+                border-spacing: 0;
+            }
+            #tabela-achados tbody tr {
+                padding: 14px;
+                margin-bottom: 12px;
+            }
+            #tabela-achados td {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 8px 0;
+                border-bottom: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+                word-break: break-word;
+            }
+            #tabela-achados td:last-child {
+                border-bottom: none;
+            }
+            #tabela-achados td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--text-light);
+                min-width: 120px;
+            }
+            #tabela-achados td.lf-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            #tabela-achados th:not(:last-child)::after,
+            #tabela-achados td:not(:last-child)::after {
+                display: none;
+            }
+            #tabela-achados td {
+                word-break: break-word;
             }
             #tabela-achados tbody tr {
                 box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);

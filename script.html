@@ -3650,15 +3650,17 @@
 
                 tdAcoes.append(btnLigar, btnEditar, btnEncontrado, btnExcluir);
 
-                linha.appendChild(criarCelulaTexto(item.dono || '-'));
-                linha.appendChild(criarCelulaTexto(item.dataGuardaTexto || '-'));
-                linha.appendChild(criarCelulaTexto(item.descricao || '-'));
-                linha.appendChild(criarCelulaTexto(item.telefone || '-'));
+                linha.appendChild(criarCelulaTexto(item.dono || '-', 'Dono do pertence'));
+                linha.appendChild(criarCelulaTexto(item.dataGuardaTexto || '-', 'Data da guarda'));
+                linha.appendChild(criarCelulaTexto(item.descricao || '-', 'Descrição'));
+                linha.appendChild(criarCelulaTexto(item.telefone || '-', 'Telefone'));
 
                 const tdStatus = document.createElement('td');
+                tdStatus.dataset.label = 'Encontrado?';
                 tdStatus.appendChild(statusPill);
                 linha.appendChild(tdStatus);
-                linha.appendChild(criarCelulaTexto(ultimaLigacao || '-'));
+                linha.appendChild(criarCelulaTexto(ultimaLigacao || '-', 'Última ligação'));
+                tdAcoes.dataset.label = 'Ações';
                 linha.appendChild(tdAcoes);
 
                 elementos.tabelaAchadosBody.appendChild(linha);
@@ -3690,9 +3692,12 @@
                 elementos.achadosFiltroAplicado.textContent = filtros.join(' | ');
             }
         }
-        function criarCelulaTexto(texto) {
+        function criarCelulaTexto(texto, rotulo) {
             const td = document.createElement('td');
             td.textContent = texto;
+            if (rotulo) {
+                td.dataset.label = rotulo;
+            }
             return td;
         }
         async function carregarAchados({ forcarAtualizacao = false } = {}) {
