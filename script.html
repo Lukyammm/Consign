@@ -1805,8 +1805,26 @@
             return { success: false, error: 'Erro de conexão com o servidor', _erroNotificado: true };
         }
         async function inicializarAplicacao() {
-            garantirPortaisCabecalho();
-            if (aplicacaoInicializada) {
+            try {
+                garantirPortaisCabecalho();
+                if (aplicacaoInicializada) {
+                    await carregarDadosIniciais();
+                    atualizarCabecalhoUsuario();
+                    if (!turnoIntervalId) {
+                        turnoIntervalId = setInterval(atualizarTurnoCabecalho, 60000);
+                    }
+                    aplicarPermissoesMenu();
+                    atualizarInterface();
+                    carregarDadosTabelas();
+                    persistirSessaoAtual();
+                    return;
+                }
+                aplicacaoInicializada = true;
+                aplicarPreferenciasCabecalhoRestauradas();
+                atualizarInterface();
+                aprimorarSeletoresCabecalho();
+                inicializarCanvasAssinatura();
+                inicializarEventos();
                 await carregarDadosIniciais();
                 atualizarCabecalhoUsuario();
                 if (!turnoIntervalId) {
@@ -1816,23 +1834,14 @@
                 atualizarInterface();
                 carregarDadosTabelas();
                 persistirSessaoAtual();
-                return;
+            } catch (erro) {
+                aplicacaoInicializada = false;
+                console.error('Erro ao inicializar a aplicação:', erro);
+                atualizarFeedbackLogin('error', 'Não foi possível iniciar a aplicação. Atualize a página.');
+                if (elementos.appShell) {
+                    elementos.appShell.classList.remove('hidden');
+                }
             }
-            aplicacaoInicializada = true;
-            aplicarPreferenciasCabecalhoRestauradas();
-            atualizarInterface();
-            aprimorarSeletoresCabecalho();
-            inicializarCanvasAssinatura();
-            inicializarEventos();
-            await carregarDadosIniciais();
-            atualizarCabecalhoUsuario();
-            if (!turnoIntervalId) {
-                turnoIntervalId = setInterval(atualizarTurnoCabecalho, 60000);
-            }
-            aplicarPermissoesMenu();
-            atualizarInterface();
-            carregarDadosTabelas();
-            persistirSessaoAtual();
         }
         function atualizarFeedbackLogin(tipo, mensagem = '') {
             if (!elementos.loginFeedback) {
