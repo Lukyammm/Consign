@@ -2026,7 +2026,9 @@ function obterRegistroBaseVitaePorProntuario(prontuarioEntrada, prontuarioSemZer
   }
 }
 
-function getArmarios(tipo, incluirInternacoes) {
+function getArmarios(tipo, incluirInternacoes, opcoes) {
+  opcoes = opcoes || {};
+  var atualizarStatus = opcoes.atualizarStatus !== false;
   var tipoNormalizadoOriginal = normalizarTextoBasico(tipo);
   if (!tipoNormalizadoOriginal) {
     tipoNormalizadoOriginal = 'geral';
@@ -2038,7 +2040,13 @@ function getArmarios(tipo, incluirInternacoes) {
     chaveCacheTipo = 'geral';
   }
 
-  var chaveCache = montarChaveCache('armarios', chaveCacheTipo, incluirInternacoesNormalizado ? 'com-internacoes' : 'sem-internacoes');
+  var sufixoAtualizacao = atualizarStatus ? '' : 'sem-atualizacao';
+  var chaveCache = montarChaveCache(
+    'armarios',
+    chaveCacheTipo,
+    incluirInternacoesNormalizado ? 'com-internacoes' : 'sem-internacoes',
+    sufixoAtualizacao
+  );
 
   return executarComCache(chaveCache, CACHE_TTL_ARMARIOS, function() {
     try {
@@ -2100,14 +2108,14 @@ function getArmarios(tipo, incluirInternacoes) {
       }
 
       if (tipoNormalizado === 'admin' || tipoNormalizado === 'ambos' || tipoNormalizado === 'todos' || tipoNormalizado === 'geral') {
-        var visitantes = getArmariosFromSheet('Visitantes', 'visitante', null, mapaInternacoes);
-        var acompanhantes = getArmariosFromSheet('Acompanhantes', 'acompanhante', termosMap, mapaInternacoes);
+        var visitantes = getArmariosFromSheet('Visitantes', 'visitante', null, mapaInternacoes, atualizarStatus);
+        var acompanhantes = getArmariosFromSheet('Acompanhantes', 'acompanhante', termosMap, mapaInternacoes, atualizarStatus);
         return { success: true, data: visitantes.concat(acompanhantes) };
       }
 
       var sheetName = tipoNormalizado === 'acompanhante' ? 'Acompanhantes' : 'Visitantes';
       var mapa = tipoNormalizado === 'acompanhante' ? termosMap : null;
-      return { success: true, data: getArmariosFromSheet(sheetName, tipoNormalizado, mapa, mapaInternacoes) };
+      return { success: true, data: getArmariosFromSheet(sheetName, tipoNormalizado, mapa, mapaInternacoes, atualizarStatus) };
     } catch (error) {
       registrarLog('ERRO', `Erro ao buscar armários: ${error.toString()}`);
       return { success: false, error: error.toString() };
@@ -2115,7 +2123,10 @@ function getArmarios(tipo, incluirInternacoes) {
   });
 }
 
-function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
+function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes, atualizarStatus) {
+  if (atualizarStatus === undefined) {
+    atualizarStatus = true;
+  }
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(sheetName);
 
@@ -2210,8 +2221,10 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
       var novoStatus = calcularStatusAutomaticoVisitante(status, dataRegistroBruta, horaPrevistaBruta, agoraReferencia);
       if (novoStatus && novoStatus !== status) {
         status = novoStatus;
-        row[statusIndex] = novoStatus;
-        houveAtualizacaoStatus = true;
+        if (atualizarStatus) {
+          row[statusIndex] = novoStatus;
+          houveAtualizacaoStatus = true;
+        }
       }
     }
 
@@ -2327,7 +2340,7 @@ function getArmariosFromSheet(sheetName, tipo, termosMap, mapaInternacoes) {
     armarios.push(armario);
   }
 
-  if (houveAtualizacaoStatus && statusIndex > -1) {
+  if (atualizarStatus && houveAtualizacaoStatus && statusIndex > -1) {
     var statusAtualizados = dados.map(function(linha) {
       return [linha[statusIndex] || ''];
     });
@@ -7184,6 +7197,7 @@ function getLogs() {
 function getNotificacoes() {
   try {
     var agora = new Date();
+    var hoje = agora.toISOString().split('T')[0];
     var notificacoes = [];
 
     var armariosVisitantes = getArmarios('visitante');
@@ -7274,7 +7288,7 @@ function getEstatisticasDashboard(tipoUsuario) {
     var agora = new Date();
 
     tipos.forEach(function(tipo) {
-      var armarios = getArmarios(tipo);
+      var armarios = getArmarios(tipo, false, { atualizarStatus: false });
       if (armarios.success) {
         armarios.data.forEach(function(armario) {
           if (armario.status === 'livre') {
@@ -7282,7 +7296,6 @@ function getEstatisticasDashboard(tipoUsuario) {
           } else if (armario.status === 'em-uso') {
             if (armario.horaPrevista) {
               try {
-                var hoje = new Date().toISOString().split('T')[0];
                 var horaPrevista = new Date(hoje + 'T' + armario.horaPrevista + ':00');
                 var diferencaMinutos = (horaPrevista - agora) / (1000 * 60);
                 
