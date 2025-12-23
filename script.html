@@ -5520,11 +5520,11 @@
                 };
                 estado.armarios.push(armarioNormalizado);
                 estado.armariosCarregados = true;
+                abrirTermoWizard(armarioNormalizado.id);
                 atualizarResumoDashboardLocal();
                 atualizarInterface();
                 carregarDadosTabelas({ recarregarArmarios: false }).catch(console.error);
                 sincronizarDadosArmariosEmSegundoPlano({ recarregarArmarios: true });
-                await abrirTermoWizard(armarioNormalizado.id);
             } finally {
                 finalizar();
             }
