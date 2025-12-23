@@ -498,11 +498,12 @@
             if (elementos.headerUserProfile) {
                 elementos.headerUserProfile.setAttribute('aria-expanded', 'true');
             }
+            if (elementos.notificationBell) {
+                elementos.notificationBell.setAttribute('aria-expanded', 'true');
+            }
             sincronizarSelecaoAvatar();
             requestAnimationFrame(() => {
-                const selecionado = elementos.avatarOptions?.querySelector('.avatar-option.selected');
-                const alvo = selecionado || elementos.avatarOptions?.querySelector('.avatar-option');
-                alvo?.focus();
+                elementos.avatarModalClose?.focus();
             });
         }
         function fecharModalAvatar({ focusTrigger = true } = {}) {
@@ -521,28 +522,9 @@
                     elementos.headerUserProfile.focus();
                 }
             }
-            if (elementos.avatarUrlInput) {
-                elementos.avatarUrlInput.value = '';
-                elementos.avatarUrlInput.classList.remove('invalid');
-                elementos.avatarUrlInput.removeAttribute('aria-invalid');
-            }
-        }
-        function painelNotificacoesAberto() {
-            return Boolean(elementos.notificationPanel?.classList.contains('is-open'));
-        }
-        function atualizarPainelNotificacoes(aberto) {
-            if (!elementos.notificationPanel) {
-                return;
-            }
-            const deveAbrir = Boolean(aberto);
-            elementos.notificationPanel.classList.toggle('is-open', deveAbrir);
-            elementos.notificationPanel.setAttribute('aria-hidden', deveAbrir ? 'false' : 'true');
             if (elementos.notificationBell) {
-                elementos.notificationBell.setAttribute('aria-expanded', deveAbrir ? 'true' : 'false');
+                elementos.notificationBell.setAttribute('aria-expanded', 'false');
             }
-        }
-        function alternarPainelNotificacoes() {
-            atualizarPainelNotificacoes(!painelNotificacoesAberto());
         }
         function aplicarAvatarUsuario(url) {
             if (!estado.autenticado || !estado.usuarioAutenticado) {
@@ -560,30 +542,6 @@
             sincronizarSelecaoAvatar();
             fecharModalAvatar();
         }
-        function aplicarAvatarPersonalizado() {
-            if (!elementos.avatarUrlInput) {
-                return;
-            }
-            const valor = elementos.avatarUrlInput.value.trim();
-            if (!valor) {
-                elementos.avatarUrlInput.classList.add('invalid');
-                elementos.avatarUrlInput.setAttribute('aria-invalid', 'true');
-                elementos.avatarUrlInput.focus();
-                return;
-            }
-            try {
-                const urlValida = new URL(valor);
-                elementos.avatarUrlInput.classList.remove('invalid');
-                elementos.avatarUrlInput.removeAttribute('aria-invalid');
-                const urlFinal = urlValida.toString();
-                elementos.avatarUrlInput.value = '';
-                aplicarAvatarUsuario(urlFinal);
-            } catch (erro) {
-                elementos.avatarUrlInput.classList.add('invalid');
-                elementos.avatarUrlInput.setAttribute('aria-invalid', 'true');
-                elementos.avatarUrlInput.focus();
-            }
-        }
         // Elementos DOM
         const elementos = {
             loginContainer: document.getElementById('login-container'),
@@ -598,7 +556,6 @@
             profileSelect: document.getElementById('profile-select'),
             unitSelect: document.getElementById('unit-select'),
             notificationBell: document.getElementById('notification-bell'),
-            notificationPanel: document.getElementById('notification-panel'),
             notificationBadge: document.querySelector('.notification-badge'),
             armariosContainer: document.getElementById('armarios-container'),
             armarioModal: document.getElementById('armario-modal'),
@@ -652,9 +609,10 @@
             avatarModal: document.getElementById('avatar-modal'),
             avatarModalBackdrop: document.getElementById('avatar-modal-backdrop'),
             avatarModalClose: document.getElementById('avatar-modal-close'),
-            avatarOptions: document.getElementById('avatar-options'),
-            avatarUrlInput: document.getElementById('avatar-url'),
-            avatarUrlApply: document.getElementById('avatar-url-apply'),
+            profileModalAvatar: document.getElementById('profile-modal-avatar'),
+            profileModalName: document.getElementById('profile-modal-name'),
+            profileModalRole: document.getElementById('profile-modal-role'),
+            profileNotificationList: document.getElementById('profile-notification-list'),
             globalLoadingOverlay: document.getElementById('global-loading-overlay'),
             globalLoadingText: document.getElementById('global-loading-text'),
             termoModal: document.getElementById('termo-modal'),
@@ -821,7 +779,6 @@
         }
         popularAvataresPadrao();
         sincronizarSelecaoAvatar();
-        atualizarPainelNotificacoes(false);
         const customSelectorInstances = new WeakMap();
         const customSelectorStore = new Set();
         const paginasRestritasUsuario = new Set(['cadastro-armarios', 'cadastro-unidades', 'usuarios', 'logs']);
@@ -830,7 +787,7 @@
         let eventosInicializados = false;
         const estadoImpressaoReserva = { dados: null };
         function garantirPortaisCabecalho() {
-            [elementos.notificationPanel, elementos.avatarModalBackdrop].forEach(elemento => {
+            [elementos.avatarModalBackdrop].forEach(elemento => {
                 if (elemento && elemento.parentElement !== document.body) {
                     document.body.appendChild(elemento);
                 }
@@ -1524,6 +1481,17 @@
                 elementos.headerUserAvatar.style.backgroundImage = '';
                 elementos.headerUserAvatar.classList.remove('has-image');
                 elementos.headerUserProfile?.setAttribute('aria-label', 'Perfil do usuário');
+                if (elementos.profileModalName) {
+                    elementos.profileModalName.textContent = 'Usuário';
+                }
+                if (elementos.profileModalRole) {
+                    elementos.profileModalRole.textContent = '';
+                }
+                if (elementos.profileModalAvatar) {
+                    elementos.profileModalAvatar.textContent = '--';
+                    elementos.profileModalAvatar.style.backgroundImage = '';
+                    elementos.profileModalAvatar.classList.remove('has-image');
+                }
                 if (elementos.headerUserGreetingRole) {
                     elementos.headerUserGreetingRole.textContent = 'Visitante';
                 }
@@ -1535,6 +1503,12 @@
             elementos.headerUserName.textContent = nomeLimpo;
             elementos.headerUserRole.textContent = perfilAtualEhAdmin() ? 'Administrador' : 'Usuário';
             elementos.headerUserProfile?.setAttribute('aria-label', `Perfil do usuário ${nomeLimpo} (${elementos.headerUserRole.textContent})`);
+            if (elementos.profileModalName) {
+                elementos.profileModalName.textContent = nomeLimpo;
+            }
+            if (elementos.profileModalRole) {
+                elementos.profileModalRole.textContent = elementos.headerUserRole.textContent;
+            }
             if (elementos.headerUserGreetingRole) {
                 elementos.headerUserGreetingRole.textContent = perfilAtualEhAdmin() ? 'Administrador Geral' : 'Usuário';
             }
@@ -1544,10 +1518,20 @@
                 elementos.headerUserAvatar.style.backgroundImage = `url("${avatarUrl.replace(/"/g, '\\"')}")`;
                 elementos.headerUserAvatar.classList.add('has-image');
                 elementos.headerUserAvatar.textContent = '';
+                if (elementos.profileModalAvatar) {
+                    elementos.profileModalAvatar.style.backgroundImage = `url("${avatarUrl.replace(/"/g, '\\"')}")`;
+                    elementos.profileModalAvatar.classList.add('has-image');
+                    elementos.profileModalAvatar.textContent = '';
+                }
             } else {
                 elementos.headerUserAvatar.style.backgroundImage = '';
                 elementos.headerUserAvatar.classList.remove('has-image');
                 elementos.headerUserAvatar.textContent = gerarIniciais(nomeLimpo);
+                if (elementos.profileModalAvatar) {
+                    elementos.profileModalAvatar.style.backgroundImage = '';
+                    elementos.profileModalAvatar.classList.remove('has-image');
+                    elementos.profileModalAvatar.textContent = gerarIniciais(nomeLimpo);
+                }
             }
             sincronizarSelecaoAvatar();
             atualizarResponsavelMovimentacaoInfo();
@@ -1951,9 +1935,6 @@
             }
             if (elementos.appShell) {
                 elementos.appShell.classList.add('hidden');
-            }
-            if (elementos.notificationPanel) {
-                atualizarPainelNotificacoes(false);
             }
             if (elementos.notificationBadge) {
                 elementos.notificationBadge.textContent = '0';
@@ -2825,12 +2806,16 @@
             // Notificações
             if (elementos.notificationBell) {
                 elementos.notificationBell.addEventListener('click', () => {
-                    alternarPainelNotificacoes();
+                    if (avatarModalAberto()) {
+                        fecharModalAvatar({ focusTrigger: false });
+                    } else {
+                        abrirModalAvatar();
+                    }
                 });
                 elementos.notificationBell.addEventListener('keydown', event => {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
-                        alternarPainelNotificacoes();
+                        abrirModalAvatar();
                     }
                 });
             }
@@ -2858,42 +2843,6 @@
                     if (event.target === elementos.avatarModalBackdrop) {
                         fecharModalAvatar();
                     }
-                });
-            }
-            if (elementos.avatarOptions) {
-                elementos.avatarOptions.addEventListener('click', event => {
-                    const botao = event.target.closest('.avatar-option');
-                    if (!botao) {
-                        return;
-                    }
-                    event.preventDefault();
-                    aplicarAvatarUsuario(botao.dataset.avatarUrl || '');
-                });
-                elementos.avatarOptions.addEventListener('keydown', event => {
-                    if (event.key !== 'Enter' && event.key !== ' ') {
-                        return;
-                    }
-                    const botao = event.target.closest('.avatar-option');
-                    if (!botao) {
-                        return;
-                    }
-                    event.preventDefault();
-                    aplicarAvatarUsuario(botao.dataset.avatarUrl || '');
-                });
-            }
-            if (elementos.avatarUrlApply) {
-                elementos.avatarUrlApply.addEventListener('click', aplicarAvatarPersonalizado);
-            }
-            if (elementos.avatarUrlInput) {
-                elementos.avatarUrlInput.addEventListener('keydown', event => {
-                    if (event.key === 'Enter') {
-                        event.preventDefault();
-                        aplicarAvatarPersonalizado();
-                    }
-                });
-                elementos.avatarUrlInput.addEventListener('input', () => {
-                    elementos.avatarUrlInput.classList.remove('invalid');
-                    elementos.avatarUrlInput.removeAttribute('aria-invalid');
                 });
             }
             // Fechar modais
@@ -3386,24 +3335,10 @@
             if (elementos.usuarioUnidades) {
                 elementos.usuarioUnidades.addEventListener('change', tratarAlteracaoUnidadeUsuario);
             }
-            // Fechar notificações ao clicar fora
-            document.addEventListener('click', function(e) {
-                if (!painelNotificacoesAberto()) {
-                    return;
-                }
-                const cliqueForaDoPainel = elementos.notificationPanel && !elementos.notificationPanel.contains(e.target);
-                const cliqueForaDoSino = elementos.notificationBell && !elementos.notificationBell.contains(e.target);
-                if (cliqueForaDoPainel && cliqueForaDoSino) {
-                    atualizarPainelNotificacoes(false);
-                }
-            });
             document.addEventListener('keydown', event => {
                 if (event.key === 'Escape') {
                     if (avatarModalAberto()) {
                         fecharModalAvatar();
-                    }
-                    if (painelNotificacoesAberto()) {
-                        atualizarPainelNotificacoes(false);
                     }
                 }
             });
@@ -5342,10 +5277,9 @@
                 const nomeLimpo = (unidade.nome || '').trim();
                 const desativada = unidade.status !== 'ativa';
                 const label = desativada ? `${nomeLimpo} (inativa)` : nomeLimpo;
-                const descricao = desativada ? 'Unidade temporariamente indisponível' : 'Filtrar por este setor';
-                return `<option value="${nomeLimpo}" ${desativada ? 'disabled' : ''} data-icon="fas fa-location-dot" data-description="${descricao}">${label}</option>`;
+                return `<option value="${nomeLimpo}" ${desativada ? 'disabled' : ''} data-icon="fas fa-location-dot">${label}</option>`;
             }).join('');
-            const opcaoTodas = `<option value="todas" data-icon="fas fa-layer-group" data-description="Visualização geral por setor">Todas as unidades</option>`;
+            const opcaoTodas = `<option value="todas" data-icon="fas fa-layer-group">Todas as unidades</option>`;
             elementos.unitSelect.innerHTML = `${deveIncluirOpcaoTodas ? opcaoTodas : ''}${opcoes}`;
             const opcaoCorrespondente = Array.from(elementos.unitSelect.options)
                 .find(option => normalizarTexto(option.value) === valorAtualNormalizado);
@@ -9580,14 +9514,10 @@
         }
         // Atualizar painel de notificações
         function renderizarPainelNotificacoes() {
-            if (!elementos.notificationPanel) {
+            if (!elementos.profileNotificationList) {
                 return;
             }
-            const notificationList = elementos.notificationPanel.querySelector('.notification-list');
-            if (!notificationList) {
-                return;
-            }
-            notificationList.innerHTML = '';
+            elementos.profileNotificationList.innerHTML = '';
 
             estado.notificacoes.forEach(notificacao => {
                 const item = document.createElement('div');
@@ -9603,7 +9533,7 @@
                     </div>
                 `;
 
-                notificationList.appendChild(item);
+                elementos.profileNotificationList.appendChild(item);
             });
         }
        
