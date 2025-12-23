@@ -3079,6 +3079,28 @@
             justify-content: space-between;
             align-items: center;
             gap: 16px;
+            padding: 18px 20px;
+            border-radius: 18px;
+            background: linear-gradient(120deg, rgba(37, 99, 235, 0.08), rgba(34, 197, 94, 0.08));
+            border: 1px solid color-mix(in srgb, var(--color-neutral-900) 6%, transparent);
+        }
+
+        .armario-modal-hero {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .armario-modal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(37, 99, 235, 0.15);
+            color: #1d4ed8;
+            font-size: 1.2rem;
         }
 
         .armario-modal-eyebrow {
@@ -3091,30 +3113,33 @@
 
         .armario-modal-title {
             margin: 6px 0 4px;
-            font-size: 1.6rem;
+            font-size: 1.9rem;
             letter-spacing: -0.02em;
-            font-weight: 700;
+            font-weight: 800;
             color: var(--text-color);
         }
 
         .armario-modal-subtitle {
             margin: 0;
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             color: color-mix(in srgb, var(--text-color) 60%, transparent);
         }
 
         .armario-modal-status {
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 999px;
-            font-weight: 600;
-            font-size: 0.82rem;
+            font-weight: 700;
+            font-size: 0.85rem;
             background: color-mix(in srgb, var(--color-neutral-100) 70%, transparent);
             color: var(--text-color);
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .armario-modal-status.status-em-uso {
-            background: color-mix(in srgb, #22c55e 16%, transparent);
+            background: color-mix(in srgb, #22c55e 20%, transparent);
             color: #15803d;
         }
 
@@ -3133,14 +3158,58 @@
             color: #0369a1;
         }
 
+        .armario-modal-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: currentColor;
+            box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 20%, transparent);
+        }
+
         .armario-modal-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px 20px;
-            padding: 16px;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+            gap: 16px 20px;
+            padding: 18px;
             border-radius: 16px;
             background: color-mix(in srgb, var(--color-neutral-100) 70%, transparent);
             border: 1px solid color-mix(in srgb, var(--color-neutral-900) 8%, transparent);
+        }
+
+        .armario-modal-patient {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 6px;
+        }
+
+        .armario-modal-patient-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .armario-modal-patient-sub {
+            font-size: 0.9rem;
+            color: color-mix(in srgb, var(--text-color) 65%, transparent);
+        }
+
+        .armario-modal-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-content: flex-start;
+        }
+
+        .armario-modal-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--color-neutral-900) 8%, transparent);
+            color: var(--text-color);
+            font-size: 0.82rem;
+            font-weight: 600;
         }
 
         .armario-modal-label {
@@ -3169,6 +3238,27 @@
 
         .armario-modal-section .info-box {
             margin: 0;
+        }
+
+        .armario-modal-termo {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: color-mix(in srgb, #0f766e 16%, transparent);
+            color: #0f172a;
+        }
+
+        .armario-modal-termo-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #0f766e;
+        }
+
+        .armario-modal-termo-text {
+            font-size: 0.82rem;
+            color: color-mix(in srgb, var(--text-color) 60%, transparent);
         }
 
         .armario-modal-actions {
@@ -3209,17 +3299,18 @@
         }
 
         .armario-modal-primary {
-            background: #16a34a !important;
+            background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+            box-shadow: 0 14px 26px rgba(22, 163, 74, 0.35) !important;
         }
 
         .armario-modal-secondary {
-            background: color-mix(in srgb, #2563eb 18%, transparent) !important;
+            background: color-mix(in srgb, #2563eb 12%, transparent) !important;
             color: #1d4ed8 !important;
         }
 
         .armario-modal-tertiary {
-            background: color-mix(in srgb, var(--color-neutral-900) 10%, transparent) !important;
-            color: var(--text-color) !important;
+            background: transparent !important;
+            color: color-mix(in srgb, var(--text-color) 55%, transparent) !important;
         }
 
         .armario-modal-popup .swal2-close {
@@ -3241,8 +3332,14 @@
                 align-items: flex-start;
             }
 
+            .armario-modal-icon {
+                width: 44px;
+                height: 44px;
+                border-radius: 14px;
+            }
+
             .armario-modal-title {
-                font-size: 1.4rem;
+                font-size: 1.6rem;
             }
 
             .armario-modal-grid {
