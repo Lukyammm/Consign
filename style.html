@@ -146,6 +146,17 @@
             --btn-ghost-border: color-mix(in srgb, var(--border-color) 70%, transparent);
             --btn-ghost-shadow: none;
 
+            --btn-contingencia-bg: linear-gradient(135deg,
+                color-mix(in srgb, var(--status-contingencia) 30%, var(--surface-color) 70%),
+                color-mix(in srgb, var(--status-contingencia) 78%, var(--primary-color) 22%));
+            --btn-contingencia-bg-hover: linear-gradient(135deg,
+                color-mix(in srgb, var(--status-contingencia) 38%, var(--surface-color) 62%),
+                color-mix(in srgb, var(--status-contingencia) 88%, var(--primary-color) 12%));
+            --btn-contingencia-text: var(--color-neutral-0);
+            --btn-contingencia-border: color-mix(in srgb, var(--status-contingencia) 70%, var(--color-neutral-0) 30%);
+            --btn-contingencia-shadow: 0 16px 32px color-mix(in srgb, var(--status-contingencia) 32%, transparent);
+            --btn-contingencia-icon: color-mix(in srgb, var(--color-neutral-0) 92%, var(--status-contingencia) 8%);
+
             --btn-cta-bg: linear-gradient(135deg,
                 color-mix(in srgb, var(--primary-color) 82%, var(--surface-color) 18%),
                 color-mix(in srgb, var(--primary-dark) 78%, var(--primary-color) 22%));
@@ -261,6 +272,17 @@
             --login-input-bg: color-mix(in srgb, var(--color-surface) 88%, var(--color-background) 12%);
             --login-feedback-bg: color-mix(in srgb, var(--color-background) 70%, transparent);
             --login-logo-filter: brightness(0) invert(1);
+
+            --btn-contingencia-bg: linear-gradient(135deg,
+                color-mix(in srgb, var(--status-contingencia) 28%, var(--color-surface) 72%),
+                color-mix(in srgb, var(--status-contingencia) 80%, var(--primary-color) 20%));
+            --btn-contingencia-bg-hover: linear-gradient(135deg,
+                color-mix(in srgb, var(--status-contingencia) 36%, var(--color-surface) 64%),
+                color-mix(in srgb, var(--status-contingencia) 88%, var(--primary-color) 12%));
+            --btn-contingencia-text: var(--color-neutral-0);
+            --btn-contingencia-border: color-mix(in srgb, var(--status-contingencia) 65%, var(--color-neutral-0) 35%);
+            --btn-contingencia-shadow: 0 18px 36px color-mix(in srgb, var(--status-contingencia) 42%, transparent);
+            --btn-contingencia-icon: color-mix(in srgb, var(--color-neutral-0) 90%, var(--status-contingencia) 10%);
         }
         [data-theme="pink"] {
             --color-primary-500: #C98AAD;
@@ -311,6 +333,17 @@
             --sidebar-menu-active-bg: color-mix(in srgb, white 20%, transparent);
             --sidebar-logout-bg: rgba(255,255,255,0.12);
             --sidebar-logout-border: rgba(255,255,255,0.28);
+
+            --btn-contingencia-bg: linear-gradient(135deg,
+                color-mix(in srgb, var(--status-contingencia) 32%, var(--surface-color) 68%),
+                color-mix(in srgb, var(--status-contingencia) 82%, var(--primary-color) 18%));
+            --btn-contingencia-bg-hover: linear-gradient(135deg,
+                color-mix(in srgb, var(--status-contingencia) 40%, var(--surface-color) 60%),
+                color-mix(in srgb, var(--status-contingencia) 90%, var(--primary-color) 10%));
+            --btn-contingencia-text: var(--color-neutral-0);
+            --btn-contingencia-border: color-mix(in srgb, var(--status-contingencia) 68%, var(--color-neutral-0) 32%);
+            --btn-contingencia-shadow: 0 16px 34px color-mix(in srgb, var(--status-contingencia) 34%, transparent);
+            --btn-contingencia-icon: color-mix(in srgb, var(--color-neutral-0) 92%, var(--status-contingencia) 8%);
         }
 
         /* Achados e Perdidos */
@@ -2310,13 +2343,17 @@
             align-items: center;
         }
         .btn-contingencia {
-            --btn-border: color-mix(in srgb, var(--primary-color) 30%, var(--border-color));
-            --btn-text: color-mix(in srgb, var(--primary-color) 75%, var(--dark-color) 25%);
-            border-style: dashed;
+            --btn-bg: var(--btn-contingencia-bg);
+            --btn-bg-hover: var(--btn-contingencia-bg-hover);
+            --btn-text: var(--btn-contingencia-text);
+            --btn-border: var(--btn-contingencia-border);
+            --btn-shadow: var(--btn-contingencia-shadow);
+            border-style: solid;
+            font-weight: 700;
             white-space: nowrap;
         }
         .btn-contingencia i {
-            color: color-mix(in srgb, var(--primary-color) 80%, var(--dark-color) 20%);
+            color: var(--btn-contingencia-icon);
         }
         .btn-contingencia:hover, .btn-contingencia:focus-visible {
             transform: translateY(-1px);
