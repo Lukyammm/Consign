@@ -9541,7 +9541,7 @@
             if (!notificationList) {
                 return;
             }
-            notificationList.innerHTML = '';
+            elementos.profileNotificationList.innerHTML = '';
 
             estado.notificacoes.forEach(notificacao => {
                 const item = document.createElement('div');
@@ -9557,7 +9557,7 @@
                     </div>
                 `;
 
-                notificationList.appendChild(item);
+                elementos.profileNotificationList.appendChild(item);
             });
         }
        
