@@ -2549,32 +2549,43 @@ function registrarContingencia(dados) {
     var statusIndex = obterIndiceColuna(estrutura, 'status', 2);
     var idIndex = obterIndiceColuna(estrutura, 'id', 0);
 
-    var linhasPlanilha = totalLinhas > 1
-      ? sheet.getRange(2, 1, totalLinhas - 1, totalColunas).getValues()
+    var linhasDisponiveis = totalLinhas > 1 ? totalLinhas - 1 : 0;
+    var ids = linhasDisponiveis > 0
+      ? sheet.getRange(2, idIndex + 1, linhasDisponiveis, 1).getValues()
+      : [];
+    var numeros = linhasDisponiveis > 0
+      ? sheet.getRange(2, numeroIndex + 1, linhasDisponiveis, 1).getValues()
+      : [];
+    var status = linhasDisponiveis > 0
+      ? sheet.getRange(2, statusIndex + 1, linhasDisponiveis, 1).getValues()
       : [];
 
     var linhaDisponivel = -1;
     var numeroDisponivel = '';
     var maiorId = 0;
+    var maiorSequencia = 0;
 
-    linhasPlanilha.forEach(function(linha, indice) {
-      var idLinha = Number(linha[idIndex]) || 0;
+    for (var i = 0; i < linhasDisponiveis; i++) {
+      var idLinha = Number(ids[i][0]) || 0;
       if (idLinha > maiorId) {
         maiorId = idLinha;
       }
 
-      var numeroAtual = obterValorLinha(linha, estrutura, 'numero', linha[numeroIndex] || '');
-      var statusAtual = normalizarTextoBasico(obterValorLinha(linha, estrutura, 'status', linha[statusIndex] || ''));
+      var numeroAtual = numeros[i][0] || '';
+      var statusAtual = normalizarTextoBasico(status[i][0] || '');
 
-      if (linhaDisponivel === -1 && ehNumeroContingencia(numeroAtual) && statusAtual === 'livre') {
-        linhaDisponivel = indice;
-        numeroDisponivel = numeroAtual;
+      if (ehNumeroContingencia(numeroAtual)) {
+        maiorSequencia = Math.max(maiorSequencia, extrairSequenciaContingencia(numeroAtual));
+        if (linhaDisponivel === -1 && statusAtual === 'livre') {
+          linhaDisponivel = i;
+          numeroDisponivel = numeroAtual;
+        }
       }
-    });
+    }
 
-    var numeroContingencia = numeroDisponivel || gerarProximoNumeroContingencia(sheet, estrutura, numeroIndex, statusIndex);
+    var numeroContingencia = numeroDisponivel || ('Contingência-' + String(maiorSequencia + 1).padStart(2, '0'));
     var linhaPlanilha = linhaDisponivel > -1 ? linhaDisponivel + 2 : totalLinhas + 1;
-    var idGerado = linhaDisponivel > -1 ? linhasPlanilha[linhaDisponivel][idIndex] : maiorId + 1;
+    var idGerado = linhaDisponivel > -1 ? ids[linhaDisponivel][0] : maiorId + 1;
     var dataHoraAtual = obterDataHoraAtualFormatada();
     var responsavel = determinarResponsavelRegistro(dados.usuarioResponsavel);
     var nomeChavesCadastro = CABECALHOS_NOME_ACOMPANHANTE;
