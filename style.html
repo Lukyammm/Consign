@@ -1698,17 +1698,17 @@
             display: flex;
             align-items: flex-start;
             justify-content: flex-end;
-            padding: 96px 40px 40px;
+            padding: 100px 40px 40px;
             backdrop-filter: var(--modal-overlay-blur);
             -webkit-backdrop-filter: var(--modal-overlay-blur);
         }
         .avatar-modal {
-            width: min(380px, 100%);
+            width: min(340px, 100%);
             background: var(--modal-bg);
             border-radius: var(--modal-radius);
             box-shadow: var(--modal-shadow);
             border: 1px solid var(--modal-divider);
-            padding: 20px;
+            padding: 18px;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -1746,79 +1746,103 @@
             color: var(--primary-dark);
             outline: none;
         }
-        .profile-modal-hero {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 16px;
-            border-radius: 16px;
-            border: 1px solid color-mix(in srgb, var(--primary-color) 18%, var(--modal-divider));
-            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 18%, #ffffff 82%), color-mix(in srgb, var(--surface-color) 94%, #ffffff 6%));
-            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface-color) 70%, transparent);
+        .avatar-modal-description {
+            font-size: 0.85rem;
+            color: var(--muted-color);
+            line-height: 1.4;
         }
-        .profile-modal-avatar {
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+            gap: 12px;
+        }
+        .avatar-option {
             width: 64px;
             height: 64px;
-            border-radius: 18px;
+            border-radius: 16px;
+            border: 2px solid transparent;
+            padding: 0;
+            overflow: hidden;
+            background: color-mix(in srgb, var(--light-color) 85%, white 15%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
-            color: white;
-            background: linear-gradient(140deg, var(--primary-color), color-mix(in srgb, var(--secondary-color) 60%, var(--primary-color) 40%));
-            box-shadow: 0 12px 20px color-mix(in srgb, var(--primary-color) 28%, transparent);
-            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
-        .profile-modal-avatar.has-image {
-            background-size: cover;
-            background-position: center;
-            color: transparent;
+        .avatar-option img,
+        .avatar-option span {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
-        .profile-modal-info {
+        .avatar-option span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.6rem;
+            color: var(--dark-color);
+        }
+        .avatar-option:hover,
+        .avatar-option:focus-visible {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 18px rgba(15, 23, 42, 0.15);
+            outline: none;
+        }
+        .avatar-option.selected {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+        }
+        .avatar-custom {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 8px;
         }
-        .profile-modal-name {
-            margin: 0;
-            font-size: 1.05rem;
+        .avatar-custom label {
+            font-size: 0.8rem;
             font-weight: 600;
-            color: var(--text-color);
+            color: var(--dark-color);
         }
-        .profile-modal-role {
-            margin: 0;
-            font-size: 0.85rem;
-            color: var(--muted-color);
-        }
-        .profile-modal-actions {
+        .avatar-custom-control {
             display: flex;
+            gap: 8px;
         }
-        .profile-modal-actions .theme-toggle {
-            width: 100%;
-            height: auto;
-            justify-content: flex-start;
-            gap: 10px;
-            padding: 10px 14px;
-            border-radius: 14px;
+        .avatar-custom-control input[type="url"] {
+            flex: 1;
+            border-radius: var(--input-radius);
+            border: 1px solid var(--input-border);
+            padding: 8px 10px;
+            font-size: 0.85rem;
+            color: var(--input-text);
+            background-color: var(--input-bg);
+        }
+        .avatar-custom-control input[type="url"]:focus {
+            outline: 2px solid var(--input-focus-ring);
+            outline-offset: 1px;
+        }
+        .avatar-custom-control input[type="url"].invalid {
+            border-color: var(--danger-color);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger-color) 18%, transparent);
+        }
+        .avatar-apply-button {
+            border: none;
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
+            padding: 8px 14px;
+            border-radius: 10px;
             font-weight: 600;
-            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-size: 0.85rem;
+            white-space: nowrap;
         }
-        .profile-modal-actions .theme-toggle span {
-            display: inline-block;
-        }
-        .profile-modal-notifications {
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            background: color-mix(in srgb, var(--surface-color) 94%, #ffffff 6%);
-            overflow: hidden;
-        }
-        .profile-modal-section-title {
-            padding: 14px 16px;
-            font-weight: 600;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .profile-modal-notifications .notification-list {
-            max-height: 260px;
+        .avatar-apply-button:hover,
+        .avatar-apply-button:focus-visible {
+            background: var(--btn-primary-bg-hover);
+            transform: translateY(-1px);
+            outline: none;
         }
         .avatar-modal.hidden,
         .avatar-modal-backdrop.hidden {
