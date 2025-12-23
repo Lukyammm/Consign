@@ -5490,108 +5490,16 @@
                 mostrarErro('Ação disponível apenas no perfil de acompanhantes.');
                 return;
             }
-
-                let fotoContingencia = { base64: '', mime: '', nome: '' };
-
-                const resultado = await Swal.fire({
-                    title: 'Registrar contingência',
-                    html: `
-                        <div class="swal-form-grid">
-                        <div class="swal-form-group">
-                            <label for="contingencia-paciente">Paciente</label>
-                            <input id="contingencia-paciente" class="swal2-input" placeholder="Nome do paciente" required>
-                        </div>
-                        <div class="swal-form-group">
-                            <label for="contingencia-acompanhante">Acompanhante</label>
-                            <input id="contingencia-acompanhante" class="swal2-input" placeholder="Nome do acompanhante" required>
-                        </div>
-                        <div class="swal-form-group">
-                            <label for="contingencia-prontuario">Prontuário</label>
-                            <input id="contingencia-prontuario" class="swal2-input" placeholder="Prontuário" aria-required="true">
-                        </div>
-                        <div class="swal-form-group">
-                            <label for="contingencia-observacoes">Observações</label>
-                            <textarea id="contingencia-observacoes" class="swal2-textarea" placeholder="Observações da contingência"></textarea>
-                        </div>
-                        <div class="swal-form-group">
-                            <label for="contingencia-foto">Foto da contingência</label>
-                            <input id="contingencia-foto" type="file" class="swal2-input" accept="image/jpeg,image/png" aria-required="true">
-                            <small class="field-hint">Envie JPG ou PNG até 2 MB.</small>
-                        </div>
-                    </div>
-                `,
-                focusConfirm: false,
-                showCancelButton: true,
-                confirmButtonText: 'Registrar',
-                cancelButtonText: 'Cancelar',
-                preConfirm: async () => {
-                    const popup = Swal.getPopup();
-                    const acompanhante = padronizarNomeMaiusculo(popup.querySelector('#contingencia-acompanhante').value);
-                    const paciente = padronizarNomeMaiusculo(popup.querySelector('#contingencia-paciente').value);
-                    const prontuario = popup.querySelector('#contingencia-prontuario').value.trim();
-                    const observacoes = popup.querySelector('#contingencia-observacoes').value.trim();
-                    const inputFoto = popup.querySelector('#contingencia-foto');
-                    const arquivoFoto = inputFoto?.files?.[0];
-
-                    if (!acompanhante || !paciente) {
-                        Swal.showValidationMessage('Informe acompanhante e paciente.');
-                        return false;
-                    }
-
-                    if (!arquivoFoto) {
-                        Swal.showValidationMessage('Inclua a foto da contingência (JPG ou PNG).');
-                        return false;
-                    }
-
-                    const tamanhoMaximo = 2 * 1024 * 1024; // 2 MB
-                    if (!/^image\/(jpeg|png)$/i.test(arquivoFoto.type)) {
-                        Swal.showValidationMessage('Use apenas imagens JPG ou PNG.');
-                        return false;
-                    }
-
-                    if (arquivoFoto.size > tamanhoMaximo) {
-                        Swal.showValidationMessage('A imagem deve ter no máximo 2 MB.');
-                        return false;
-                    }
-
-                    try {
-                        const imagem = await lerArquivoImagemComoBase64(arquivoFoto, 450);
-                        fotoContingencia = {
-                            base64: imagem.base64,
-                            mime: imagem.mime || arquivoFoto.type,
-                            nome: arquivoFoto.name || 'contingencia'
-                        };
-                    } catch (erroFoto) {
-                        console.error('Erro ao carregar foto da contingência:', erroFoto);
-                        Swal.showValidationMessage('Não foi possível processar a foto enviada.');
-                        return false;
-                    }
-
-                    return { acompanhante, paciente, prontuario, observacoes };
-                }
-            });
-
-            if (!resultado.isConfirmed || !resultado.value) {
-                return;
-            }
-
             const payload = {
-                nomeAcompanhante: padronizarNomeMaiusculo(resultado.value.acompanhante),
-                nomePaciente: padronizarNomeMaiusculo(resultado.value.paciente),
-                prontuario: resultado.value.prontuario,
-                observacoes: resultado.value.observacoes,
                 unidade: estado.unidadeAtual === 'todas' ? '' : estado.unidadeAtual,
-                usuarioResponsavel: obterDescricaoResponsavelAtual(),
-                fotoBase64: fotoContingencia.base64,
-                fotoMime: fotoContingencia.mime,
-                fotoNome: fotoContingencia.nome
+                usuarioResponsavel: obterDescricaoResponsavelAtual()
             };
 
-            const finalizar = mostrarOverlayCarregamento('Registrando contingência...');
+            const finalizar = mostrarOverlayCarregamento('Preparando termo de responsabilidade...');
             try {
-                const resposta = await callGoogleScript('registrarContingencia', payload);
+                const resposta = await callGoogleScript('registrarContingenciaTermo', payload);
                 if (!resposta.success) {
-                    notificarErroPadrao(resposta, 'Não foi possível registrar contingência.');
+                    notificarErroPadrao(resposta, 'Não foi possível iniciar a contingência.');
                     return;
                 }
 
@@ -5607,8 +5515,6 @@
                     prontuario: novoArmario.prontuario ? novoArmario.prontuario.toString().trim() : '',
                     observacoes: novoArmario.observacoes ? novoArmario.observacoes.toString().trim() : '',
                     visitaEstendida: Boolean(novoArmario.visitaEstendida),
-                    fotoContingenciaUrl: novoArmario.fotoContingenciaUrl || '',
-                    fotoContingenciaId: novoArmario.fotoContingenciaId || '',
                     ehContingencia: true,
                     status: 'contingencia'
                 };
@@ -5618,7 +5524,7 @@
                 atualizarInterface();
                 carregarDadosTabelas({ recarregarArmarios: false }).catch(console.error);
                 sincronizarDadosArmariosEmSegundoPlano({ recarregarArmarios: true });
-                mostrarSucesso('Contingência registrada com sucesso.');
+                await abrirTermoWizard(armarioNormalizado.id);
             } finally {
                 finalizar();
             }

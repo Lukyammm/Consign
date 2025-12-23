@@ -1516,6 +1516,10 @@ function handlePost(e) {
         return ContentService.createTextOutput(JSON.stringify(registrarContingencia(e.parameter)))
           .setMimeType(ContentService.MimeType.JSON);
 
+      case 'registrarContingenciaTermo':
+        return ContentService.createTextOutput(JSON.stringify(registrarContingenciaTermo(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
       case 'getLogs':
         return ContentService.createTextOutput(JSON.stringify(getLogs()))
           .setMimeType(ContentService.MimeType.JSON);
@@ -2683,6 +2687,107 @@ function registrarContingencia(dados) {
 
   } catch (error) {
     registrarLog('ERRO', `Erro ao registrar contingência: ${error.toString()}`);
+    return { success: false, error: error.toString() };
+  }
+}
+
+function registrarContingenciaTermo(dados) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Acompanhantes');
+
+    if (!sheet) {
+      return { success: false, error: 'Aba "Acompanhantes" não encontrada' };
+    }
+
+    var estrutura = garantirColunaProntuario(sheet, obterEstruturaPlanilha(sheet));
+    estrutura = garantirColunaObservacoesAcompanhantes(sheet, estrutura);
+    estrutura = garantirColunasFotoContingencia(sheet, estrutura);
+    var totalColunas = estrutura.ultimaColuna || 12;
+    var totalLinhas = sheet.getLastRow();
+    var numeroIndex = obterIndiceColuna(estrutura, 'numero', 1);
+    var statusIndex = obterIndiceColuna(estrutura, 'status', 2);
+    var idIndex = obterIndiceColuna(estrutura, 'id', 0);
+
+    var linhasPlanilha = totalLinhas > 1
+      ? sheet.getRange(2, 1, totalLinhas - 1, totalColunas).getValues()
+      : [];
+
+    var linhaDisponivel = -1;
+    var numeroDisponivel = '';
+    var maiorId = 0;
+
+    linhasPlanilha.forEach(function(linha, indice) {
+      var idLinha = Number(linha[idIndex]) || 0;
+      if (idLinha > maiorId) {
+        maiorId = idLinha;
+      }
+
+      var numeroAtual = obterValorLinha(linha, estrutura, 'numero', linha[numeroIndex] || '');
+      var statusAtual = normalizarTextoBasico(obterValorLinha(linha, estrutura, 'status', linha[statusIndex] || ''));
+
+      if (linhaDisponivel === -1 && ehNumeroContingencia(numeroAtual) && statusAtual === 'livre') {
+        linhaDisponivel = indice;
+        numeroDisponivel = numeroAtual;
+      }
+    });
+
+    var numeroContingencia = numeroDisponivel || gerarProximoNumeroContingencia(sheet, estrutura, numeroIndex, statusIndex);
+    var linhaPlanilha = linhaDisponivel > -1 ? linhaDisponivel + 2 : totalLinhas + 1;
+    var idGerado = linhaDisponivel > -1 ? linhasPlanilha[linhaDisponivel][idIndex] : maiorId + 1;
+    var dataHoraAtual = obterDataHoraAtualFormatada();
+
+    var linhaBase = linhaDisponivel > -1
+      ? sheet.getRange(linhaPlanilha, 1, 1, totalColunas).getValues()[0]
+      : new Array(totalColunas).fill('');
+
+    definirValorLinha(linhaBase, estrutura, 'id', idGerado);
+    definirValorLinha(linhaBase, estrutura, 'numero', numeroContingencia);
+    definirValorLinha(linhaBase, estrutura, 'status', 'contingencia');
+    definirValorLinha(linhaBase, estrutura, CABECALHOS_NOME_ACOMPANHANTE, '');
+    definirValorLinha(linhaBase, estrutura, 'nome paciente', '');
+    definirValorLinha(linhaBase, estrutura, 'prontuario', '');
+    definirValorLinha(linhaBase, estrutura, 'leito', '');
+    definirValorLinha(linhaBase, estrutura, 'volumes', 0);
+    definirValorLinha(linhaBase, estrutura, 'hora inicio', dataHoraAtual.horaCurta);
+    definirValorLinha(linhaBase, estrutura, 'hora prevista', '');
+    definirValorLinha(linhaBase, estrutura, 'data registro', dataHoraAtual.dataHoraIso);
+    definirValorLinha(linhaBase, estrutura, 'unidade', dados.unidade || '');
+    definirValorLinha(linhaBase, estrutura, CABECALHOS_WHATSAPP, '');
+    definirValorLinha(linhaBase, estrutura, 'termo aplicado', false);
+    definirValorLinha(linhaBase, estrutura, CABECALHOS_OBSERVACOES, '');
+
+    sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([linhaBase]);
+
+    limparCacheArmarios();
+
+    return {
+      success: true,
+      data: {
+        id: idGerado,
+        numero: numeroContingencia,
+        status: 'contingencia',
+        tipo: 'acompanhante',
+        nomeVisitante: '',
+        nomePaciente: '',
+        prontuario: '',
+        leito: '',
+        volumes: 0,
+        horaInicio: dataHoraAtual.horaCurta,
+        horaPrevista: '',
+        dataRegistro: dataHoraAtual.dataHoraIso,
+        unidade: dados.unidade || '',
+        whatsapp: '',
+        observacoes: '',
+        visitaEstendida: false,
+        termoAplicado: false,
+        termoFinalizado: false,
+        termoStatus: 'pendente',
+        ehContingencia: true
+      }
+    };
+  } catch (error) {
+    registrarLog('ERRO', 'Erro ao registrar contingência para termo: ' + error.toString());
     return { success: false, error: error.toString() };
   }
 }
@@ -4759,7 +4864,7 @@ function salvarTermoCompleto(dadosTermo) {
       }
 
       var statusAtual = normalizarTextoBasico(obterValorLinha(linhaAtualizada, estruturaAcompanhantes, 'status', ''));
-      if (statusAtual && statusAtual !== 'livre') {
+      if (statusAtual && statusAtual !== 'livre' && statusAtual !== 'contingencia') {
         throw new Error('Armário já está em uso. Atualize a lista e tente novamente.');
       }
 
