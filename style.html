@@ -684,7 +684,7 @@
         }
         body.nav-open {
             overflow: hidden;
-            touch-action: none;
+            touch-action: auto;
         }
         html, body, .app-shell, .main-content, #pages-container, .page {
             width: 100%;
@@ -692,7 +692,7 @@
         }
         body.modal-open {
             overflow: hidden;
-            touch-action: none;
+            touch-action: auto;
         }
         .fa-user-clock, .fas.fa-user-clock {
             color: inherit;
@@ -883,9 +883,19 @@
             box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
             transition: all 0.2s ease;
         }
+        [data-theme="dark"] .sidebar-toggle {
+            background: color-mix(in srgb, var(--color-neutral-900) 18%, var(--color-surface) 82%);
+            border-color: color-mix(in srgb, var(--color-neutral-900) 28%, transparent);
+            color: var(--color-neutral-0);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+        }
         .sidebar-toggle:hover {
             transform: translateY(-1px);
             box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+        }
+        [data-theme="dark"] .sidebar-toggle:hover {
+            background: color-mix(in srgb, var(--color-neutral-900) 28%, var(--color-surface) 72%);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
         }
         .sidebar-toggle i {
             font-size: 1.1rem;
