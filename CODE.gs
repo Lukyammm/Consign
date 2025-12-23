@@ -6619,6 +6619,10 @@ function salvarMovimentacao(dados) {
     fotoMime = primeiraFotoItem.mime || fotoMime;
   }
 
+  if (!fotoBase64 && !fotoUrl) {
+    return { success: false, error: 'A foto da movimentação é obrigatória.' };
+  }
+
   if (!volumeTotal) {
     var volumeInformado = Number(dados.volume);
     volumeTotal = Number.isFinite(volumeInformado) && volumeInformado > 0 ? volumeInformado : 1;
