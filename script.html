@@ -3527,6 +3527,7 @@
                 estado.achados = {
                     itens: [],
                     carregando: false,
+                    salvando: false,
                     filtros: {
                         busca: '',
                         status: 'todos',
@@ -3641,7 +3642,13 @@
                 btnEncontrado.innerHTML = `<i class="fas ${item.encontrado ? 'fa-rotate-left' : 'fa-check'}"></i> ${item.encontrado ? 'Reabrir' : 'Marcar encontrado'}`;
                 btnEncontrado.addEventListener('click', () => confirmarAlternarStatusAchado(item, btnEncontrado));
 
-                tdAcoes.append(btnLigar, btnEditar, btnEncontrado);
+                const btnExcluir = document.createElement('button');
+                btnExcluir.type = 'button';
+                btnExcluir.className = 'btn btn-ghost btn-danger-outline';
+                btnExcluir.innerHTML = '<i class="fas fa-trash"></i> Excluir';
+                btnExcluir.addEventListener('click', () => confirmarExcluirAchado(item, btnExcluir));
+
+                tdAcoes.append(btnLigar, btnEditar, btnEncontrado, btnExcluir);
 
                 linha.appendChild(criarCelulaTexto(item.dono || '-'));
                 linha.appendChild(criarCelulaTexto(item.dataGuardaTexto || '-'));
@@ -3760,6 +3767,8 @@
         async function salvarAchado(event) {
             if (event) event.preventDefault();
             if (!elementos.achadoForm) return;
+            const alvo = obterEstadoAchados();
+            if (alvo.salvando) return;
             const id = elementos.achadoId?.value || '';
             const payload = {
                 idLinha: id,
@@ -3773,6 +3782,8 @@
 
             const botaoSalvar = elementos.achadoBtnCancelar?.nextElementSibling || elementos.achadoForm.querySelector('button[type="submit"]');
             const finalizar = botaoSalvar ? iniciarLoadingBotao(botaoSalvar) : () => {};
+            if (botaoSalvar) botaoSalvar.disabled = true;
+            alvo.salvando = true;
             try {
                 const acao = id ? 'atualizarPertencePerdido' : 'cadastrarPertencePerdido';
                 // Evita envios duplicados em caso de falha de comunicação
@@ -3788,7 +3799,45 @@
                 console.error(erro);
                 mostrarErro('Não foi possível salvar o pertence.');
             } finally {
+                alvo.salvando = false;
+                if (botaoSalvar) botaoSalvar.disabled = false;
                 finalizar();
+            }
+        }
+        async function confirmarExcluirAchado(item, botaoAcao) {
+            if (!item || !item.idLinha) return;
+            const resultado = await Swal.fire({
+                title: 'Excluir pertence?',
+                text: 'Essa ação remove o registro da planilha.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, excluir',
+                cancelButtonText: 'Cancelar'
+            });
+            if (resultado.isDismissed) return;
+
+            const finalizarLoading = iniciarLoadingBotao(botaoAcao);
+            if (botaoAcao) botaoAcao.setAttribute('aria-busy', 'true');
+            try {
+                await excluirAchado(item);
+            } finally {
+                if (botaoAcao) botaoAcao.removeAttribute('aria-busy');
+                finalizarLoading();
+            }
+        }
+        async function excluirAchado(item) {
+            try {
+                const resposta = await callGoogleScript('excluirPertencePerdido', { idLinha: item.idLinha }, { tentativas: 1 });
+                if (!resposta.success) {
+                    throw new Error(resposta.error || 'Falha ao excluir pertence');
+                }
+                mostrarSucesso('Pertence excluído.');
+                await carregarAchados({ forcarAtualizacao: true });
+                return true;
+            } catch (erro) {
+                console.error(erro);
+                mostrarErro('Não foi possível excluir o pertence.');
+                return false;
             }
         }
         async function confirmarAlternarStatusAchado(item, botaoAcao) {
