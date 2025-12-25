@@ -819,6 +819,380 @@
                 }
             }
         }
+        class GerenciadorCartoesTabela {
+            constructor(mediaQueryString = '(max-width: 1024px)') {
+                this.mediaQuery = window.matchMedia(mediaQueryString);
+                this.adapters = new Map();
+            }
+            registrar(tabela, config = {}) {
+                if (!tabela || this.adapters.has(tabela)) return null;
+                const adaptador = new AdaptadorTabelaResponsiva(tabela, config, this.mediaQuery);
+                adaptador.inicializar();
+                this.adapters.set(tabela, adaptador);
+                return adaptador;
+            }
+            reconstruirTabelaPorId(idTabela) {
+                const adaptador = [...this.adapters.keys()].find(tabela => tabela.id === idTabela);
+                if (adaptador) {
+                    this.adapters.get(adaptador)?.reconstruirCartoes();
+                }
+            }
+            atualizarTodos() {
+                this.adapters.forEach(adaptador => adaptador.reconstruirCartoes());
+            }
+        }
+        class AdaptadorTabelaResponsiva {
+            constructor(tabela, config, mediaQuery) {
+                this.tabela = tabela;
+                this.config = {
+                    principal: [],
+                    meta: [],
+                    resumo: [],
+                    detalhesPrioritarios: [],
+                    ocultarDetalhes: [],
+                    ...config
+                };
+                this.mediaQuery = mediaQuery;
+                this.cardContainer = null;
+                this.observer = null;
+                this.debounceId = null;
+            }
+            inicializar() {
+                const corpo = this.tabela.tBodies?.[0];
+                if (!corpo) return;
+                this.cardContainer = document.createElement('div');
+                this.cardContainer.className = 'table-card-list';
+                this.cardContainer.setAttribute('aria-live', 'polite');
+                const containerTabela = this.tabela.parentElement;
+                if (containerTabela) {
+                    containerTabela.insertBefore(this.cardContainer, this.tabela.nextSibling);
+                } else {
+                    this.tabela.insertAdjacentElement('afterend', this.cardContainer);
+                }
+                this.mediaQuery.addEventListener('change', () => this.sincronizarVisibilidade());
+                this.observer = new MutationObserver(() => this.agendarReconstrucao());
+                this.observer.observe(corpo, { childList: true, subtree: true, characterData: true });
+                this.sincronizarVisibilidade();
+                this.reconstruirCartoes();
+            }
+            sincronizarVisibilidade() {
+                const usarCards = this.mediaQuery.matches;
+                if (this.cardContainer) {
+                    this.cardContainer.style.display = usarCards ? 'flex' : 'none';
+                }
+                if (usarCards) {
+                    this.reconstruirCartoes();
+                }
+            }
+            agendarReconstrucao() {
+                if (this.debounceId) cancelAnimationFrame(this.debounceId);
+                this.debounceId = requestAnimationFrame(() => this.reconstruirCartoes());
+            }
+            normalizarTexto(valor) {
+                return (valor || '').toString().trim().toLowerCase();
+            }
+            obterCabecalhos() {
+                const cabecalhos = [];
+                this.tabela.querySelectorAll('thead th').forEach((th) => {
+                    cabecalhos.push((th?.textContent || '').trim());
+                });
+                return cabecalhos;
+            }
+            resolverIndices(alvos, mapaCabecalho, totalColunas) {
+                if (!Array.isArray(alvos)) return [];
+                const indices = [];
+                alvos.forEach(alvo => {
+                    if (Number.isInteger(alvo)) {
+                        if (alvo >= 0 && alvo < totalColunas) indices.push(alvo);
+                        return;
+                    }
+                    const indice = mapaCabecalho.get(this.normalizarTexto(alvo));
+                    if (Number.isInteger(indice)) {
+                        indices.push(indice);
+                    }
+                });
+                return indices;
+            }
+            extrairPrimeiroValor(celulas, mapaCabecalho, preferencias) {
+                const indices = this.resolverIndices(preferencias, mapaCabecalho, celulas.length);
+                for (const indice of indices) {
+                    const texto = this.extrairTextoCelula(celulas[indice]);
+                    if (texto) {
+                        return { indice, texto };
+                    }
+                }
+                for (let i = 0; i < celulas.length; i++) {
+                    const texto = this.extrairTextoCelula(celulas[i]);
+                    if (texto) {
+                        return { indice: i, texto };
+                    }
+                }
+                return { indice: -1, texto: '' };
+            }
+            extrairMultiplos(celulas, mapaCabecalho, preferencias) {
+                const indices = this.resolverIndices(preferencias, mapaCabecalho, celulas.length);
+                const resultados = [];
+                indices.forEach(indice => {
+                    const texto = this.extrairTextoCelula(celulas[indice]);
+                    if (texto) {
+                        resultados.push({ indice, texto });
+                    }
+                });
+                return resultados;
+            }
+            extrairTextoCelula(celula) {
+                if (!celula) return '';
+                const textoAcessivel = celula.getAttribute('aria-label');
+                if (textoAcessivel) return textoAcessivel.trim();
+                const texto = celula.textContent?.trim();
+                return texto || '';
+            }
+            criarMensagemEstado(tipo, mensagem) {
+                const div = document.createElement('div');
+                div.className = tipo;
+                div.textContent = mensagem;
+                this.cardContainer.appendChild(div);
+            }
+            construirDetalhes(celulas, cabecalhos, indicesPrincipais) {
+                const mapaCabecalho = new Map(cabecalhos.map((cab, i) => [this.normalizarTexto(cab), i]));
+                const total = celulas.length;
+                const ocultar = new Set(this.resolverIndices(this.config.ocultarDetalhes, mapaCabecalho, total));
+                const usados = new Set(indicesPrincipais);
+                const detalharPrioritarios = this.resolverIndices(this.config.detalhesPrioritarios, mapaCabecalho, total)
+                    .filter(indice => !usados.has(indice) && !ocultar.has(indice));
+                const demais = [];
+                for (let i = 0; i < total; i++) {
+                    if (usados.has(i) || ocultar.has(i)) continue;
+                    if (!detalharPrioritarios.includes(i)) {
+                        demais.push(i);
+                    }
+                }
+                return [...detalharPrioritarios, ...demais];
+            }
+            clonarAcoesInterativas(celula) {
+                const interativos = celula?.querySelectorAll('button, a, [data-action]') || [];
+                if (!interativos.length) return null;
+                const fragment = document.createDocumentFragment();
+                interativos.forEach(original => {
+                    const clone = original.cloneNode(true);
+                    clone.dataset.preventToggle = 'true';
+                    if (clone.id) clone.removeAttribute('id');
+                    clone.addEventListener('click', evento => {
+                        evento.preventDefault();
+                        evento.stopPropagation();
+                        original.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                    });
+                    fragment.appendChild(clone);
+                });
+                return fragment;
+            }
+            criarLinhaDetalhe(indice, celula, cabecalhos) {
+                const detalhe = document.createElement('div');
+                detalhe.className = 'table-card-detail';
+                const label = document.createElement('span');
+                label.className = 'table-card-detail-label';
+                label.textContent = cabecalhos[indice] || `Coluna ${indice + 1}`;
+                const valor = document.createElement('div');
+                valor.className = 'table-card-detail-value';
+                const acoes = this.clonarAcoesInterativas(celula);
+                if (acoes) {
+                    valor.appendChild(acoes);
+                } else {
+                    valor.innerHTML = celula?.innerHTML?.trim() || this.extrairTextoCelula(celula) || '-';
+                }
+                detalhe.appendChild(label);
+                detalhe.appendChild(valor);
+                return detalhe;
+            }
+            ajustarAlturaDetalhes(card, expandir) {
+                const detalhes = card.querySelector('.table-card-details');
+                if (!detalhes) return;
+                if (expandir) {
+                    detalhes.style.maxHeight = `${detalhes.scrollHeight}px`;
+                } else {
+                    detalhes.style.maxHeight = '0px';
+                }
+            }
+            construirCard(linha, cabecalhos) {
+                const celulas = Array.from(linha.cells || []);
+                if (celulas.length === 1) {
+                    const celula = celulas[0];
+                    const classe = celula.classList.contains('table-error')
+                        ? 'table-card-error'
+                        : celula.classList.contains('table-loading')
+                            ? 'table-card-loading'
+                            : 'table-card-empty';
+                    this.criarMensagemEstado(classe, this.extrairTextoCelula(celula));
+                    return null;
+                }
+                const mapaCabecalho = new Map(cabecalhos.map((cab, i) => [this.normalizarTexto(cab), i]));
+                const principal = this.extrairPrimeiroValor(celulas, mapaCabecalho, this.config.principal);
+                const meta = this.extrairPrimeiroValor(celulas, mapaCabecalho, this.config.meta);
+                const resumos = this.extrairMultiplos(celulas, mapaCabecalho, this.config.resumo);
+                const indicesPrincipais = [];
+                if (Number.isInteger(principal.indice) && principal.texto) {
+                    indicesPrincipais.push(principal.indice);
+                }
+                if (Number.isInteger(meta.indice) && meta.texto && meta.indice !== principal.indice) {
+                    indicesPrincipais.push(meta.indice);
+                }
+                resumos.forEach(resumo => indicesPrincipais.push(resumo.indice));
+                const indicesDetalhe = this.construirDetalhes(celulas, cabecalhos, indicesPrincipais);
+                const card = document.createElement('article');
+                card.className = 'table-card';
+                card.tabIndex = 0;
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-expanded', 'false');
+                card.dataset.expanded = 'false';
+                const cabecalhoCard = document.createElement('div');
+                cabecalhoCard.className = 'table-card-main';
+                const titulo = document.createElement('div');
+                titulo.className = 'table-card-title';
+                titulo.textContent = principal.texto || '—';
+                const metaEl = document.createElement('div');
+                metaEl.className = 'table-card-meta';
+                metaEl.textContent = meta.texto || '';
+                const seta = document.createElement('span');
+                seta.className = 'table-card-toggle';
+                seta.innerHTML = '<i class="fas fa-chevron-down" aria-hidden="true"></i>';
+                cabecalhoCard.appendChild(titulo);
+                cabecalhoCard.appendChild(metaEl);
+                cabecalhoCard.appendChild(seta);
+                const resumo = document.createElement('div');
+                resumo.className = 'table-card-secondary';
+                resumo.textContent = resumos.map(item => item.texto).filter(Boolean).join(' • ');
+                const detalhes = document.createElement('div');
+                detalhes.className = 'table-card-details';
+                indicesDetalhe.forEach(indice => {
+                    const detalhe = this.criarLinhaDetalhe(indice, celulas[indice], cabecalhos);
+                    detalhes.appendChild(detalhe);
+                });
+                card.appendChild(cabecalhoCard);
+                if (resumo.textContent) {
+                    card.appendChild(resumo);
+                }
+                card.appendChild(detalhes);
+                card.addEventListener('click', evento => {
+                    if (evento.target.closest('[data-prevent-toggle]')) return;
+                    this.alternarCard(card);
+                });
+                card.addEventListener('keydown', evento => {
+                    if (evento.key === 'Enter' || evento.key === ' ') {
+                        evento.preventDefault();
+                        this.alternarCard(card);
+                    }
+                });
+                return card;
+            }
+            alternarCard(card) {
+                const novoEstado = card.dataset.expanded !== 'true';
+                card.dataset.expanded = novoEstado ? 'true' : 'false';
+                card.setAttribute('aria-expanded', novoEstado ? 'true' : 'false');
+                this.ajustarAlturaDetalhes(card, novoEstado);
+            }
+            reconstruirCartoes() {
+                if (!this.cardContainer || !this.mediaQuery.matches) return;
+                const cabecalhos = this.obterCabecalhos();
+                const linhas = Array.from(this.tabela.tBodies?.[0]?.rows || []);
+                this.cardContainer.innerHTML = '';
+                if (!linhas.length) {
+                    this.criarMensagemEstado('table-card-empty', 'Nenhum registro disponível.');
+                    return;
+                }
+                const fragment = document.createDocumentFragment();
+                linhas.forEach(linha => {
+                    if (linha.hidden) return;
+                    const card = this.construirCard(linha, cabecalhos);
+                    if (card) {
+                        fragment.appendChild(card);
+                    }
+                });
+                if (!fragment.children.length) {
+                    this.criarMensagemEstado('table-card-empty', 'Nenhum registro disponível.');
+                } else {
+                    this.cardContainer.appendChild(fragment);
+                }
+            }
+        }
+        const configuracoesTabelasResponsivas = {
+            'tabela-visitantes': {
+                principal: ['Visitante', 'Acompanhante'],
+                meta: ['Previsão Saída', 'Hora Fim', 'Hora Início'],
+                resumo: ['Status', 'Paciente', 'Unidade'],
+                detalhesPrioritarios: ['Número', 'Leito', 'Volumes', 'WhatsApp', 'Ações'],
+            },
+            'tabela-acompanhantes': {
+                principal: ['Acompanhante', 'Visitante'],
+                meta: ['Hora Início', 'Previsão Saída'],
+                resumo: ['Status', 'Paciente', 'Unidade'],
+                detalhesPrioritarios: ['Número', 'Leito', 'Volumes', 'WhatsApp', 'Ações'],
+            },
+            'tabela-historico-visitantes': {
+                principal: ['Visitante'],
+                meta: ['Data', 'Hora Fim'],
+                resumo: ['Status', 'Paciente', 'Armário'],
+                detalhesPrioritarios: ['Hora Início', 'Volumes', 'Usuário', 'WhatsApp'],
+            },
+            'tabela-historico-acompanhantes': {
+                principal: ['Acompanhante'],
+                meta: ['Data', 'Hora Fim'],
+                resumo: ['Status', 'Paciente', 'Armário'],
+                detalhesPrioritarios: ['Hora Início', 'Volumes', 'Usuário', 'WhatsApp'],
+            },
+            'tabela-liberacao': {
+                principal: [0, 'Paciente', 'Armário'],
+                meta: ['Data', 'Horário', 'Data/Hora'],
+                resumo: ['Usuário', 'Status'],
+                detalhesPrioritarios: ['Prontuário', 'Unidade', 'Ações'],
+            },
+            'tabela-achados': {
+                principal: ['Descrição', 'Dono do pertence'],
+                meta: ['Data da guarda'],
+                resumo: ['Encontrado?', 'Telefone'],
+                detalhesPrioritarios: ['Dono do pertence', 'Telefone', 'Última ligação', 'Ações'],
+            },
+            'tabela-termos': {
+                principal: ['Paciente', 'Acompanhante'],
+                meta: ['Aplicado em', 'Status'],
+                resumo: ['Armário', 'Prontuário'],
+                detalhesPrioritarios: ['Movimentações', 'PDF', 'Ações'],
+            },
+            'tabela-cadastro-armarios': {
+                principal: ['Número', 'ID'],
+                meta: ['Unidade'],
+                resumo: ['Tipo', 'Status'],
+                detalhesPrioritarios: ['Localização', 'Ações'],
+            },
+            'tabela-unidades': {
+                principal: ['Unidade'],
+                meta: ['Armários cadastrados'],
+                resumo: ['Status'],
+                detalhesPrioritarios: ['Ações', 'ID'],
+            },
+            'tabela-usuarios': {
+                principal: ['Nome'],
+                meta: ['Perfil'],
+                resumo: ['Matrícula', 'Status'],
+                detalhesPrioritarios: ['Visitantes', 'Acompanhantes', 'Unidades', 'Ações'],
+            },
+            'tabela-logs': {
+                principal: ['Ação'],
+                meta: ['Data/Hora'],
+                resumo: ['Usuário'],
+                detalhesPrioritarios: ['Detalhes'],
+            }
+        };
+        let gerenciadorCartoesTabela = null;
+        function inicializarCartoesTabelasResponsivas() {
+            if (gerenciadorCartoesTabela) return;
+            gerenciadorCartoesTabela = new GerenciadorCartoesTabela('(max-width: 1024px)');
+            Object.entries(configuracoesTabelasResponsivas).forEach(([id, config]) => {
+                const tabela = document.getElementById(id);
+                if (tabela) {
+                    gerenciadorCartoesTabela.registrar(tabela, config);
+                }
+            });
+        }
         popularAvataresPadrao();
         sincronizarSelecaoAvatar();
         atualizarPainelNotificacoes(false);
@@ -1822,6 +2196,7 @@
         }
         async function inicializarAplicacao() {
             garantirPortaisCabecalho();
+            inicializarCartoesTabelasResponsivas();
             if (aplicacaoInicializada) {
                 await carregarDadosIniciais();
                 atualizarCabecalhoUsuario();
