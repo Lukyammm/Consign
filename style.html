@@ -681,6 +681,7 @@
             display: flex;
             min-height: 100vh;
             overflow-x: hidden;
+            padding-bottom: 56px;
         }
         body.nav-open {
             overflow: hidden;
@@ -693,6 +694,33 @@
         body.modal-open {
             overflow: hidden;
             touch-action: auto;
+        }
+        .global-footer {
+            position: fixed;
+            inset-inline: 0;
+            bottom: 0;
+            width: 100%;
+            padding: 10px 16px;
+            text-align: center;
+            font-size: 0.8rem;
+            letter-spacing: 0.015em;
+            color: var(--muted-color);
+            background: color-mix(in srgb, var(--bg-color) 92%, transparent);
+            border-top: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent);
+            backdrop-filter: blur(6px);
+            z-index: calc(var(--z-header) + 10);
+            line-height: 1.4;
+        }
+        .global-footer .footer-signature-text {
+            font-weight: 500;
+            color: color-mix(in srgb, var(--text-color) 45%, var(--muted-color) 55%);
+            letter-spacing: 0.04em;
+        }
+        @media (max-width: 640px) {
+            .global-footer {
+                font-size: 0.75rem;
+                padding: 8px 12px;
+            }
         }
         .fa-user-clock, .fas.fa-user-clock {
             color: inherit;
