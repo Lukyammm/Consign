@@ -657,6 +657,7 @@
             avatarUrlApply: document.getElementById('avatar-url-apply'),
             globalLoadingOverlay: document.getElementById('global-loading-overlay'),
             globalLoadingText: document.getElementById('global-loading-text'),
+            footerSignature: document.getElementById('global-footer-signature'),
             termoModal: document.getElementById('termo-modal'),
             termoForm: document.getElementById('termo-form'),
             termoProntuarioBusca: document.getElementById('termo-prontuario-busca'),
@@ -2075,8 +2076,16 @@
                 reader.readAsDataURL(arquivo);
             });
         }
+        function atualizarAssinaturaRodape() {
+            if (!elementos.footerSignature) {
+                return;
+            }
+            const anoAtual = new Date().getFullYear();
+            elementos.footerSignature.textContent = `© ${anoAtual} – COSIGN · by Cygnus`;
+        }
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
+            atualizarAssinaturaRodape();
             inicializarTema();
             atualizarOpcoesSetorTermo();
             atualizarResponsavelMovimentacaoInfo();
