@@ -1,106 +1,159 @@
-# Guia simples do Cosign (gerenciamento de armários)
+# Guia completo do Cosign (gerenciamento de armários)
 
-Este manual foi pensado para quem não é técnico. Ele explica, em linguagem direta, como acessar e usar o Cosign para controlar armários de visitantes e acompanhantes no hospital.
+Este manual detalha todos os recursos do Cosign para controle de armários de visitantes e acompanhantes no hospital. Cada seção explica onde as informações são salvas, como acessar, quais fotos ou documentos são gerados e como recuperar tudo depois.
 
-## 1. O que o sistema faz
-- Controla os armários usados por visitantes e acompanhantes.
-- Mostra rapidamente quais armários estão livres, em uso, perto de vencer ou vencidos.
-- Registra novas entregas e devoluções, incluindo horários e dados de contato.
-- Gera e acompanha termos de responsabilidade para armários de acompanhantes.
-- Mantém cadastros de armários, unidades e usuários, além de um histórico de ações.
+## 1. Acesso e autenticação
+1. Abra o link público do WebApp do Cosign no navegador (computador ou celular).
+2. Na tela **Acesso Restrito**, informe **Usuário** e **Senha** e clique em **Entrar**.
+3. Em caso de erro de credenciais, confirme com a TI ou coordenação. O acesso só é liberado para logins cadastrados.
+4. Após entrar, a interface principal é carregada e o menu lateral é exibido. Use o botão **Sair** (rodapé do menu) para encerrar a sessão.
 
-## 2. O que você precisa antes de usar
-1. Um computador ou celular com acesso à internet.
-2. Navegador atualizado (Chrome, Edge ou Firefox recomendados).
-3. Usuário e senha fornecidos pela equipe de TI ou pela coordenação.
+### Onde as credenciais ficam
+- Os usuários são mantidos na aba **Usuários** da planilha vinculada ao Apps Script, incluindo nome, e-mail, senha e permissões.
+- O front-end grava dados mínimos de sessão no navegador para reabrir o app, mas o acesso depende dos dados na planilha.
 
-## 3. Como entrar no sistema
-1. Abra o link do Cosign no navegador.
-2. Na tela de **Acesso Restrito**, digite seu **Usuário** e **Senha**.
-3. Clique em **Entrar**. Se os dados estiverem corretos, a tela principal será carregada.
-4. Se precisar de ajuda com o login, use o contato indicado pela sua equipe local.
+## 2. Estrutura geral da interface
+- **Menu lateral**: navegação entre todas as páginas (Dashboard, Visitantes, Acompanhantes, Históricos, Liberações, Achados e Perdidos, Termo de Responsabilidade, Cadastros e LOGS).
+- **Cabeçalho**: título da página, saudação com perfil e turno, seletores de **Perfil** (geral/visitante/acompanhante) e **Unidade**, alternância de tema, sino de notificações e avatar do usuário.
+- **Filtro rápido**: os seletores de Perfil e Unidade afetam listagens e cards em todas as páginas.
 
-## 4. Conhecendo a tela principal
-- **Menu lateral (esquerda):** navegação entre as páginas (Dashboard, Visitantes, Acompanhantes, etc.).
-- **Topo da tela:** mostra o nome da página, atalhos e o seletor de **Perfil** (geral, visitante ou acompanhante) e **Unidade**.
-- **Sino de notificações:** indica avisos pendentes.
-- **Avatar do usuário:** mostra suas iniciais; clique para ver opções de sessão.
+## 3. Fluxos por página
 
-## 5. Passo a passo inicial
-1. Confirme que está logado: o menu lateral e os cards do Dashboard devem aparecer.
-2. No topo, ajuste **Perfil** e **Unidade** para focar no setor desejado.
-3. Veja os cards do Dashboard (Em uso, Livres, Próximo do horário, Vencidos) para ter um panorama rápido.
-4. Use o campo de busca ou os filtros de status para localizar um armário ou paciente.
+### 3.1 Dashboard (visão geral)
+- **Cards principais**: Em uso, Livres, Próximo do horário, Contingência e Vencidos. Clicar em um card aplica o filtro correspondente na lista.
+- **Filtros de status**: botões Todos/Livre/Em uso/Próximo/Vencido/Contingência.
+- **Busca rápida**: localiza por número de armário, paciente, prontuário ou acompanhante.
+- **Ocultar dados**: esconde/mostra informações sensíveis na tabela.
+- **Ações da tabela**: editar armário, finalizar devolução ou abrir registros de imagem.
 
-## 6. Dashboard (visão geral)
-- **Cards coloridos:** mostram a quantidade de armários em cada situação.
-- **Filtros de status:** botões "Todos", "Livre", "Em uso", "Próximo do horário", "Vencido" e "Contingência".
-- **Busca rápida:** digite nome do paciente, prontuário ou número do armário.
-- **Ocultar dados sensíveis:** botão "Ocultar dados" alterna a exibição de informações pessoais.
-- **Contingência (Sem Armários):** registre casos em que não há armários disponíveis.
+**Onde os dados ficam**
+- As contagens e registros exibidos refletem as abas **Acompanhantes** e **Visitantes** da planilha principal.
+- Fotos mostradas pela ação **Registros em imagens** são buscadas da aba **Registro de Imagens** (criada automaticamente) ou reconstruídas dos dados de termos e movimentações.
 
-### 6.1 Registrar contingência com foto
-1. Clique em **Contingência** no painel superior (perfil de acompanhantes).
-2. Preencha paciente, acompanhante, prontuário e observações.
-3. Anexe uma **foto obrigatória** (JPG ou PNG até 2 MB). Ela é salva no Drive com acesso somente via link e fica indexada na planilha.
-4. Conclua em **Registrar**. A imagem aparecerá ao abrir o registro da contingência.
+### 3.2 Visitantes
+- **Novo Cadastro**: registra uso de armário por visitante. Campos principais: unidade, número do armário, visitante, paciente, leito, horários de entrada/saída previstos, volumes e observações.
+- **Tabela**: mostra status atual, tempos e contatos. Use a coluna **Ações** para editar ou finalizar devolução.
+- **Finalizar/Devolver**: registra saída e libera o armário, atualizando status no dashboard.
 
-## 7. Visitantes (armários de visita)
-1. Clique em **Visitantes** no menu.
-2. Use **Novo Cadastro** para registrar um armário em uso: informe unidade, número, visitante, paciente, leito, volumes e horários.
-3. Na tabela, use a coluna **Ações** para atualizar status (por exemplo, finalizar/devolver) ou editar dados.
-4. Consulte rapidamente horários de início, previsão de saída e contatos na tabela.
+**Armazenamento**
+- Todos os cadastros e atualizações são gravados na aba **Visitantes** da planilha principal.
 
-## 8. Acompanhantes (armários para acompanhantes)
-1. Clique em **Acompanhantes**.
-2. Selecione **Novo Cadastro** e preencha armário, unidade, paciente, acompanhante, leito, volumes e contato.
-3. Use a coluna **Ações** para registrar devoluções, editar dados ou acompanhar status.
-4. Os dados alimentam o módulo de **Termo de Responsabilidade**.
+### 3.3 Acompanhantes
+- **Novo Cadastro**: registra armário de acompanhante com paciente, acompanhante responsável, contatos, leito, unidade e volumes. Esse fluxo alimenta o módulo de termo.
+- **Ações**: editar, finalizar devolução ou acessar o termo de responsabilidade.
 
-## 9. Históricos
-- **Histórico de Visitantes** e **Histórico de Acompanhantes** mostram registros anteriores, com horários de início/fim, status e usuário responsável.
-- Use os cabeçalhos da tabela para localizar informações por armário, paciente, leito ou WhatsApp.
+**Armazenamento**
+- Registros ficam na aba **Acompanhantes** da planilha principal.
 
-## 10. Liberações
-1. Acesse **Liberações** pelo menu.
-2. Escolha um período (data de início e fim) e, se precisar, filtre por **Prontuário** ou **Paciente**.
-3. Clique em **Aplicar filtros** para carregar os registros.
-4. A tabela exibirá apenas as colunas e linhas correspondentes ao filtro selecionado.
+### 3.4 Contingência (Sem Armários)
+- Disponível no painel superior do Dashboard quando o perfil é **Acompanhante**.
+- Preencha paciente, acompanhante, prontuário, observações e anexe **foto obrigatória** (JPG/PNG até 2 MB).
+- A foto é capturada no ato e registrada como evidência do atendimento sem armário.
 
-## 11. Termo de Responsabilidade
-- A página **Termos de Responsabilidade** lista armários de acompanhantes com status do termo, data de aplicação e link para o PDF.
-- Para aplicar um termo, siga o assistente (wizard) em 3 passos:
-  1. Dados do paciente (nome, prontuário, data de nascimento, setor e leito).
-  2. Dados do acompanhante responsável (nome, telefone, documento e endereço).
-  3. Revisão e assinatura: confirme as informações, gere e salve o termo.
-- Após salvo, o status muda para aplicado e o PDF fica disponível para consulta.
-- As fotos anexadas (volumes, movimentações e entrega) ficam registradas na aba "Registro de Imagens" da planilha, permitindo consultar depois pelo botão **Registros em imagens**.
+**Armazenamento**
+- Dados de contingência são gravados na aba **Contingência** (na planilha principal). A foto é salva na pasta do Drive configurada em `PASTA_DRIVE_FOTOS_ID` e indexada na aba **Registro de Imagens**.
 
-## 12. Cadastros administrativos
-- **Cadastro de Armários:** cria ou edita armários, definindo número, tipo (visitante ou acompanhante), unidade, localização e status.
-- **Cadastro de Unidades:** mantém a lista de unidades/setores e se estão ativos.
-- **Usuários:** cadastra pessoas com nome, e-mail, senha, papel (admin ou usuário) e acessos permitidos (visitantes, acompanhantes e unidades autorizadas).
-- **LOGS:** painel de auditoria com ações registradas no sistema.
+### 3.5 Históricos
+- **Histórico de Visitantes**: lista registros finalizados de visitantes, com horários de início/fim, status e usuário responsável.
+- **Histórico de Acompanhantes**: o mesmo para armários de acompanhantes.
+- Use os cabeçalhos para ordenar e pesquisar por armário, paciente, leito ou WhatsApp.
 
-## 13. Dicas rápidas de uso
-- Prefira preencher todos os campos obrigatórios para evitar retrabalho.
-- Revise horários antes de salvar para não gerar alertas de atraso incorretos.
-- Use a busca do Dashboard para localizar rapidamente por nome ou número de armário.
-- Mantenha seu navegador atualizado e evite fechar o navegador durante o preenchimento de um termo.
+**Armazenamento**
+- Dados vêm das abas **Visitantes** e **Acompanhantes**, filtrados pelos status de término.
 
-## 14. Problemas comuns e soluções
-- **Não consigo entrar:** verifique usuário e senha; se ainda falhar, solicite redefinição à equipe de TI.
-- **Armários não aparecem:** confirme se a **Unidade** selecionada no topo está correta.
-- **Termo não gera PDF:** confira se todos os passos estão marcados como completos antes de finalizar.
-- **Dados sensíveis escondidos:** clique em **Ocultar dados** (Dashboard) para alternar a visibilidade.
+### 3.6 Liberações
+- Filtro por **Data inicial** e **Data final** (obrigatórios) e, opcionalmente, por **Prontuário** ou **Paciente**.
+- Clique em **Aplicar filtros** para carregar apenas os registros no intervalo.
+- Útil para conferência diária das devoluções e entregas.
 
-## 15. Segurança e boas práticas
-- Nunca compartilhe seu login ou senha.
-- Faça logout ao terminar (botão **Sair** no rodapé do menu).
-- Não insira dados pessoais sem autorização do paciente ou responsável.
+**Armazenamento**
+- Os dados são lidos da aba **Liberação** da planilha principal. Há integração opcional com uma planilha externa dedicada, definida pelas constantes de configuração (`PLANILHA_LIBERACAO_ID`, aba `LIBERACAO`).
 
-## 16. Checklist rápido antes de finalizar o dia
-1. Conferir armários **Vencidos** e regularizar devoluções.
-2. Garantir que todos os **Termos de Responsabilidade** estejam aplicados e salvos.
-3. Revisar se há registros pendentes na página de **Liberações**.
-4. Fazer logout para encerrar a sessão.
+### 3.7 Achados e Perdidos
+- Registra itens encontrados nos armários.
+- Preencha identificação do item, armário, data/hora e observações. Use a coluna **Ações** para resolver ou devolver.
+
+**Armazenamento**
+- Os registros são escritos na planilha de Achados e Perdidos configurada (`PLANILHA_PERTENCES_PERDIDOS_ID`, aba `PERTENCES PERDIDOS GUARDA-VOLUMES`). A planilha externa guarda o histórico e pode ser consultada diretamente.
+
+### 3.8 Termo de Responsabilidade
+- Página dedicada aos armários de acompanhantes.
+- **Lista de termos**: mostra status (pendente/aplicado), data de aplicação e link do PDF.
+- **Assistente (wizard) em 3 passos**:
+  1. **Paciente**: nome, prontuário, data de nascimento, setor e leito.
+  2. **Acompanhante responsável**: nome, telefone, documento e endereço.
+  3. **Revisão e assinatura**: conferência final, captura de fotos obrigatórias dos volumes e da entrega, e geração do PDF.
+- **Geração de PDF**: ao finalizar, o termo é salvo em PDF na pasta Drive configurada em `PASTA_DRIVE_ID`. O link fica disponível na tabela.
+- **Encerramento e liberação unificados**: finalizar o termo já libera o armário e encerra o atendimento.
+
+**Armazenamento e imagens**
+- Dados textuais do termo ficam na aba **Termos de Responsabilidade** da planilha principal.
+- Fotos obrigatórias (volumes, movimentações e entrega) são salvas na pasta `PASTA_DRIVE_FOTOS_ID` e indexadas em **Registro de Imagens** com contexto (termo ou movimentação). A pasta **temporária** (`PASTA_DRIVE_TEMP_ID`) é usada para compor o PDF antes de gravar na pasta final.
+
+### 3.9 Cadastro de Armários
+- Cria ou edita armários com número, tipo (visitante ou acompanhante), unidade, localização, status e observações.
+- Use para marcar armários como ativos, bloqueados ou em manutenção.
+
+**Armazenamento**
+- Mantido na aba **Armários** da planilha principal. O dashboard lê esses status para classificar disponibilidade.
+
+### 3.10 Cadastro de Unidades
+- Mantém a lista de setores/unidades e indica se estão ativas.
+- Impacta os filtros e a criação de novos registros em todas as páginas.
+
+**Armazenamento**
+- Dados na aba **Unidades** da planilha principal.
+
+### 3.11 Usuários
+- Cadastre nome, e-mail, senha, papel (admin ou usuário) e permissões de acesso (visitantes, acompanhantes e unidades autorizadas).
+- Use a coluna **Ações** para editar ou remover usuários.
+
+**Armazenamento**
+- Todos os usuários ficam na aba **Usuários** da planilha principal. A autenticação do login consulta esta aba.
+
+### 3.12 LOGS
+- Painel de auditoria das ações executadas no sistema (cadastros, finalizações, erros de imagem, etc.).
+- Ajuda a rastrear quem realizou cada operação e quando.
+
+**Armazenamento**
+- Os registros ficam na aba **LOGS** da planilha principal.
+
+## 4. Fluxos com fotos e arquivos
+- **Volumes no termo**: cada volume exige foto no passo 3 do assistente.
+- **Movimentações (entrada/saída)**: toda movimentação registrada salva uma foto obrigatória.
+- **Entrega do termo**: antes da assinatura final, registre foto da entrega ao acompanhante.
+- **Contingências**: sempre exigem uma foto.
+- Todas as imagens são salvas na pasta de fotos (`PASTA_DRIVE_FOTOS_ID`) e indexadas na aba **Registro de Imagens**, permitindo consulta pelo botão **Registros em imagens**.
+
+## 5. Recuperação de documentos e evidências
+- **PDF do termo**: disponível na coluna de ações da página Termo de Responsabilidade e guardado na pasta do Drive (`PASTA_DRIVE_ID`).
+- **Fotos**: acessíveis pela aba **Registro de Imagens** na planilha ou pelos botões de cada armário (Dashboard, Acompanhantes, Termos). A coluna da planilha contém ID, URL, nome do arquivo, contexto e data/hora.
+- **Planilhas de apoio**: Achados e Perdidos e Liberação podem ser abertas diretamente nos IDs configurados, caso precise validar ou exportar dados.
+
+## 6. Boas práticas de uso diário
+1. Ajuste **Perfil** e **Unidade** antes de operar para evitar lançamentos no setor errado.
+2. Preencha todos os campos obrigatórios e confira horários para prevenir alertas de atraso.
+3. Garanta que fotos estejam nítidas e com tamanho dentro do limite (até 2 MB por imagem).
+4. No fim do turno, revise armários **Vencidos**, finalize termos pendentes e registre devoluções em **Liberações**.
+5. Use o botão **Sair** para encerrar a sessão.
+
+## 7. Limitações conhecidas
+- Dependência de conectividade com Google Drive e Google Sheets para salvar PDFs, fotos e registros.
+- Tamanho máximo das imagens depende das cotas do Apps Script para arquivos base64.
+- A disponibilidade dos dados externos (Achados e Perdidos, Liberação) depende das planilhas configuradas e de suas permissões de acesso.
+
+## 8. Onde cada informação é salva (resumo rápido)
+- **Visitantes**: aba `Visitantes` na planilha principal.
+- **Acompanhantes**: aba `Acompanhantes`.
+- **Contingência**: aba `Contingência` + pasta de fotos `PASTA_DRIVE_FOTOS_ID` + índice `Registro de Imagens`.
+- **Termos de Responsabilidade**: aba `Termos de Responsabilidade` + PDFs em `PASTA_DRIVE_ID` + fotos em `PASTA_DRIVE_FOTOS_ID` + pasta temporária `PASTA_DRIVE_TEMP_ID` para montagem.
+- **Movimentações e volumes**: imagens salvas em `PASTA_DRIVE_FOTOS_ID` e indexadas em `Registro de Imagens` com data/hora e contexto.
+- **Liberações**: aba `Liberação` (ou planilha externa `PLANILHA_LIBERACAO_ID`).
+- **Achados e Perdidos**: planilha externa `PLANILHA_PERTENCES_PERDIDOS_ID`, aba `PERTENCES PERDIDOS GUARDA-VOLUMES`.
+- **Cadastros de Armários**: aba `Armários`.
+- **Cadastros de Unidades**: aba `Unidades`.
+- **Usuários**: aba `Usuários`.
+- **LOGS**: aba `LOGS` (auditoria).
+- **Registro de Imagens**: aba `Registro de Imagens`, contendo ID, armário, contexto, responsável, data/hora, URL e nome do arquivo.
+
+Com este guia, é possível operar todas as abas do Cosign, entender o caminho de cada informação e localizar rapidamente PDFs, fotos e registros na planilha e no Google Drive configurado.
