@@ -37,6 +37,7 @@
 - **getDashboardData**: agrega KPIs, gráficos (linha, barras, heatmap), rankings e resumo por armário com filtros (período, status, unidade, perfil, solicitante, atendente e fora do SLA).
 - **salvarSnapshotDashboard**: grava KPIs filtrados na aba `SNAPSHOTS` para histórico.
 - **Exportação**: geração de CSV no cliente a partir dos dados retornados e PDF sintético com jsPDF.
+- **Fallback automático**: caso a aba `LOG` ainda não tenha dados, o dashboard passa a usar o histórico de Visitantes e Acompanhantes para montar as métricas básicas.
 
 ### Limitações conhecidas
 - Os cálculos dependem da consistência dos timestamps; registros sem datas são ignorados.
