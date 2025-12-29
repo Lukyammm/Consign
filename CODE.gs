@@ -7738,13 +7738,19 @@ function gerarParetoArmarios(registros) {
 }
 
 function getDashboardAnalytics(params) {
+  var apenasForaSla = params && typeof params.apenasForaSla !== 'undefined'
+    ? params.apenasForaSla === true || params.apenasForaSla === 'true'
+    : false;
+
+  var paramsNormalizados = Object.assign({}, params, { apenasForaSla: apenasForaSla });
+
   var permissao = validarPermissaoAdmin({ usuarioId: params && params.usuarioId ? params.usuarioId : usuarioContextoRequisicaoId });
   if (!permissao.ok) {
     return { success: false, error: permissao.error || 'Acesso negado' };
   }
 
   var cache = CacheService.getScriptCache();
-  var chaveCache = 'dashboard_' + Utilities.base64EncodeWebSafe(JSON.stringify(params || {})).slice(0, 80);
+  var chaveCache = 'dashboard_' + Utilities.base64EncodeWebSafe(JSON.stringify(paramsNormalizados || {})).slice(0, 80);
   var cacheado = cache.get(chaveCache);
   if (cacheado) {
     try {
@@ -7777,7 +7783,7 @@ function getDashboardAnalytics(params) {
       }
     }
   });
-  if (params && params.apenasForaSla) {
+  if (apenasForaSla) {
     var slaMinutos = Number(config.sla_minutos) || 30;
     filtrados = filtrados.filter(function(r) { return typeof r.duracaoTotalMinutos === 'number' && r.duracaoTotalMinutos > slaMinutos; });
   }
