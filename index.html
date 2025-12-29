@@ -645,44 +645,56 @@
                         </div>
                     </div>
                     <div class="lf-filters glass-card">
-                        <div class="filter-group">
-                            <label for="achados-busca">Buscar</label>
-                            <div class="input-icon">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="achados-busca" placeholder="Dono, descrição ou telefone">
-                            </div>
-                        </div>
-                        <div class="filter-group">
-                            <label for="achados-status">Status</label>
-                            <select id="achados-status">
-                                <option value="todos">Todos</option>
-                                <option value="pendentes">Aguardando</option>
-                                <option value="encontrados">Encontrados</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="achados-data-inicio">Período</label>
-                            <div class="range-grid">
-                                <div class="range-field">
-                                    <span>De</span>
-                                    <input type="date" id="achados-data-inicio">
+                        <div class="lf-filters-head">
+                            <div class="lf-filters-title">
+                                <div class="lf-filters-icon" aria-hidden="true">
+                                    <i class="fas fa-sliders"></i>
                                 </div>
-                                <div class="range-field">
-                                    <span>Até</span>
-                                    <input type="date" id="achados-data-fim">
+                                <div>
+                                    <p class="lf-kicker">Filtros rápidos</p>
+                                    <h4>Refine os registros</h4>
+                                    <p class="lf-subtitle">Busque por dono, status ou período de guarda.</p>
                                 </div>
                             </div>
-                        </div>
-                        <div class="filter-group filter-actions">
-                            <div class="actions-row">
+                            <div class="lf-filters-actions">
                                 <button type="button" class="btn btn-ghost btn-clean" id="achados-limpar-filtros">
                                     <i class="fas fa-eraser"></i>
-                                    Limpar
+                                    Limpar filtros
                                 </button>
                                 <button type="button" class="btn btn-primary btn-search" id="achados-aplicar-filtros">
                                     <i class="fas fa-search"></i>
-                                    Buscar
+                                    Aplicar busca
                                 </button>
+                            </div>
+                        </div>
+                        <div class="lf-filters-body">
+                            <div class="filter-group">
+                                <label for="achados-busca">Buscar</label>
+                                <div class="input-icon">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="achados-busca" placeholder="Dono, descrição ou telefone">
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label for="achados-status">Status</label>
+                                <select id="achados-status">
+                                    <option value="todos">Todos</option>
+                                    <option value="pendentes">Aguardando</option>
+                                    <option value="encontrados">Encontrados</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="achados-data-inicio">Período</label>
+                                <div class="range-grid">
+                                    <div class="range-field">
+                                        <span>De</span>
+                                        <input type="date" id="achados-data-inicio">
+                                    </div>
+                                    <div class="range-field">
+                                        <span>Até</span>
+                                        <input type="date" id="achados-data-fim">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

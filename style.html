@@ -360,8 +360,8 @@
             flex-wrap: wrap;
         }
         .lf-filters {
-            display: grid;
-            grid-template-columns: 3fr 1fr 2fr auto;
+            display: flex;
+            flex-direction: column;
             gap: 14px;
             padding: 18px;
             border: 1px solid color-mix(in srgb, var(--primary-color) 14%, transparent);
@@ -370,7 +370,6 @@
             box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
             position: relative;
             overflow: hidden;
-            align-items: end;
         }
         .lf-filters::after {
             content: "";
@@ -380,6 +379,58 @@
             background: radial-gradient(circle at 12% 20%, color-mix(in srgb, var(--primary-color) 18%, transparent) 0, transparent 38%),
                         radial-gradient(circle at 86% 80%, color-mix(in srgb, var(--secondary-color) 14%, transparent) 0, transparent 36%);
             opacity: 0.28;
+        }
+        .lf-filters-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        .lf-filters-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .lf-filters-title h4 {
+            margin: 2px 0 4px;
+        }
+        .lf-filters-title .lf-subtitle {
+            margin: 0;
+            color: var(--text-light);
+        }
+        .lf-filters-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: color-mix(in srgb, var(--primary-color) 18%, rgba(255, 255, 255, 0.4));
+            color: var(--primary-color);
+            box-shadow: 0 10px 24px rgba(59, 130, 246, 0.18);
+        }
+        .lf-filters-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .lf-filters-body {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            position: relative;
+            z-index: 1;
+        }
+        .lf-filters .filter-group:first-child {
+            grid-column: span 2;
+        }
+        @media (max-width: 768px) {
+            .lf-filters .filter-group:first-child {
+                grid-column: span 1;
+            }
         }
         .lf-filters .filter-group {
             position: relative;
@@ -469,38 +520,16 @@
             border-color: color-mix(in srgb, var(--primary-color) 70%, var(--border-color) 30%);
             box-shadow: 0 0 0 4px var(--focus-ring), 0 12px 24px rgba(59, 130, 246, 0.08);
         }
-        .lf-filters .filter-actions {
-            justify-content: center;
-            padding: 0;
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            align-self: end;
-        }
-        .lf-filters .filter-actions .actions-row {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .lf-filters .filter-actions .btn {
-            margin: 0;
-        }
         .lf-filters .btn-clean {
             padding: 8px 12px;
             font-weight: 600;
-            min-width: 120px;
+            min-width: 140px;
         }
         .lf-filters .btn-search {
             padding: 12px 18px;
             font-weight: 700;
             min-width: 180px;
             box-shadow: 0 12px 24px rgba(59, 130, 246, 0.15);
-        }
-        .lf-filters .align-end {
-            align-items: flex-end;
-            justify-content: flex-end;
         }
         .lf-summary {
             display: grid;
