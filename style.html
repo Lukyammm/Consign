@@ -6611,4 +6611,364 @@
                 width: 100%;
             }
         }
+
+        /* Dashboard operacional */
+        .operational-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1rem;
+            align-items: stretch;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-tile {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filter-title {
+            font-weight: 600;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            color: var(--text-primary);
+        }
+
+        .filter-options {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-radio {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--surface);
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .filter-radio input {
+            accent-color: var(--primary);
+        }
+
+        .filter-radio:hover {
+            border-color: var(--primary);
+        }
+
+        .period-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .filter-field input {
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 0.65rem 0.75rem;
+            background: var(--surface);
+            color: var(--text-primary);
+        }
+
+        .filter-hint {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-self: center;
+            justify-content: flex-end;
+        }
+
+        .operational-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.75rem;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+        }
+
+        .summary-card .summary-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .summary-card.neutral .summary-icon { background: linear-gradient(135deg, #c7c9d1, #a9adb8); }
+        .summary-card.success .summary-icon { background: linear-gradient(135deg, #34c759, #2a9c47); }
+        .summary-card.info .summary-icon { background: linear-gradient(135deg, #1da1f2, #0c7acb); }
+        .summary-card.warning .summary-icon { background: linear-gradient(135deg, #f4b400, #d79600); }
+        .summary-card.danger .summary-icon { background: linear-gradient(135deg, #f94144, #d62828); }
+        .summary-card.time .summary-icon { background: linear-gradient(135deg, #6c5ce7, #5244c5); }
+
+        .summary-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .summary-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin: 0.1rem 0;
+            color: var(--text-primary);
+        }
+
+        .summary-sub {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .locker-map {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .section-sub {
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        .map-legend {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.35rem;
+        }
+
+        .legend-dot.livre { background: #2ecc71; }
+        .legend-dot.uso { background: #1e88e5; }
+        .legend-dot.pendente { background: #f4b400; }
+        .legend-dot.atraso { background: #e53935; }
+
+        .armarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .armario-card {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.9rem;
+            text-align: left;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .armario-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .armario-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.35rem;
+        }
+
+        .locker-code {
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: capitalize;
+            color: #fff;
+        }
+
+        .status-pill.status-livre { background: #2ecc71; }
+        .status-pill.status-uso { background: #1e88e5; }
+        .status-pill.status-pendente { background: #f4b400; color: #3b2f00; }
+        .status-pill.status-atraso { background: #e53935; }
+
+        .armario-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .locker-owner {
+            font-weight: 600;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .locker-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .locker-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 193, 7, 0.15);
+            color: #b57600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .operational-insights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .insight-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+            min-height: 260px;
+        }
+
+        .insight-header h3 {
+            margin: 0;
+        }
+
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .insight-stat {
+            padding: 0.75rem;
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            background: var(--surface);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-hint {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .operational-table {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .table-tools {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        #tabela-operacional th,
+        #tabela-operacional td {
+            padding: 0.65rem 0.5rem;
+            text-align: left;
+        }
+
+        #tabela-operacional thead {
+            background: var(--surface);
+        }
+
+        @media (max-width: 900px) {
+            .locker-meta {
+                flex-direction: column;
+                gap: 0.2rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .operational-summary { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+            .armarios-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+            .filter-actions { width: 100%; justify-content: flex-start; }
+        }
     </style>
