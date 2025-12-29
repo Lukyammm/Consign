@@ -10217,7 +10217,246 @@
                 notificationList.appendChild(item);
             });
         }
-       
+
+        // ----------------------- DASHBOARD BI -----------------------
+        const biEstado = {
+            charts: {},
+            ultimoRetorno: null,
+            carregando: false
+        };
+
+        function obterValoresSelectMultiplo(select) {
+            if (!select) return [];
+            return Array.from(select.selectedOptions || []).map(o => o.value);
+        }
+
+        function coletarFiltrosBI() {
+            const periodo = document.getElementById('bi-period').value;
+            return {
+                periodo: periodo,
+                dataInicio: document.getElementById('bi-start-date').value || '',
+                dataFim: document.getElementById('bi-end-date').value || '',
+                status: obterValoresSelectMultiplo(document.getElementById('bi-status')),
+                unidade: document.getElementById('bi-unidade').value || '',
+                armarioId: document.getElementById('bi-armario').value || '',
+                perfil: document.getElementById('bi-perfil').value || '',
+                solicitante: document.getElementById('bi-solicitante').value || '',
+                atendente: document.getElementById('bi-atendente').value || '',
+                somenteForaSla: document.getElementById('bi-fora-sla').checked
+            };
+        }
+
+        function formatarMinutos(minutos) {
+            if (minutos === null || minutos === undefined || isNaN(minutos)) return '--';
+            if (minutos < 60) return `${Math.round(minutos)} min`;
+            const horas = minutos / 60;
+            return `${horas.toFixed(1)} h`;
+        }
+
+        function atualizarKpisBI(kpis, rankings) {
+            const setText = (id, texto) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = texto;
+            };
+            setText('kpi-hoje', kpis.solicitacoesHoje || 0);
+            setText('kpi-hoje-delta', `Ontem: ${kpis.solicitacoesOntem || 0} | Semana: ${kpis.solicitacoesSemana || 0}`);
+            setText('kpi-backlog', kpis.abertasAgora || 0);
+            setText('kpi-backlog-sla', `${kpis.foraSla || 0} fora do SLA`);
+            setText('kpi-em-producao', kpis.emProducaoAgora || 0);
+            setText('kpi-em-producao-eta', `Fila média ${formatarMinutos(kpis.tempoFilaMedio)}`);
+            setText('kpi-entregues', kpis.entreguesHoje || 0);
+            setText('kpi-taxas', `Conclusão ${kpis.taxaConclusao || 0}%`);
+            setText('kpi-canceladas', kpis.canceladasPeriodo || 0);
+            setText('kpi-cancelamento', `Taxa ${kpis.taxaCancelamento || 0}%`);
+            setText('kpi-tempo-total', formatarMinutos(kpis.tempoTotalMedio));
+            setText('kpi-percentis', `P95 ${formatarMinutos(kpis.p95)} | P99 ${formatarMinutos(kpis.p99)}`);
+            setText('kpi-sla', `${kpis.slaPercentual || 0}% dentro`);
+            setText('kpi-sla-meta', `Meta ${kpis.slaMeta} min`);
+            const armariosTop = rankings && rankings.armariosTop ? rankings.armariosTop.slice(0, 3).map(a => `${a.armario}: ${a.total}`).join(', ') : '--';
+            const usuariosTop = rankings && rankings.solicitantesTop ? rankings.solicitantesTop.slice(0, 2).map(u => `${u.nome} (${u.total})`).join(', ') : '--';
+            setText('kpi-top-armarios', armariosTop || '--');
+            setText('kpi-top-usuarios', `Usuários: ${usuariosTop || '--'}`);
+        }
+
+        function construirDataset(labels, valores, label, cor) {
+            return {
+                labels,
+                datasets: [{
+                    label,
+                    data: valores,
+                    borderColor: cor,
+                    backgroundColor: cor,
+                    tension: 0.25,
+                    fill: false
+                }]
+            };
+        }
+
+        function renderizarHeatmap(dados) {
+            const heatmap = document.getElementById('chart-heatmap');
+            if (!heatmap) return;
+            heatmap.innerHTML = '';
+            const maxValor = Math.max(1, ...dados.map(l => Math.max(...l.valores)));
+            dados.forEach(linha => {
+                linha.valores.forEach((valor, idx) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'heatmap-cell';
+                    const intensidade = valor / maxValor;
+                    cell.style.background = `rgba(37, 99, 235, ${0.12 + intensidade * 0.6})`;
+                    cell.textContent = `${linha.label.slice(0,3)} ${idx}h: ${valor}`;
+                    heatmap.appendChild(cell);
+                });
+            });
+        }
+
+        function atualizarTabelaArmarios(armarios) {
+            const corpo = document.getElementById('bi-armarios-body');
+            const badge = document.getElementById('bi-armarios-total');
+            if (badge) badge.textContent = `${armarios.length} armários`;
+            if (!corpo) return;
+            corpo.innerHTML = '';
+            armarios.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.armario}</td>
+                    <td>${item.total}</td>
+                    <td>${item.abertos}</td>
+                    <td>${item.cancelados}</td>
+                    <td>${formatarMinutos(item.tempoMedio)}</td>
+                    <td>${formatarMinutos(item.p95)}</td>
+                    <td>${item.ultimaMovimentacao || '--'}</td>
+                    <td>${item.statusAtual || '--'}</td>
+                `;
+                corpo.appendChild(tr);
+            });
+        }
+
+        function atualizarChartsBI(dados) {
+            const ctxVolume = document.getElementById('chart-volume-dia');
+            const ctxStatus = document.getElementById('chart-status');
+            const ctxTempos = document.getElementById('chart-tempos');
+            if (ctxVolume) {
+                if (biEstado.charts.volume) biEstado.charts.volume.destroy();
+                biEstado.charts.volume = new Chart(ctxVolume, {
+                    type: 'line',
+                    data: construirDataset(dados.volumeDia.labels, dados.volumeDia.valores, 'Volume', '#60a5fa'),
+                    options: {responsive: true, maintainAspectRatio: false}
+                });
+            }
+            if (ctxStatus) {
+                if (biEstado.charts.status) biEstado.charts.status.destroy();
+                biEstado.charts.status = new Chart(ctxStatus, {
+                    type: 'bar',
+                    data: {
+                        labels: dados.status.labels,
+                        datasets: [{
+                            label: 'Quantidade',
+                            data: dados.status.valores,
+                            backgroundColor: ['#60a5fa','#34d399','#fbbf24','#f43f5e','#a78bfa']
+                        }]
+                    },
+                    options: {responsive: true, maintainAspectRatio: false}
+                });
+            }
+            if (ctxTempos) {
+                if (biEstado.charts.tempos) biEstado.charts.tempos.destroy();
+                biEstado.charts.tempos = new Chart(ctxTempos, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Fila', 'Atendimento', 'Total'],
+                        datasets: [{
+                            label: 'Tempo médio (min)',
+                            data: [dados.tempos.filaMedio, dados.tempos.atendimentoMedio, dados.tempos.totalMedio],
+                            backgroundColor: ['#fbbf24','#34d399','#60a5fa']
+                        }]
+                    },
+                    options: {responsive: true, maintainAspectRatio: false}
+                });
+            }
+            renderizarHeatmap(dados.heatmap || []);
+        }
+
+        function renderizarDashboardBI(resposta) {
+            const badge = document.getElementById('bi-last-update');
+            if (!resposta || !resposta.success) {
+                if (badge) badge.textContent = 'Erro ao atualizar';
+                return;
+            }
+            biEstado.ultimoRetorno = resposta.data;
+            if (badge) badge.textContent = `Atualizado em ${resposta.data.carimboAtualizacao}`;
+            atualizarKpisBI(resposta.data.kpis, resposta.data.rankings);
+            atualizarChartsBI(resposta.data.graficos);
+            atualizarTabelaArmarios(resposta.data.armariosResumo || []);
+        }
+
+        function carregarDashboardBI() {
+            if (biEstado.carregando) return;
+            biEstado.carregando = true;
+            const badge = document.getElementById('bi-last-update');
+            if (badge) badge.textContent = 'Atualizando...';
+            google.script.run.withSuccessHandler(res => {
+                biEstado.carregando = false;
+                renderizarDashboardBI(res);
+            }).withFailureHandler(err => {
+                biEstado.carregando = false;
+                if (badge) badge.textContent = 'Erro ao atualizar';
+                console.error('Erro dashboard BI', err);
+            }).getDashboardData(coletarFiltrosBI());
+        }
+
+        function exportarCsvBI() {
+            if (!biEstado.ultimoRetorno || !biEstado.ultimoRetorno.exportacao) return;
+            const csv = biEstado.ultimoRetorno.exportacao.csv;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'dashboard_cosign.csv';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportarPdfBI() {
+            if (!biEstado.ultimoRetorno) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text('Dashboard Cosign', 10, 10);
+            doc.text(`Atualizado: ${biEstado.ultimoRetorno.carimboAtualizacao}`, 10, 18);
+            doc.text(`SLA: ${biEstado.ultimoRetorno.kpis.slaPercentual}% dentro (${biEstado.ultimoRetorno.kpis.slaMeta} min)`, 10, 26);
+            doc.save('dashboard_cosign.pdf');
+        }
+
+        function salvarSnapshotBI() {
+            if (!biEstado.ultimoRetorno) return;
+            google.script.run.salvarSnapshotDashboard({
+                kpis: biEstado.ultimoRetorno.kpis,
+                filtros: coletarFiltrosBI()
+            });
+        }
+
+        function registrarEventosBI() {
+            const ids = ['bi-period','bi-start-date','bi-end-date','bi-status','bi-unidade','bi-armario','bi-perfil','bi-solicitante','bi-atendente','bi-fora-sla'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', () => carregarDashboardBI());
+                }
+            });
+            const btnRefresh = document.getElementById('bi-refresh');
+            if (btnRefresh) btnRefresh.addEventListener('click', () => carregarDashboardBI());
+            const btnCsv = document.getElementById('bi-export-csv');
+            if (btnCsv) btnCsv.addEventListener('click', exportarCsvBI);
+            const btnPdf = document.getElementById('bi-export-pdf');
+            if (btnPdf) btnPdf.addEventListener('click', exportarPdfBI);
+            const btnSnapshot = document.getElementById('bi-save-snapshot');
+            if (btnSnapshot) btnSnapshot.addEventListener('click', salvarSnapshotBI);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            registrarEventosBI();
+            setTimeout(() => carregarDashboardBI(), 400);
+        });
+
         // Funções globais para uso nos eventos HTML
         window.abrirModalArmario = abrirModalArmario;
         window.liberarArmario = liberarArmario;

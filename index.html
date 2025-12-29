@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <?!= include('style'); ?>
 
 </head>
@@ -214,6 +215,176 @@
                         </button>
                     </div>
                 </div>
+                <!-- Dashboard BI -->
+                <section class="bi-dashboard" id="bi-dashboard" aria-label="Dashboard BI Cosign">
+                    <header class="bi-dashboard__header">
+                        <div class="bi-dashboard__title">
+                            <div>
+                                <p class="eyebrow">Visão avançada</p>
+                                <h2>Dashboard operacional e SLA</h2>
+                            </div>
+                            <div class="badge" id="bi-last-update">Atualizando...</div>
+                        </div>
+                        <div class="bi-dashboard__actions">
+                            <button type="button" class="btn btn-secondary" id="bi-refresh"><i class="fas fa-rotate"></i> Atualizar</button>
+                            <button type="button" class="btn btn-primary" id="bi-export-csv"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+                            <button type="button" class="btn btn-primary" id="bi-export-pdf"><i class="fas fa-file-pdf"></i> Relatório PDF</button>
+                            <button type="button" class="btn btn-ghost" id="bi-save-snapshot"><i class="fas fa-camera"></i> Salvar snapshot</button>
+                        </div>
+                    </header>
+                    <div class="bi-filters" id="bi-filters" aria-label="Filtros do dashboard BI">
+                        <div class="bi-filter">
+                            <label for="bi-period">Período</label>
+                            <select id="bi-period">
+                                <option value="hoje">Hoje</option>
+                                <option value="7d" selected>Últimos 7 dias</option>
+                                <option value="30d">Últimos 30 dias</option>
+                                <option value="mes">Mês atual</option>
+                                <option value="personalizado">Personalizado</option>
+                            </select>
+                        </div>
+                        <div class="bi-filter">
+                            <label for="bi-start-date">Início</label>
+                            <input type="date" id="bi-start-date">
+                        </div>
+                        <div class="bi-filter">
+                            <label for="bi-end-date">Fim</label>
+                            <input type="date" id="bi-end-date">
+                        </div>
+                        <div class="bi-filter">
+                            <label for="bi-status">Status</label>
+                            <select id="bi-status" multiple>
+                                <option value="aberto">Aberto</option>
+                                <option value="em_producao">Em produção</option>
+                                <option value="entregue">Entregue</option>
+                                <option value="cancelado">Cancelado</option>
+                                <option value="pendente">Pendente</option>
+                            </select>
+                        </div>
+                        <div class="bi-filter">
+                            <label for="bi-unidade">Unidade/Setor</label>
+                            <input type="text" id="bi-unidade" placeholder="Todas">
+                        </div>
+                        <div class="bi-filter">
+                            <label for="bi-armario">Armário</label>
+                            <input type="text" id="bi-armario" placeholder="Todos">
+                        </div>
+                        <div class="bi-filter">
+                            <label for="bi-perfil">Perfil</label>
+                            <input type="text" id="bi-perfil" placeholder="Todos">
+                        </div>
+                        <div class="bi-filter">
+                            <label for="bi-solicitante">Solicitante</label>
+                            <input type="text" id="bi-solicitante" placeholder="Todos">
+                        </div>
+                        <div class="bi-filter">
+                            <label for="bi-atendente">Atendente</label>
+                            <input type="text" id="bi-atendente" placeholder="Todos">
+                        </div>
+                        <div class="bi-filter bi-filter--checkbox">
+                            <label for="bi-fora-sla">Somente fora do SLA</label>
+                            <input type="checkbox" id="bi-fora-sla">
+                        </div>
+                    </div>
+                    <div class="bi-kpis" id="bi-kpis">
+                        <div class="bi-kpi-card">
+                            <p>Solicitações (hoje)</p>
+                            <div class="bi-kpi-value" id="kpi-hoje">0</div>
+                            <small id="kpi-hoje-delta">--</small>
+                        </div>
+                        <div class="bi-kpi-card">
+                            <p>Abertas agora</p>
+                            <div class="bi-kpi-value" id="kpi-backlog">0</div>
+                            <small id="kpi-backlog-sla">--</small>
+                        </div>
+                        <div class="bi-kpi-card">
+                            <p>Em produção</p>
+                            <div class="bi-kpi-value" id="kpi-em-producao">0</div>
+                            <small id="kpi-em-producao-eta">--</small>
+                        </div>
+                        <div class="bi-kpi-card">
+                            <p>Entregues (hoje)</p>
+                            <div class="bi-kpi-value" id="kpi-entregues">0</div>
+                            <small id="kpi-taxas">--</small>
+                        </div>
+                        <div class="bi-kpi-card">
+                            <p>Canceladas</p>
+                            <div class="bi-kpi-value" id="kpi-canceladas">0</div>
+                            <small id="kpi-cancelamento">--</small>
+                        </div>
+                        <div class="bi-kpi-card">
+                            <p>Tempo médio total</p>
+                            <div class="bi-kpi-value" id="kpi-tempo-total">--</div>
+                            <small id="kpi-percentis">--</small>
+                        </div>
+                        <div class="bi-kpi-card">
+                            <p>SLA</p>
+                            <div class="bi-kpi-value" id="kpi-sla">--</div>
+                            <small id="kpi-sla-meta">--</small>
+                        </div>
+                        <div class="bi-kpi-card">
+                            <p>Top Armários</p>
+                            <div class="bi-kpi-value" id="kpi-top-armarios">--</div>
+                            <small id="kpi-top-usuarios">--</small>
+                        </div>
+                    </div>
+                    <div class="bi-charts">
+                        <div class="bi-chart">
+                            <div class="bi-chart__header">
+                                <h3>Volume por dia</h3>
+                                <span class="chart-subtitle">Últimos 30 dias</span>
+                            </div>
+                            <canvas id="chart-volume-dia"></canvas>
+                        </div>
+                        <div class="bi-chart">
+                            <div class="bi-chart__header">
+                                <h3>Status no período</h3>
+                                <span class="chart-subtitle">Distribuição</span>
+                            </div>
+                            <canvas id="chart-status"></canvas>
+                        </div>
+                        <div class="bi-chart">
+                            <div class="bi-chart__header">
+                                <h3>Fila x Atendimento</h3>
+                                <span class="chart-subtitle">Tempos médios</span>
+                            </div>
+                            <canvas id="chart-tempos"></canvas>
+                        </div>
+                        <div class="bi-chart">
+                            <div class="bi-chart__header">
+                                <h3>Heatmap demanda</h3>
+                                <span class="chart-subtitle">Dia x Hora</span>
+                            </div>
+                            <div class="heatmap" id="chart-heatmap" role="grid" aria-label="Heatmap de demanda"></div>
+                        </div>
+                    </div>
+                    <div class="bi-armarios" id="bi-armarios">
+                        <div class="bi-armarios__header">
+                            <div>
+                                <p class="eyebrow">Armários</p>
+                                <h3>Resumo por armário</h3>
+                            </div>
+                            <div class="badge" id="bi-armarios-total">0 encontrados</div>
+                        </div>
+                        <div class="bi-table-wrapper">
+                            <table class="bi-table">
+                                <thead>
+                                    <tr>
+                                        <th>Armário</th>
+                                        <th>Total</th>
+                                        <th>Abertos</th>
+                                        <th>Cancelados</th>
+                                        <th>Tempo médio</th>
+                                        <th>P95 tempo</th>
+                                        <th>Última mov.</th>
+                                        <th>Status atual</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bi-armarios-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
                 <!-- Tabela de Armários -->
                 <div class="armarios-grid" id="armarios-container">
                     <!-- Os armários serão carregados aqui via JavaScript -->

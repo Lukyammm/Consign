@@ -6448,4 +6448,165 @@
                 width: 100%;
             }
         }
+
+        /* BI Dashboard */
+        .bi-dashboard {
+            background: color-mix(in srgb, var(--surface-color) 96%, var(--bg-color) 4%);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid color-mix(in srgb, var(--border-color) 75%, var(--surface-color));
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .bi-dashboard__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .bi-dashboard__title h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .bi-dashboard__actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .bi-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            background: color-mix(in srgb, var(--surface-color) 94%, transparent);
+            border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        .bi-filter {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+        }
+        .bi-filter label {
+            color: var(--text-muted-color);
+        }
+        .bi-filter input,
+        .bi-filter select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
+            background: color-mix(in srgb, var(--surface-color) 94%, transparent);
+            color: inherit;
+        }
+        .bi-filter--checkbox {
+            align-items: center;
+            justify-content: center;
+            flex-direction: row;
+            gap: 8px;
+        }
+        .bi-kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .bi-kpi-card {
+            background: color-mix(in srgb, var(--surface-color) 92%, transparent);
+            border: 1px solid color-mix(in srgb, var(--border-color) 76%, transparent);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        .bi-kpi-card p {
+            margin: 0;
+            color: var(--text-muted-color);
+        }
+        .bi-kpi-value {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 6px 0;
+        }
+        .bi-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+        }
+        .bi-chart {
+            background: color-mix(in srgb, var(--surface-color) 92%, transparent);
+            border: 1px solid color-mix(in srgb, var(--border-color) 76%, transparent);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        .bi-chart__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .chart-subtitle {
+            color: var(--text-muted-color);
+            font-size: 12px;
+        }
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .heatmap-cell {
+            min-height: 40px;
+            border-radius: 8px;
+            text-align: center;
+            padding: 6px;
+            font-size: 12px;
+        }
+        .bi-armarios__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .bi-table-wrapper {
+            overflow-x: auto;
+        }
+        .bi-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .bi-table th, .bi-table td {
+            padding: 10px;
+            border-bottom: 1px solid color-mix(in srgb, var(--border-color) 78%, transparent);
+            text-align: left;
+        }
+        .bi-table th {
+            color: var(--text-muted-color);
+            font-weight: 500;
+        }
+        .badge {
+            background: color-mix(in srgb, var(--primary-color) 18%, transparent);
+            color: color-mix(in srgb, var(--primary-color) 82%, white 18%);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+        }
+        .eyebrow {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted-color);
+            margin: 0;
+        }
+        @media (max-width: 768px) {
+            .bi-dashboard__header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .bi-dashboard__actions {
+                width: 100%;
+            }
+        }
     </style>
