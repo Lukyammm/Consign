@@ -288,7 +288,31 @@
             <div class="page" id="historico-visitantes">
                 <div class="data-table">
                     <div class="table-header">
-                        <h3>Histórico de Visitantes</h3>
+                        <div>
+                            <h3>Histórico de Visitantes</h3>
+                            <p class="table-subtitle">Filtre por período, pessoas ou palavra-chave.</p>
+                        </div>
+                        <div class="table-header-controls">
+                            <div class="filter-group">
+                                <label for="historico-visitantes-data-inicio">Data inicial</label>
+                                <input type="date" id="historico-visitantes-data-inicio">
+                            </div>
+                            <div class="filter-group">
+                                <label for="historico-visitantes-data-fim">Data final</label>
+                                <input type="date" id="historico-visitantes-data-fim">
+                            </div>
+                            <div class="filter-group">
+                                <label for="historico-visitantes-filtro-pessoa">Visitante ou paciente</label>
+                                <input type="text" id="historico-visitantes-filtro-pessoa" placeholder="Nome do visitante, paciente ou usuário">
+                            </div>
+                            <div class="filter-group">
+                                <label for="historico-visitantes-busca">Palavra-chave</label>
+                                <input type="text" id="historico-visitantes-busca" placeholder="Armário, leito, status ou outro dado">
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="historico-visitantes-btn-limpar">
+                                <i class="fas fa-eraser"></i> Limpar filtros
+                            </button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table id="tabela-historico-visitantes">
@@ -318,7 +342,31 @@
             <div class="page" id="historico-acompanhantes">
                 <div class="data-table">
                     <div class="table-header">
-                        <h3>Histórico de Acompanhantes</h3>
+                        <div>
+                            <h3>Histórico de Acompanhantes</h3>
+                            <p class="table-subtitle">Filtre por período, pessoas ou palavra-chave.</p>
+                        </div>
+                        <div class="table-header-controls">
+                            <div class="filter-group">
+                                <label for="historico-acompanhantes-data-inicio">Data inicial</label>
+                                <input type="date" id="historico-acompanhantes-data-inicio">
+                            </div>
+                            <div class="filter-group">
+                                <label for="historico-acompanhantes-data-fim">Data final</label>
+                                <input type="date" id="historico-acompanhantes-data-fim">
+                            </div>
+                            <div class="filter-group">
+                                <label for="historico-acompanhantes-filtro-pessoa">Acompanhante ou paciente</label>
+                                <input type="text" id="historico-acompanhantes-filtro-pessoa" placeholder="Nome do acompanhante, paciente ou usuário">
+                            </div>
+                            <div class="filter-group">
+                                <label for="historico-acompanhantes-busca">Palavra-chave</label>
+                                <input type="text" id="historico-acompanhantes-busca" placeholder="Armário, leito, status ou outro dado">
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="historico-acompanhantes-btn-limpar">
+                                <i class="fas fa-eraser"></i> Limpar filtros
+                            </button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table id="tabela-historico-acompanhantes">
