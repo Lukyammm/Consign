@@ -7721,26 +7721,7 @@ function gerarParetoArmarios(registros) {
   });
 }
 
-function getDashboardAnalytics(params) {
-  var permissao = validarPermissaoAdmin({ usuarioId: params && params.usuarioId ? params.usuarioId : usuarioContextoRequisicaoId });
-  if (!permissao.ok) {
-    return { success: false, error: permissao.error || 'Acesso negado' };
-  }
-
-  var cache = CacheService.getScriptCache();
-  var chaveCache = 'dashboard_' + Utilities.base64EncodeWebSafe(JSON.stringify(params || {})).slice(0, 80);
-  var cacheado = cache.get(chaveCache);
-  if (cacheado) {
-    try {
-      return JSON.parse(cacheado);
-    } catch (e) {
-      // ignora
-    }
-  }
-
-  var config = lerConfiguracoesDashboard();
-  var registros = computeDurations(carregarLogPadronizado());
-
+function filtrarRegistrosDashboard(registros, params, config) {
   var inicio = params && params.dataInicio ? interpretarDataParametroSeguro(params.dataInicio) : null;
   var fim = params && params.dataFim ? interpretarDataParametroSeguro(params.dataFim) : null;
   var filtrados = filtrarPeriodo(registros, inicio, fim);
@@ -7762,9 +7743,33 @@ function getDashboardAnalytics(params) {
     }
   });
   if (params && params.apenasForaSla) {
-    var slaMinutos = Number(config.sla_minutos) || 30;
+    var slaMinutos = Number(config && config.sla_minutos) || 30;
     filtrados = filtrados.filter(function(r) { return typeof r.duracaoTotalMinutos === 'number' && r.duracaoTotalMinutos > slaMinutos; });
   }
+
+  return filtrados;
+}
+
+function getDashboardAnalytics(params) {
+  var permissao = validarPermissaoAdmin({ usuarioId: params && params.usuarioId ? params.usuarioId : usuarioContextoRequisicaoId });
+  if (!permissao.ok) {
+    return { success: false, error: permissao.error || 'Acesso negado' };
+  }
+
+  var cache = CacheService.getScriptCache();
+  var chaveCache = 'dashboard_' + Utilities.base64EncodeWebSafe(JSON.stringify(params || {})).slice(0, 80);
+  var cacheado = cache.get(chaveCache);
+  if (cacheado) {
+    try {
+      return JSON.parse(cacheado);
+    } catch (e) {
+      // ignora
+    }
+  }
+
+  var config = lerConfiguracoesDashboard();
+  var registros = computeDurations(carregarLogPadronizado());
+  var filtrados = filtrarRegistrosDashboard(registros, params, config);
 
   var kpis = montarKpisDashboard(filtrados, config, params && params.periodoDescricao);
   var series = calcularSeriesDashboard(filtrados, params && params.timezone);
@@ -7851,8 +7856,9 @@ function exportarDashboardCsv(params) {
   if (!resultado.success) {
     return resultado;
   }
+  var config = lerConfiguracoesDashboard();
   var registros = computeDurations(carregarLogPadronizado());
-  var filtrados = filtrarPeriodo(registros, params && params.dataInicio ? interpretarDataParametroSeguro(params.dataInicio) : null, params && params.dataFim ? interpretarDataParametroSeguro(params.dataFim) : null);
+  var filtrados = filtrarRegistrosDashboard(registros, params, config);
   var cabecalhos = ['timestamp_criacao', 'timestamp_inicio', 'timestamp_conclusao', 'status', 'armario_id', 'usuario_solicitante', 'usuario_atendente', 'perfil', 'unidade', 'observacoes'];
   var linhas = filtrados.map(function(r) {
     return cabecalhos.map(function(c) {
@@ -7916,10 +7922,13 @@ function gerarRelatorioDashboard(params) {
   body.appendParagraph('P95: ' + k.p95.toFixed(1) + ' min | P99: ' + k.p99.toFixed(1) + ' min');
   body.appendParagraph('SLA (' + k.slaMinutos + ' min): ' + k.slaPercentual.toFixed(1) + '% dentro');
   body.appendParagraph('Top Armários:');
-  var lista = body.appendListItem('');
-  resultado.topArmarios.forEach(function(item) {
-    lista.appendSublistItem(item.chave + ' - ' + item.total + ' eventos');
-  });
+  if (resultado.topArmarios.length) {
+    resultado.topArmarios.forEach(function(item) {
+      body.appendListItem(item.chave + ' - ' + item.total + ' eventos');
+    });
+  } else {
+    body.appendParagraph('Nenhum armário encontrado.');
+  }
   body.appendParagraph('Alertas ativos:');
   if (resultado.alertas.length) {
     resultado.alertas.forEach(function(a) { body.appendParagraph('- ' + a.mensagem); });
