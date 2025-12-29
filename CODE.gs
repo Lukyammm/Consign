@@ -7550,7 +7550,7 @@ function carregarLogPadronizado() {
   var logSheet = inicializarAbasDashboard();
   var ultimaLinha = logSheet.getLastRow();
   if (ultimaLinha < 2) {
-    return [];
+    return carregarHistoricoComoLog();
   }
   var ultimaColuna = logSheet.getLastColumn();
   var cabecalhos = logSheet.getRange(1, 1, 1, ultimaColuna).getValues()[0];
@@ -7579,6 +7579,54 @@ function carregarLogPadronizado() {
       observacoes: obterValorLinha(linha, estrutura, ['observacoes', 'descricao'], '')
     };
   }).filter(function(item) { return item.timestamp_criacao instanceof Date; });
+}
+
+function carregarHistoricoComoLog() {
+  var registros = [];
+  var tz = obterTimeZoneAplicacao();
+
+  function montarDataHora(dataTexto, horaTexto) {
+    var data = interpretarDataParametroSeguro(dataTexto, tz);
+    if (!data) {
+      return null;
+    }
+    var partesHora = (horaTexto || '').toString().trim().split(':');
+    var horas = Number(partesHora[0]);
+    var minutos = Number(partesHora[1]);
+    if (Number.isFinite(horas)) {
+      data.setHours(horas, Number.isFinite(minutos) ? minutos : 0, 0, 0);
+    }
+    return data;
+  }
+
+  ['visitante', 'acompanhante'].forEach(function(tipo) {
+    var historico = getHistorico(tipo);
+    if (!historico || !historico.success || !Array.isArray(historico.data)) {
+      return;
+    }
+    historico.data.forEach(function(item) {
+      var criacao = montarDataHora(item.data, item.horaInicio);
+      if (!(criacao instanceof Date)) {
+        return;
+      }
+      var conclusao = montarDataHora(item.data, item.horaFim);
+
+      registros.push({
+        timestamp_criacao: criacao,
+        timestamp_inicio: criacao,
+        timestamp_conclusao: conclusao instanceof Date ? conclusao : null,
+        status: item.status || '',
+        armario_id: item.armario || '',
+        usuario_solicitante: item.nome || item.paciente || '',
+        usuario_atendente: item.usuario || '',
+        perfil: item.tipo || tipo,
+        unidade: item.unidade || '',
+        observacoes: item.observacoes || ''
+      });
+    });
+  });
+
+  return registros;
 }
 
 function montarKpisDashboard(registros, config, periodoDescricao) {
