@@ -1532,6 +1532,22 @@ function handlePost(e) {
         return ContentService.createTextOutput(JSON.stringify(getEstatisticasDashboard(e.parameter.tipoUsuario)))
           .setMimeType(ContentService.MimeType.JSON);
 
+      case 'getDashboardAnalytics':
+        return ContentService.createTextOutput(JSON.stringify(getDashboardAnalytics(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
+      case 'exportarDashboardCsv':
+        return ContentService.createTextOutput(JSON.stringify(exportarDashboardCsv(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
+      case 'salvarSnapshotDashboard':
+        return ContentService.createTextOutput(JSON.stringify(salvarSnapshotDashboard(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
+      case 'gerarRelatorioDashboard':
+        return ContentService.createTextOutput(JSON.stringify(gerarRelatorioDashboard(e.parameter)))
+          .setMimeType(ContentService.MimeType.JSON);
+
       case 'getDescarte':
         return ContentService.createTextOutput(JSON.stringify(getItensDescarte()))
           .setMimeType(ContentService.MimeType.JSON);
