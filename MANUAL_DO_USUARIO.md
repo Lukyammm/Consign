@@ -13,13 +13,13 @@ Este manual detalha todos os recursos do Cosign para controle de armários de vi
 - O front-end grava dados mínimos de sessão no navegador para reabrir o app, mas o acesso depende dos dados na planilha.
 
 ## 2. Estrutura geral da interface
-- **Menu lateral**: navegação entre todas as páginas (Dashboard, Visitantes, Acompanhantes, Históricos, Liberações, Achados e Perdidos, Termo de Responsabilidade, Cadastros e LOGS).
+- **Menu lateral**: navegação entre todas as páginas (Monitor, Visitantes, Acompanhantes, Históricos, Liberações, Achados e Perdidos, Termo de Responsabilidade, Cadastros e LOGS).
 - **Cabeçalho**: título da página, saudação com perfil e turno, seletores de **Perfil** (geral/visitante/acompanhante) e **Unidade**, alternância de tema, sino de notificações e avatar do usuário.
 - **Filtro rápido**: os seletores de Perfil e Unidade afetam listagens e cards em todas as páginas.
 
 ## 3. Fluxos por página
 
-### 3.1 Dashboard (visão geral)
+### 3.1 Monitor (visão geral)
 - **Cards principais**: Em uso, Livres, Próximo do horário, Contingência e Vencidos. Clicar em um card aplica o filtro correspondente na lista.
 - **Filtros de status**: botões Todos/Livre/Em uso/Próximo/Vencido/Contingência.
 - **Busca rápida**: localiza por número de armário, paciente, prontuário ou acompanhante.
@@ -33,7 +33,7 @@ Este manual detalha todos os recursos do Cosign para controle de armários de vi
 ### 3.2 Visitantes
 - **Novo Cadastro**: registra uso de armário por visitante. Campos principais: unidade, número do armário, visitante, paciente, leito, horários de entrada/saída previstos, volumes e observações.
 - **Tabela**: mostra status atual, tempos e contatos. Use a coluna **Ações** para editar ou finalizar devolução.
-- **Finalizar/Devolver**: registra saída e libera o armário, atualizando status no dashboard.
+- **Finalizar/Devolver**: registra saída e libera o armário, atualizando status no Monitor.
 
 **Armazenamento**
 - Todos os cadastros e atualizações são gravados na aba **Visitantes** da planilha principal.
@@ -46,7 +46,7 @@ Este manual detalha todos os recursos do Cosign para controle de armários de vi
 - Registros ficam na aba **Acompanhantes** da planilha principal.
 
 ### 3.4 Contingência (Sem Armários)
-- Disponível no painel superior do Dashboard quando o perfil é **Acompanhante**.
+- Disponível no painel superior do Monitor quando o perfil é **Acompanhante**.
 - Preencha paciente, acompanhante, prontuário, observações e anexe **foto obrigatória** (JPG/PNG até 2 MB).
 - A foto é capturada no ato e registrada como evidência do atendimento sem armário.
 
@@ -95,7 +95,7 @@ Este manual detalha todos os recursos do Cosign para controle de armários de vi
 - Use para marcar armários como ativos, bloqueados ou em manutenção.
 
 **Armazenamento**
-- Mantido na aba **Armários** da planilha principal. O dashboard lê esses status para classificar disponibilidade.
+- Mantido na aba **Armários** da planilha principal. O Monitor lê esses status para classificar disponibilidade.
 
 ### 3.10 Cadastro de Unidades
 - Mantém a lista de setores/unidades e indica se estão ativas.
@@ -127,7 +127,7 @@ Este manual detalha todos os recursos do Cosign para controle de armários de vi
 
 ## 5. Recuperação de documentos e evidências
 - **PDF do termo**: disponível na coluna de ações da página Termo de Responsabilidade e guardado na pasta do Drive (`PASTA_DRIVE_ID`).
-- **Fotos**: acessíveis pela aba **Registro de Imagens** na planilha ou pelos botões de cada armário (Dashboard, Acompanhantes, Termos). A coluna da planilha contém ID, URL, nome do arquivo, contexto e data/hora.
+- **Fotos**: acessíveis pela aba **Registro de Imagens** na planilha ou pelos botões de cada armário (Monitor, Acompanhantes, Termos). A coluna da planilha contém ID, URL, nome do arquivo, contexto e data/hora.
 - **Planilhas de apoio**: Achados e Perdidos e Liberação podem ser abertas diretamente nos IDs configurados, caso precise validar ou exportar dados.
 
 ## 6. Boas práticas de uso diário

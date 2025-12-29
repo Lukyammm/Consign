@@ -19,10 +19,10 @@
 
 - **Encerramento e liberação unificados:** a finalização do termo e a liberação do armário agora ocorrem em uma única ação para reduzir o tempo de espera e manter o fluxo mais ágil.
 
-## Dashboard BI (novo)
+## Monitor BI (novo)
 ### Passo a passo de instalação
 1. Publique ou atualize o WebApp no Apps Script e garanta que os usuários tenham permissão de acesso.
-2. Abra a planilha vinculada e confirme que as abas `LOG`, `CONFIG` e `SNAPSHOTS` foram criadas automaticamente ao acessar o dashboard (ou crie manualmente com os cabeçalhos padrão descritos abaixo).
+2. Abra a planilha vinculada e confirme que as abas `LOG`, `CONFIG` e `SNAPSHOTS` foram criadas automaticamente ao acessar o Monitor (ou crie manualmente com os cabeçalhos padrão descritos abaixo).
 3. Na aba `CONFIG`, ajuste os parâmetros:
    - `sla_minutos` (meta em minutos)
    - `limite_backlog`, `alerta_aberto_minutos`, `alerta_armario_travado_minutos`, `email_alertas` (opcional)
@@ -31,9 +31,9 @@
 
 ### Configuração de permissões
 - Leitura/escrita na planilha (LOG, CONFIG, SNAPSHOTS) para cálculos, alertas e snapshots.
-- Nenhum escopo adicional é exigido para o dashboard além dos já necessários para o app (Drive continua sendo usado para PDFs/fotos se aplicável).
+- Nenhum escopo adicional é exigido para o Monitor além dos já necessários para o app (Drive continua sendo usado para PDFs/fotos se aplicável).
 
-### Funções principais do dashboard
+### Funções principais do Monitor
 - **getDashboardData**: agrega KPIs, gráficos (linha, barras, heatmap), rankings e resumo por armário com filtros (período, status, unidade, perfil, solicitante, atendente e fora do SLA).
 - **salvarSnapshotDashboard**: grava KPIs filtrados na aba `SNAPSHOTS` para histórico.
 - **Exportação**: geração de CSV no cliente a partir dos dados retornados e PDF sintético com jsPDF.

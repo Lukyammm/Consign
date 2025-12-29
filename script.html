@@ -2385,7 +2385,7 @@
             }
             const headerTitle = document.querySelector('.header-title h1');
             if (headerTitle) {
-                headerTitle.textContent = 'Dashboard';
+                headerTitle.textContent = 'Monitor';
             }
             if (elementos.liberacaoResumo) {
                 elementos.liberacaoResumo.textContent = 'Selecione um período para visualizar os registros de liberação.';
@@ -4439,7 +4439,7 @@
             const id = setTimeout(callback, 0);
             renderizarArmariosAgendamento = { tipo: 'timeout', id };
         }
-        // Renderizar lista de armários no dashboard
+        // Renderizar lista de armários no Monitor
         function renderizarArmarios(opcoes = {}) {
             if (!elementos.armariosContainer) return;
             cancelarRenderizacaoArmarios();

@@ -7272,7 +7272,7 @@ function getNotificacoes() {
   }
 }
 
-// Função para obter estatísticas do dashboard
+// Função para obter estatísticas do Monitor
 function getEstatisticasDashboard(tipoUsuario) {
   try {
     var estatisticas = {
