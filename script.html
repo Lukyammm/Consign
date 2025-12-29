@@ -56,20 +56,20 @@
                 logs: [],
                 dashboardBi: {
                     filtros: {
-                        periodo: '7d',
                         dataInicio: '',
                         dataFim: '',
                         status: 'todos',
                         unidade: 'todas',
                         armario: '',
-                        perfil: '',
-                        solicitante: '',
-                        atendente: '',
-                        foraSla: false
+                        perfil: 'ambos'
                     },
                     carregando: false,
                     dados: null,
-                    graficos: {}
+                    graficos: {},
+                    registros: [],
+                    buscaTabela: '',
+                    slaMinutos: 30,
+                    operacionalArmarios: []
                 },
                 carregamentoTermosId: 0,
                 filtrosTermos: {
@@ -668,52 +668,41 @@
             headerUserGreeting: document.getElementById('header-user-greeting'),
             headerUserGreetingRole: document.getElementById('header-user-greeting-role'),
             headerUserGreetingShift: document.getElementById('header-user-greeting-shift'),
-            dashboardPeriodo: document.getElementById('dashboard-periodo'),
             dashboardDataInicio: document.getElementById('dashboard-data-inicio'),
             dashboardDataFim: document.getElementById('dashboard-data-fim'),
             dashboardStatus: document.getElementById('dashboard-status'),
             dashboardUnidade: document.getElementById('dashboard-unidade'),
             dashboardArmario: document.getElementById('dashboard-armario'),
-            dashboardPerfil: document.getElementById('dashboard-perfil'),
-            dashboardSolicitante: document.getElementById('dashboard-solicitante'),
-            dashboardAtendente: document.getElementById('dashboard-atendente'),
-            dashboardForaSla: document.getElementById('dashboard-fora-sla'),
+            dashboardPerfilRadios: document.querySelectorAll('input[name="dashboard-perfil"]'),
             dashboardAplicar: document.getElementById('btn-dashboard-aplicar'),
             dashboardAlertas: document.getElementById('dashboard-alertas'),
             dashboardExportar: document.getElementById('btn-dashboard-exportar'),
             dashboardPdf: document.getElementById('btn-dashboard-pdf'),
             dashboardSnapshot: document.getElementById('btn-dashboard-snapshot'),
-            kpis: {
-                hoje: document.getElementById('kpi-hoje'),
-                ontem: document.getElementById('kpi-ontem'),
-                semana: document.getElementById('kpi-semana'),
-                mes: document.getElementById('kpi-mes'),
-                abertas: document.getElementById('kpi-abertas'),
-                producao: document.getElementById('kpi-producao'),
-                conclusao: document.getElementById('kpi-conclusao'),
-                cancelamento: document.getElementById('kpi-cancelamento'),
-                tempoTotal: document.getElementById('kpi-tempo-total'),
-                tempoAtendimento: document.getElementById('kpi-tempo-atendimento'),
-                tempoFila: document.getElementById('kpi-tempo-fila'),
-                p95: document.getElementById('kpi-p95'),
-                p99: document.getElementById('kpi-p99'),
-                sla: document.getElementById('kpi-sla'),
-                slaMeta: document.getElementById('kpi-sla-meta')
+            dashboardResumoCards: document.querySelectorAll('#dashboard-resumo .resumo-card'),
+            dashboardResumoValores: {
+                total: document.getElementById('card-total-armarios'),
+                livres: document.getElementById('card-armarios-livres'),
+                ocupados: document.getElementById('card-armarios-ocupados'),
+                pendentes: document.getElementById('card-armarios-pendentes'),
+                atrasados: document.getElementById('card-armarios-atrasados'),
+                tempoMedio: document.getElementById('card-tempo-medio'),
+                movimentacoes: document.getElementById('card-movimentacoes')
             },
-            listasTop: {
-                armarios: document.getElementById('lista-armarios'),
-                solicitantes: document.getElementById('lista-solicitantes'),
-                atendentes: document.getElementById('lista-atendentes')
+            dashboardIndicadores: {
+                ocupacao: document.getElementById('indicador-ocupacao'),
+                usados: document.getElementById('indicador-usados'),
+                ativos: document.getElementById('indicador-ativos'),
+                iniciadosAntes: document.getElementById('indicador-iniciados-antes'),
+                finalizados: document.getElementById('indicador-finalizados'),
+                tempoMedio: document.getElementById('indicador-tempo-medio'),
+                pico: document.getElementById('indicador-pico')
             },
             tabelaArmariosDashboard: document.getElementById('tabela-armarios-dashboard'),
-            heatmapGrid: document.getElementById('heatmap-grid'),
             graficoSerie: document.getElementById('grafico-serie'),
             graficoStatus: document.getElementById('grafico-status'),
-            graficoHora: document.getElementById('grafico-hora'),
-            graficoHistFila: document.getElementById('grafico-hist-fila'),
-            graficoHistAtendimento: document.getElementById('grafico-hist-atendimento'),
-            graficoHistTotal: document.getElementById('grafico-hist-total'),
-            graficoPareto: document.getElementById('grafico-pareto'),
+            dashboardMapaArmarios: document.getElementById('dashboard-mapa-armarios'),
+            dashboardTableBusca: document.getElementById('dashboard-table-busca'),
             avatarModal: document.getElementById('avatar-modal'),
             avatarModalBackdrop: document.getElementById('avatar-modal-backdrop'),
             avatarModalClose: document.getElementById('avatar-modal-close'),
@@ -3419,11 +3408,31 @@
                 });
             }
             // Dashboard analítico
-            if (elementos.dashboardPeriodo) {
-                elementos.dashboardPeriodo.addEventListener('change', atualizarPeriodoDashboardAnalitico);
-            }
             if (elementos.dashboardAplicar) {
                 elementos.dashboardAplicar.addEventListener('click', () => carregarDashboardAnalitico(true));
+            }
+            if (elementos.dashboardPerfilRadios) {
+                elementos.dashboardPerfilRadios.forEach(radio => {
+                    radio.addEventListener('change', () => carregarDashboardAnalitico(true));
+                });
+            }
+            if (elementos.dashboardResumoCards) {
+                elementos.dashboardResumoCards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        const status = card.dataset.status || 'todos';
+                        if (elementos.dashboardStatus) {
+                            const alvo = (status === 'tempo' || status === 'movimentacoes') ? 'todos' : status;
+                            elementos.dashboardStatus.value = alvo;
+                        }
+                        carregarDashboardAnalitico(true);
+                    });
+                });
+            }
+            if (elementos.dashboardTableBusca) {
+                elementos.dashboardTableBusca.addEventListener('input', () => {
+                    estado.dashboardBi.buscaTabela = elementos.dashboardTableBusca.value || '';
+                    renderizarTabelaArmariosDashboard(estado.dashboardBi.operacionalArmarios || []);
+                });
             }
             if (elementos.dashboardExportar) {
                 elementos.dashboardExportar.addEventListener('click', exportarDashboardCsvCliente);
@@ -10303,53 +10312,54 @@
         }
 
         // Dashboard analítico
-        function atualizarPeriodoDashboardAnalitico() {
-            if (!elementos.dashboardPeriodo) return;
-            const valor = elementos.dashboardPeriodo.value;
-            const hoje = new Date();
-            const fimPadrao = hoje.toISOString().slice(0, 10);
-            let inicio = '';
-            switch (valor) {
-                case 'hoje':
-                    inicio = fimPadrao;
-                    break;
-                case '7d':
-                    inicio = new Date(hoje.getTime() - 6 * 86400000).toISOString().slice(0, 10);
-                    break;
-                case '30d':
-                    inicio = new Date(hoje.getTime() - 29 * 86400000).toISOString().slice(0, 10);
-                    break;
-                case 'mes':
-                    inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10);
-                    break;
-                default:
-                    inicio = elementos.dashboardDataInicio?.value || '';
-                    break;
+        function obterDataHojeIso() {
+            return new Date().toISOString().slice(0, 10);
+        }
+
+        function obterPerfilFiltroDashboard() {
+            if (!elementos.dashboardPerfilRadios) return 'ambos';
+            for (const radio of elementos.dashboardPerfilRadios) {
+                if (radio.checked) return radio.value || 'ambos';
             }
-            if (elementos.dashboardDataInicio && valor !== 'personalizado') {
-                elementos.dashboardDataInicio.value = inicio;
+            return 'ambos';
+        }
+
+        function garantirIntervaloPreenchido() {
+            const hoje = obterDataHojeIso();
+            if (elementos.dashboardDataInicio && !elementos.dashboardDataInicio.value) {
+                elementos.dashboardDataInicio.value = hoje;
             }
-            if (elementos.dashboardDataFim && valor !== 'personalizado') {
-                elementos.dashboardDataFim.value = fimPadrao;
+            if (elementos.dashboardDataFim && !elementos.dashboardDataFim.value) {
+                elementos.dashboardDataFim.value = hoje;
             }
-            const alvo = estado.dashboardBi.filtros;
-            alvo.periodo = valor;
-            alvo.dataInicio = elementos.dashboardDataInicio?.value || '';
-            alvo.dataFim = elementos.dashboardDataFim?.value || '';
+        }
+
+        function obterIntervaloDashboard() {
+            garantirIntervaloPreenchido();
+            const inicio = elementos.dashboardDataInicio?.value || obterDataHojeIso();
+            const fim = elementos.dashboardDataFim?.value || inicio;
+            const inicioDate = new Date(`${inicio}T00:00:00`);
+            const fimDate = new Date(`${fim}T00:00:00`);
+            return {
+                inicio,
+                fim,
+                inicioDate,
+                fimDate,
+                inicioMs: inicioDate.getTime(),
+                fimMs: fimDate.getTime() + 86399999,
+                descricao: inicio === fim ? formatarData(inicio) : `${formatarData(inicio)} a ${formatarData(fim)}`
+            };
         }
 
         function obterFiltrosDashboardAnalitico() {
+            const intervalo = obterIntervaloDashboard();
             const alvo = estado.dashboardBi.filtros;
-            alvo.periodo = elementos.dashboardPeriodo?.value || '7d';
-            alvo.dataInicio = elementos.dashboardDataInicio?.value || '';
-            alvo.dataFim = elementos.dashboardDataFim?.value || '';
+            alvo.dataInicio = intervalo.inicio;
+            alvo.dataFim = intervalo.fim;
             alvo.status = elementos.dashboardStatus?.value || 'todos';
             alvo.unidade = elementos.dashboardUnidade?.value || 'todas';
             alvo.armario = (elementos.dashboardArmario?.value || '').trim();
-            alvo.perfil = (elementos.dashboardPerfil?.value || '').trim();
-            alvo.solicitante = (elementos.dashboardSolicitante?.value || '').trim();
-            alvo.atendente = (elementos.dashboardAtendente?.value || '').trim();
-            alvo.foraSla = Boolean(elementos.dashboardForaSla?.checked);
+            alvo.perfil = obterPerfilFiltroDashboard();
             return { ...alvo };
         }
 
@@ -10380,52 +10390,221 @@
             });
         }
 
-        function renderizarKpisDashboard(kpis) {
-            if (!kpis || !elementos.kpis) return;
-            elementos.kpis.hoje.textContent = kpis.solicitacoesHoje || 0;
-            elementos.kpis.ontem.textContent = kpis.solicitacoesOntem || 0;
-            elementos.kpis.semana.textContent = kpis.solicitacoesSemana || 0;
-            elementos.kpis.mes.textContent = kpis.solicitacoesMes || 0;
-            elementos.kpis.abertas.textContent = kpis.abertasAgora || 0;
-            elementos.kpis.producao.textContent = kpis.emProducaoAgora || 0;
-            elementos.kpis.conclusao.textContent = `${(kpis.taxaConclusao || 0).toFixed(1)}%`;
-            elementos.kpis.cancelamento.textContent = `${(kpis.taxaCancelamento || 0).toFixed(1)}%`;
-            elementos.kpis.tempoTotal.textContent = `${(kpis.tempoMedioTotal || 0).toFixed(1)} min`;
-            elementos.kpis.tempoAtendimento.textContent = `${(kpis.tempoMedioAtendimento || 0).toFixed(1)} min`;
-            elementos.kpis.tempoFila.textContent = `${(kpis.tempoMedioFila || 0).toFixed(1)} min`;
-            elementos.kpis.p95.textContent = (kpis.p95 || 0).toFixed(1);
-            elementos.kpis.p99.textContent = (kpis.p99 || 0).toFixed(1);
-            elementos.kpis.sla.textContent = `${(kpis.slaPercentual || 0).toFixed(1)}%`;
-            elementos.kpis.slaMeta.textContent = kpis.slaMinutos || 0;
-        }
-
-        function renderizarListaTop(elemento, lista) {
-            if (!elemento) return;
-            elemento.innerHTML = '';
-            (lista || []).forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span>${item.chave}</span><strong>${item.total}</strong>`;
-                elemento.appendChild(li);
+        function normalizarRegistrosDashboard(lista) {
+            return (lista || []).map(item => {
+                const inicio = item.timestamp_inicio ? new Date(item.timestamp_inicio) : null;
+                const fim = item.timestamp_conclusao ? new Date(item.timestamp_conclusao) : null;
+                const criacao = item.timestamp_criacao ? new Date(item.timestamp_criacao) : null;
+                return {
+                    ...item,
+                    inicio,
+                    fim,
+                    criacao,
+                    inicioMs: inicio instanceof Date ? inicio.getTime() : (criacao instanceof Date ? criacao.getTime() : null),
+                    fimMs: fim instanceof Date ? fim.getTime() : null,
+                    criacaoMs: criacao instanceof Date ? criacao.getTime() : null,
+                    statusLimpo: normalizarTexto(item.status || ''),
+                    perfilLimpo: normalizarTexto(item.perfil || '')
+                };
             });
         }
 
-        function renderizarTabelaArmariosDashboard(lista) {
+        function calcularDuracaoMinutos(registro, fimMsReferencia) {
+            if (!registro || registro.inicioMs === null || registro.inicioMs === undefined) return 0;
+            const fimMs = registro.fimMs !== null && registro.fimMs !== undefined ? registro.fimMs : fimMsReferencia;
+            if (!fimMs) return 0;
+            return Math.max((fimMs - registro.inicioMs) / 60000, 0);
+        }
+
+        function definirStatusOperacional(registro, intervalo, slaMinutos) {
+            if (!registro || registro.inicioMs === null || registro.inicioMs === undefined) return 'livre';
+            const ativo = registro.fimMs === null || registro.fimMs >= intervalo.inicioMs;
+            if (!ativo) return 'livre';
+            const base = registro.statusLimpo || '';
+            let status = 'ocupado';
+            if (base.includes('pend')) status = 'pendente';
+            const duracao = calcularDuracaoMinutos(registro, intervalo.fimMs);
+            if (duracao > (slaMinutos || 30) && (status === 'ocupado' || status === 'pendente')) {
+                status = 'atraso';
+            }
+            return status;
+        }
+
+        function construirMapaOperacional(registros, dados) {
+            const intervalo = obterIntervaloDashboard();
+            const slaMin = estado.dashboardBi.slaMinutos || dados?.kpis?.slaMinutos || 30;
+            const filtros = estado.dashboardBi.filtros || {};
+            const base = registros.map(registro => {
+                const statusOperacional = definirStatusOperacional(registro, intervalo, slaMin);
+                const duracaoMinutos = calcularDuracaoMinutos(registro, intervalo.fimMs);
+                return { ...registro, statusOperacional, duracaoMinutos };
+            }).filter(r => {
+                if (filtros.perfil && filtros.perfil !== 'ambos' && r.perfilLimpo !== normalizarTexto(filtros.perfil)) return false;
+                if (filtros.unidade && filtros.unidade !== 'todas' && normalizarTexto(r.unidade) !== normalizarTexto(filtros.unidade)) return false;
+                if (filtros.armario && !normalizarTexto(r.armario_id || '').includes(normalizarTexto(filtros.armario))) return false;
+                if (filtros.status && filtros.status !== 'todos' && r.statusOperacional !== filtros.status) return false;
+                return true;
+            });
+
+            const mapa = new Map();
+            base.forEach(registro => {
+                const id = registro.armario_id || 'Sem identificação';
+                const atual = mapa.get(id);
+                if (!atual || (registro.inicioMs || 0) > (atual.inicioMs || 0)) {
+                    mapa.set(id, registro);
+                }
+            });
+
+            const cadastro = estado.cadastroArmarios || [];
+            cadastro.forEach(item => {
+                const id = item.numero || item.id || item.armario_id;
+                if (id && !mapa.has(id)) {
+                    mapa.set(id, {
+                        armario_id: id,
+                        statusOperacional: 'livre',
+                        duracaoMinutos: 0,
+                        perfil: item.tipo || '',
+                        unidade: item.unidade || ''
+                    });
+                }
+            });
+
+            const armarios = Array.from(mapa.values()).map(item => {
+                const diasAtivo = item.duracaoMinutos ? Math.floor(item.duracaoMinutos / 1440) : 0;
+                return { ...item, diasAtivo };
+            });
+
+            const contagem = { total: armarios.length, livres: 0, ocupados: 0, pendentes: 0, atrasados: 0 };
+            let somaDuracao = 0; let totalDuracao = 0; let ativos = 0; let iniciadosAntes = 0; let finalizados = 0;
+            armarios.forEach(item => {
+                contagem[item.statusOperacional] = (contagem[item.statusOperacional] || 0) + 1;
+                if (['ocupado', 'pendente', 'atraso'].includes(item.statusOperacional)) ativos += 1;
+                if (item.duracaoMinutos) { somaDuracao += item.duracaoMinutos; totalDuracao += 1; }
+                if (item.inicioMs && item.inicioMs < intervalo.inicioMs) iniciadosAntes += 1;
+                if (item.fimMs && item.fimMs >= intervalo.inicioMs && item.fimMs <= intervalo.fimMs) finalizados += 1;
+            });
+
+            const tempoMedio = totalDuracao ? somaDuracao / totalDuracao : 0;
+            const ocupacao = contagem.total ? ((contagem.ocupados + contagem.pendentes + contagem.atrasados) / contagem.total) * 100 : 0;
+            const pico = (dados?.series?.serieDia || []).reduce((max, dia) => Math.max(max, dia.total || 0), 0);
+
+            return {
+                armarios,
+                contagem,
+                tempoMedio,
+                ativos,
+                iniciadosAntes,
+                finalizados,
+                ocupacao,
+                pico,
+                movimentacoes: base.length,
+                intervalo,
+                slaMin
+            };
+        }
+
+        function renderizarResumoOperacional(resumo) {
+            if (!resumo || !elementos.dashboardResumoValores) return;
+            const valores = elementos.dashboardResumoValores;
+            valores.total.textContent = resumo.contagem.total || 0;
+            valores.livres.textContent = resumo.contagem.livres || 0;
+            valores.ocupados.textContent = resumo.contagem.ocupados || 0;
+            valores.pendentes.textContent = resumo.contagem.pendentes || 0;
+            valores.atrasados.textContent = resumo.contagem.atrasados || 0;
+            valores.tempoMedio.textContent = `${(resumo.tempoMedio || 0).toFixed(1)} min`;
+            valores.movimentacoes.textContent = resumo.movimentacoes || 0;
+        }
+
+        function renderizarIndicadoresOperacionais(resumo) {
+            if (!resumo || !elementos.dashboardIndicadores) return;
+            elementos.dashboardIndicadores.ocupacao.textContent = `${(resumo.ocupacao || 0).toFixed(1)}%`;
+            elementos.dashboardIndicadores.usados.textContent = resumo.contagem.total || 0;
+            elementos.dashboardIndicadores.ativos.textContent = resumo.ativos || 0;
+            elementos.dashboardIndicadores.iniciadosAntes.textContent = resumo.iniciadosAntes || 0;
+            elementos.dashboardIndicadores.finalizados.textContent = resumo.finalizados || 0;
+            elementos.dashboardIndicadores.tempoMedio.textContent = `${(resumo.tempoMedio || 0).toFixed(1)} min`;
+            elementos.dashboardIndicadores.pico.textContent = resumo.pico || 0;
+        }
+
+        function renderizarMapaArmarios(armarios) {
+            const container = elementos.dashboardMapaArmarios;
+            if (!container) return;
+            container.innerHTML = '';
+            if (!armarios || !armarios.length) {
+                container.innerHTML = '<div class="table-empty">Nenhum armário dentro do filtro selecionado.</div>';
+                return;
+            }
+            const ordenados = [...armarios].sort((a, b) => (a.armario_id || '').localeCompare(b.armario_id || ''));
+            ordenados.forEach(item => {
+                const duracao = `${(item.duracaoMinutos || 0).toFixed(0)} min`;
+                const longRun = item.diasAtivo >= 2;
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = `armario-card status-${item.statusOperacional || 'livre'}${longRun ? ' long-run' : ''}`;
+                card.innerHTML = `
+                    <div class="armario-top">
+                        <span class="armario-id"><i class="fas fa-lock"></i> ${item.armario_id || 'N/I'}</span>
+                        <span class="armario-status">${(item.statusOperacional || 'Livre').toUpperCase()}</span>
+                    </div>
+                    <div class="armario-meta">Perfil: ${item.perfil || '---'} • Unidade: ${item.unidade || '---'}</div>
+                    <div class="armario-duracao"><i class="fas fa-clock"></i> ${duracao}</div>
+                    ${longRun ? '<div class="armario-meta"><strong>Ativo há vários dias</strong></div>' : ''}
+                `;
+                card.addEventListener('click', () => abrirDetalheArmarioDashboard(item));
+                container.appendChild(card);
+            });
+        }
+
+        function abrirDetalheArmarioDashboard(item) {
+            const inicio = item.inicio ? formatarDataHora(item.inicio) : 'Sem registro';
+            const fim = item.fim ? formatarDataHora(item.fim) : 'Em aberto';
+            const duracao = `${(item.duracaoMinutos || 0).toFixed(1)} min`;
+            const status = (item.statusOperacional || 'livre').toUpperCase();
+            const html = `
+                <div class="dashboard-modal-grid">
+                    <div><strong>Perfil:</strong> ${item.perfil || '---'}</div>
+                    <div><strong>Status:</strong> ${status}</div>
+                    <div><strong>Início:</strong> ${inicio}</div>
+                    <div><strong>Fim:</strong> ${fim}</div>
+                    <div><strong>Tempo total:</strong> ${duracao}</div>
+                    <div><strong>Unidade:</strong> ${item.unidade || '---'}</div>
+                    <div><strong>Solicitante:</strong> ${item.usuario_solicitante || '---'}</div>
+                    <div><strong>Atendente:</strong> ${item.usuario_atendente || '---'}</div>
+                </div>`;
+            Swal.fire({
+                title: `Armário ${item.armario_id || 'N/I'}`,
+                html,
+                icon: 'info',
+                confirmButtonText: 'Fechar'
+            });
+        }
+
+        function renderizarTabelaArmariosDashboard(armarios) {
             const tbody = elementos.tabelaArmariosDashboard?.querySelector('tbody');
             if (!tbody) return;
+            const termo = normalizarTexto(estado.dashboardBi.buscaTabela || '');
             tbody.innerHTML = '';
-            (lista || []).forEach(item => {
+            const lista = (armarios || []).filter(item => {
+                if (!termo) return true;
+                const alvo = `${item.armario_id || ''} ${item.perfil || ''} ${item.statusOperacional || ''} ${item.unidade || ''}`;
+                return normalizarTexto(alvo).includes(termo);
+            }).sort((a, b) => (b.inicioMs || 0) - (a.inicioMs || 0));
+            if (!lista.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Nenhum registro encontrado.</td></tr>';
+                return;
+            }
+            lista.forEach(item => {
                 const tr = document.createElement('tr');
-                const dataFormatada = item.ultima ? new Date(item.ultima).toLocaleString('pt-BR') : '-';
                 tr.innerHTML = `
-                    <td>${item.armario_id}</td>
-                    <td>${item.total}</td>
-                    <td>${item.abertos}</td>
-                    <td>${item.cancelados}</td>
-                    <td>${(item.tempoMedio || 0).toFixed(1)} min</td>
-                    <td>${(item.p95 || 0).toFixed(1)} min</td>
-                    <td>${dataFormatada}</td>
-                    <td>${item.statusAtual || '-'}</td>
+                    <td>${item.armario_id || 'N/I'}</td>
+                    <td>${item.perfil || '-'}</td>
+                    <td><span class="status-label ${item.statusOperacional || 'livre'}">${(item.statusOperacional || 'Livre').toUpperCase()}</span></td>
+                    <td>${item.inicio ? formatarDataHora(item.inicio) : '-'}</td>
+                    <td>${item.fim ? formatarDataHora(item.fim) : '-'}</td>
+                    <td>${(item.duracaoMinutos || 0).toFixed(1)} min</td>
+                    <td><button class="btn-small" type="button">Detalhar</button></td>
                 `;
+                tr.querySelector('button')?.addEventListener('click', () => abrirDetalheArmarioDashboard(item));
                 tbody.appendChild(tr);
             });
         }
@@ -10439,78 +10618,40 @@
             graficos[chave] = new Chart(ctx, { type: tipo, data: dados.data, options: dados.options || {} });
         }
 
-        function renderizarHeatmapDashboard(heatmap) {
-            if (!elementos.heatmapGrid) return;
-            const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-            elementos.heatmapGrid.innerHTML = '';
-            for (let dia = 0; dia < 7; dia++) {
-                for (let hora = 0; hora < 24; hora += 3) {
-                    const chave = `${dia}-${('0' + hora).slice(-2)}`;
-                    const valor = heatmap[chave] || 0;
-                    const intensidade = Math.min(1, valor / 10);
-                    const cor = `rgba(59,130,246,${0.15 + intensidade * 0.65})`;
-                    const div = document.createElement('div');
-                    div.className = 'heatmap-cell';
-                    div.style.background = cor;
-                    div.innerHTML = `<div>${dias[dia]} ${('0' + hora).slice(-2)}h</div><strong>${valor}</strong>`;
-                    elementos.heatmapGrid.appendChild(div);
-                }
-            }
-        }
-
-        function renderizarGraficosDashboard(dados) {
+        function renderizarGraficosDashboard(dados, resumo) {
             if (!dados) return;
             const serie = dados.series?.serieDia || [];
             criarOuAtualizarGrafico('serie', elementos.graficoSerie, 'line', {
                 data: {
                     labels: serie.map(s => s.data),
-                    datasets: [{ label: 'Solicitações', data: serie.map(s => s.total), borderColor: '#2563eb', fill: false }]
+                    datasets: [{ label: 'Movimentações', data: serie.map(s => s.total), borderColor: '#2563eb', fill: false }]
                 }
             });
-            const status = dados.series?.status || {};
-            const labelsStatus = Object.keys(status);
+            const statusLabels = ['livre', 'ocupado', 'pendente', 'atraso'];
             criarOuAtualizarGrafico('status', elementos.graficoStatus, 'bar', {
-                data: { labels: labelsStatus, datasets: [{ label: 'Volume', data: labelsStatus.map(l => status[l]), backgroundColor: '#10b981' }] }
-            });
-            const horas = dados.series?.horas || [];
-            criarOuAtualizarGrafico('hora', elementos.graficoHora, 'bar', {
-                data: { labels: horas.map(h => h.hora), datasets: [{ label: 'Volume', data: horas.map(h => h.total), backgroundColor: '#6366f1' }] },
-                options: { scales: { x: { ticks: { maxTicksLimit: 12 } } } }
-            });
-            renderizarHeatmapDashboard(dados.series?.heatmap || {});
-
-            const histFila = dados.histogramas?.fila || [];
-            criarOuAtualizarGrafico('histFila', elementos.graficoHistFila, 'bar', {
-                data: { labels: histFila.map(h => h.faixa), datasets: [{ label: 'Fila (min)', data: histFila.map(h => h.total), backgroundColor: '#f97316' }] }
-            });
-            const histAt = dados.histogramas?.atendimento || [];
-            criarOuAtualizarGrafico('histAt', elementos.graficoHistAtendimento, 'bar', {
-                data: { labels: histAt.map(h => h.faixa), datasets: [{ label: 'Atendimento (min)', data: histAt.map(h => h.total), backgroundColor: '#8b5cf6' }] }
-            });
-            const histTotal = dados.histogramas?.total || [];
-            criarOuAtualizarGrafico('histTotal', elementos.graficoHistTotal, 'bar', {
-                data: { labels: histTotal.map(h => h.faixa), datasets: [{ label: 'Total (min)', data: histTotal.map(h => h.total), backgroundColor: '#0ea5e9' }] }
-            });
-            const pareto = dados.paretoArmarios || [];
-            criarOuAtualizarGrafico('pareto', elementos.graficoPareto, 'line', {
                 data: {
-                    labels: pareto.map(p => p.chave),
-                    datasets: [{ label: 'Percentual acumulado', data: pareto.map(p => p.percentualAcumulado), borderColor: '#ef4444', fill: false }]
-                },
-                options: { scales: { y: { suggestedMax: 100 } } }
+                    labels: statusLabels.map(s => s.toUpperCase()),
+                    datasets: [{
+                        label: 'Quantidade',
+                        data: statusLabels.map(s => resumo?.contagem?.[s] || 0),
+                        backgroundColor: ['#16a34a', '#2563eb', '#f59e0b', '#dc2626']
+                    }]
+                }
             });
         }
 
         function renderizarDashboardAnalitico(dados) {
             if (!dados?.success) return;
             preencherFiltrosDashboardDisponiveis(dados);
-            renderizarKpisDashboard(dados.kpis);
+            const registros = estado.dashboardBi.registros || [];
+            const resumo = construirMapaOperacional(registros, dados);
+            estado.dashboardBi.operacionalArmarios = resumo.armarios;
+            renderizarResumoOperacional(resumo);
+            renderizarIndicadoresOperacionais(resumo);
             renderizarAlertasDashboard(dados.alertas);
-            renderizarListaTop(elementos.listasTop.armarios, dados.topArmarios);
-            renderizarListaTop(elementos.listasTop.solicitantes, dados.topSolicitantes);
-            renderizarListaTop(elementos.listasTop.atendentes, dados.topAtendentes);
-            renderizarTabelaArmariosDashboard(dados.armarios);
-            renderizarGraficosDashboard(dados);
+            renderizarMapaArmarios(resumo.armarios);
+            renderizarGraficosDashboard(dados, resumo);
+            renderizarTabelaArmariosDashboard(resumo.armarios);
         }
 
         async function carregarDashboardAnalitico(forcar = false) {
@@ -10518,22 +10659,23 @@
             if (!estado.autenticado) return;
             if (!forcar && estado.dashboardBi.dados && estado.paginaAtual !== 'dashboard-analitico') return;
             estado.dashboardBi.carregando = true;
+            estado.dashboardBi.operacionalArmarios = [];
             try {
                 const filtros = obterFiltrosDashboardAnalitico();
+                const statusApi = ['aberto', 'em_producao', 'entregue', 'cancelado', 'todos'].includes(filtros.status) ? filtros.status : 'todos';
                 const resposta = await callGoogleScript('getDashboardAnalytics', {
                     dataInicio: filtros.dataInicio,
                     dataFim: filtros.dataFim,
-                    status: filtros.status,
+                    status: statusApi,
                     unidade: filtros.unidade,
                     armario_id: filtros.armario,
-                    perfil: filtros.perfil,
-                    usuario_solicitante: filtros.solicitante,
-                    usuario_atendente: filtros.atendente,
-                    apenasForaSla: filtros.foraSla,
-                    periodoDescricao: filtros.periodo
+                    perfil: filtros.perfil === 'ambos' ? '' : filtros.perfil,
+                    periodoDescricao: filtros.dataInicio === filtros.dataFim ? formatarData(filtros.dataInicio) : `${formatarData(filtros.dataInicio)} a ${formatarData(filtros.dataFim)}`
                 });
                 if (resposta?.success) {
                     estado.dashboardBi.dados = resposta;
+                    estado.dashboardBi.slaMinutos = resposta.kpis?.slaMinutos || estado.dashboardBi.slaMinutos;
+                    estado.dashboardBi.registros = normalizarRegistrosDashboard(resposta.registrosPeriodo || []);
                     renderizarDashboardAnalitico(resposta);
                 } else {
                     mostrarErro(resposta?.error || 'Falha ao carregar dashboard.');
@@ -10548,7 +10690,9 @@
 
         async function exportarDashboardCsvCliente() {
             const filtros = obterFiltrosDashboardAnalitico();
-            const resposta = await callGoogleScript('exportarDashboardCsv', filtros);
+            const statusApi = ['aberto', 'em_producao', 'entregue', 'cancelado', 'todos'].includes(filtros.status) ? filtros.status : 'todos';
+            const payload = { ...filtros, status: statusApi, perfil: filtros.perfil === 'ambos' ? '' : filtros.perfil };
+            const resposta = await callGoogleScript('exportarDashboardCsv', payload);
             if (!resposta?.success) {
                 mostrarErro(resposta?.error || 'Não foi possível exportar.');
                 return;
@@ -10561,7 +10705,9 @@
 
         async function gerarRelatorioDashboardCliente() {
             const filtros = obterFiltrosDashboardAnalitico();
-            const resposta = await callGoogleScript('gerarRelatorioDashboard', filtros);
+            const statusApi = ['aberto', 'em_producao', 'entregue', 'cancelado', 'todos'].includes(filtros.status) ? filtros.status : 'todos';
+            const payload = { ...filtros, status: statusApi, perfil: filtros.perfil === 'ambos' ? '' : filtros.perfil };
+            const resposta = await callGoogleScript('gerarRelatorioDashboard', payload);
             if (!resposta?.success) {
                 mostrarErro(resposta?.error || 'Não foi possível gerar relatório.');
                 return;
@@ -10571,7 +10717,9 @@
 
         async function salvarSnapshotDashboardCliente() {
             const filtros = obterFiltrosDashboardAnalitico();
-            const resposta = await callGoogleScript('salvarSnapshotDashboard', filtros);
+            const statusApi = ['aberto', 'em_producao', 'entregue', 'cancelado', 'todos'].includes(filtros.status) ? filtros.status : 'todos';
+            const payload = { ...filtros, status: statusApi, perfil: filtros.perfil === 'ambos' ? '' : filtros.perfil };
+            const resposta = await callGoogleScript('salvarSnapshotDashboard', payload);
             if (!resposta?.success) {
                 mostrarErro(resposta?.error || 'Não foi possível salvar snapshot.');
                 return;
