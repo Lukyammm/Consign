@@ -7526,23 +7526,24 @@ function computeSLACompliance(registros, limiteMinutos) {
 }
 
 function filtrarPeriodo(registros, inicio, fim) {
-  if (!inicio && !fim) {
-    return registros;
-  }
-  var inicioMs = inicio instanceof Date ? inicio.getTime() : null;
-  var fimMs = fim instanceof Date ? fim.getTime() + 86399999 : null;
+  var hoje = obterDataAtualNormalizada();
+  var inicioPadrao = inicio instanceof Date ? inicio : hoje;
+  var fimPadrao = fim instanceof Date ? fim : hoje;
+
+  var inicioMs = inicioPadrao.getTime();
+  var fimMs = fimPadrao.getTime() + 86399999;
+
   return registros.filter(function(item) {
-    var momento = item.timestamp_criacao instanceof Date ? item.timestamp_criacao.getTime() : null;
-    if (momento === null) {
+    var inicioUso = item.timestamp_inicio instanceof Date
+      ? item.timestamp_inicio.getTime()
+      : (item.timestamp_criacao instanceof Date ? item.timestamp_criacao.getTime() : null);
+    var fimUso = item.timestamp_conclusao instanceof Date ? item.timestamp_conclusao.getTime() : null;
+
+    if (inicioUso === null) {
       return false;
     }
-    if (inicioMs !== null && momento < inicioMs) {
-      return false;
-    }
-    if (fimMs !== null && momento > fimMs) {
-      return false;
-    }
-    return true;
+
+    return inicioUso <= fimMs && (fimUso === null || fimUso >= inicioMs);
   });
 }
 
@@ -7836,6 +7837,21 @@ function getDashboardAnalytics(params) {
   var histFila = gerarHistograma(filtrados, 'duracaoFilaMinutos', 10);
   var histAtendimento = gerarHistograma(filtrados, 'duracaoAtendimentoMinutos', 10);
   var histTotal = gerarHistograma(filtrados, 'duracaoTotalMinutos', 10);
+  var registrosPeriodo = filtrados.map(function(r) {
+    return {
+      armario_id: r.armario_id,
+      perfil: r.perfil,
+      status: r.status,
+      unidade: r.unidade,
+      usuario_solicitante: r.usuario_solicitante,
+      usuario_atendente: r.usuario_atendente,
+      observacoes: r.observacoes,
+      timestamp_criacao: r.timestamp_criacao,
+      timestamp_inicio: r.timestamp_inicio,
+      timestamp_conclusao: r.timestamp_conclusao,
+      duracaoTotalMinutos: r.duracaoTotalMinutos
+    };
+  });
 
   var resultado = {
     success: true,
@@ -7852,6 +7868,7 @@ function getDashboardAnalytics(params) {
       total: histTotal
     },
     alertas: gerarAlertasDashboard(filtrados, config),
+    registrosPeriodo: registrosPeriodo,
     filtrosDisponiveis: {
       unidades: Array.from(new Set(registros.map(function(r) { return r.unidade || 'Não informado'; }))).filter(Boolean),
       perfis: Array.from(new Set(registros.map(function(r) { return r.perfil || 'Não informado'; }))).filter(Boolean)
