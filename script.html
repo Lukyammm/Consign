@@ -36,6 +36,13 @@
                 notificacoes: [],
                 termos: {},
                 movimentacoes: {},
+                dashboardOperacional: {
+                    perfil: 'ambos',
+                    dataInicio: '',
+                    dataFim: '',
+                    busca: '',
+                    status: 'todos'
+                },
                 historicoVisitantes: [],
                 historicoAcompanhantes: [],
                 achados: {
@@ -92,6 +99,7 @@
         };
         let turnoIntervalId = null;
         let carregamentoContingenciaId = 0;
+        let graficoOcupacaoDiaInstancia = null;
         function obterEstadoLiberacao() {
             if (!estado.liberacao) {
                 estado.liberacao = criarEstadoLiberacaoInicial();
@@ -620,6 +628,11 @@
             notificationPanel: document.getElementById('notification-panel'),
             notificationBadge: document.querySelector('.notification-badge'),
             armariosContainer: document.getElementById('armarios-container'),
+            filtroPerfilOperacional: document.querySelectorAll('input[name="perfil-dashboard"]'),
+            filtroDataInicioOperacional: document.getElementById('periodo-inicio'),
+            filtroDataFimOperacional: document.getElementById('periodo-fim'),
+            filtroAplicarOperacional: document.getElementById('aplicar-filtros-operacionais'),
+            filtroLimparOperacional: document.getElementById('limpar-filtros-operacionais'),
             armarioModal: document.getElementById('armario-modal'),
             usuarioModal: document.getElementById('usuario-modal'),
             modalTitle: document.getElementById('modal-title'),
@@ -646,18 +659,14 @@
             filterSearchClear: document.getElementById('dashboard-search-clear'),
             dashboardSearch: document.getElementById('dashboard-search'),
             contingenciaButton: document.getElementById('btn-contingencia'),
-            cardsHero: document.querySelector('.cards-hero'),
-            cardProximo: document.querySelector('.card.proximo'),
-            cardVencido: document.querySelector('.card.vencido'),
-            cardEmUso: document.querySelector('.card.em-uso'),
-            cardLivres: document.querySelector('.card.livre'),
-            cardContingencia: document.querySelector('.card.contingencia'),
-            cardsCount: {
-                livres: document.getElementById('livres-count'),
-                emUso: document.getElementById('em-uso-count'),
-                proximo: document.getElementById('proximo-count'),
-                contingencia: document.getElementById('contingencia-count'),
-                vencidos: document.getElementById('vencidos-count')
+            cardsOperacionais: {
+                total: document.getElementById('total-armarios'),
+                livres: document.getElementById('armarios-livres'),
+                ocupados: document.getElementById('armarios-ocupados'),
+                pendentes: document.getElementById('armarios-pendentes'),
+                atraso: document.getElementById('armarios-atraso'),
+                tempoMedio: document.getElementById('tempo-medio-uso'),
+                movimentacoes: document.getElementById('movimentacoes-periodo')
             },
             pages: document.querySelectorAll('.page'),
             menuLinks: document.querySelectorAll('.sidebar-menu a[data-page]'),
@@ -668,6 +677,19 @@
             headerUserGreeting: document.getElementById('header-user-greeting'),
             headerUserGreetingRole: document.getElementById('header-user-greeting-role'),
             headerUserGreetingShift: document.getElementById('header-user-greeting-shift'),
+            estatisticasOperacionais: {
+                taxaOcupacao: document.getElementById('taxa-ocupacao'),
+                usadosPeriodo: document.getElementById('usados-periodo'),
+                ativosAgora: document.getElementById('ativos-agora'),
+                iniciadosAntes: document.getElementById('iniciados-antes'),
+                finalizadosPeriodo: document.getElementById('finalizados-periodo'),
+                tempoMedio: document.getElementById('tempo-medio-periodo')
+            },
+            graficoOcupacaoDia: document.getElementById('grafico-ocupacao-dia'),
+            tabelaOperacional: document.getElementById('tabela-operacional'),
+            tabelaOperacionalBody: document.querySelector('#tabela-operacional tbody'),
+            buscaOperacional: document.getElementById('operational-search'),
+            filtroStatusOperacional: document.getElementById('operational-status-filter'),
             dashboardPeriodo: document.getElementById('dashboard-periodo'),
             dashboardDataInicio: document.getElementById('dashboard-data-inicio'),
             dashboardDataFim: document.getElementById('dashboard-data-fim'),
@@ -2484,7 +2506,7 @@
         const ARMARIOS_CACHE_KEY = 'dashboard-armarios-cache';
         const ARMARIOS_CACHE_TTL_MS = 3 * 60 * 1000;
         function agendarAtualizacaoResumoDashboard() {
-            const atualizar = () => atualizarResumoDashboardLocal();
+            const atualizar = () => atualizarDashboardImediato();
             if (typeof requestAnimationFrame === 'function') {
                 requestAnimationFrame(atualizar);
             } else {
@@ -3268,6 +3290,45 @@
                     atualizarResumoDashboardLocal();
                     atualizarInterface();
                     carregarDadosTabelas();
+                });
+            }
+            if (elementos.filtroPerfilOperacional?.length) {
+                elementos.filtroPerfilOperacional.forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        if (radio.checked) {
+                            estado.dashboardOperacional.perfil = radio.value;
+                            aplicarFiltrosOperacionais({ manterDatas: true });
+                        }
+                    });
+                });
+            }
+            if (elementos.filtroAplicarOperacional) {
+                elementos.filtroAplicarOperacional.addEventListener('click', () => aplicarFiltrosOperacionais());
+            }
+            if (elementos.filtroLimparOperacional) {
+                elementos.filtroLimparOperacional.addEventListener('click', () => limparFiltrosOperacionais());
+            }
+            if (elementos.filtroDataInicioOperacional && elementos.filtroDataFimOperacional) {
+                const padraoLocal = obterDataHoraLocalPadrao();
+                if (!elementos.filtroDataInicioOperacional.value) {
+                    elementos.filtroDataInicioOperacional.value = padraoLocal.data;
+                    estado.dashboardOperacional.dataInicio = padraoLocal.data;
+                }
+                if (!elementos.filtroDataFimOperacional.value) {
+                    elementos.filtroDataFimOperacional.value = padraoLocal.data;
+                    estado.dashboardOperacional.dataFim = padraoLocal.data;
+                }
+            }
+            if (elementos.buscaOperacional) {
+                elementos.buscaOperacional.addEventListener('input', () => {
+                    estado.dashboardOperacional.busca = elementos.buscaOperacional.value;
+                    aplicarFiltrosOperacionais({ manterDatas: true });
+                });
+            }
+            if (elementos.filtroStatusOperacional) {
+                elementos.filtroStatusOperacional.addEventListener('change', () => {
+                    estado.dashboardOperacional.status = elementos.filtroStatusOperacional.value;
+                    aplicarFiltrosOperacionais({ manterDatas: true });
                 });
             }
             if (elementos.visitaEstendidaInput) {
@@ -4494,6 +4555,52 @@
             ];
             return campos.some(campo => normalizarTextoBusca(campo).includes(filtroNormalizado));
         }
+        function obterPeriodoOperacional() {
+            const hoje = new Date();
+            const inicioPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            const fimPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59, 999);
+            const inicio = tentarConverterParaData(estado.dashboardOperacional.dataInicio) || inicioPadrao;
+            const fim = tentarConverterParaData(estado.dashboardOperacional.dataFim) || fimPadrao;
+            return { inicio, fim };
+        }
+        function armarioDentroDoPeriodo(armario, periodo) {
+            const inicio = periodo?.inicio;
+            const fim = periodo?.fim;
+            const dataInicio = tentarConverterParaData(armario.dataRegistro || armario.data || armario.horaInicio) || inicio;
+            const dataFim = tentarConverterParaData(armario.finalizadoEm || armario.dataFim || armario.termoInfo?.finalizadoEm) || null;
+            if (!inicio || !fim || !dataInicio) return true;
+            return dataInicio <= fim && (!dataFim || dataFim >= inicio);
+        }
+        function calcularTempoUsoMinutos(armario) {
+            const inicio = tentarConverterParaData(armario.dataRegistro || armario.data) || null;
+            const fim = tentarConverterParaData(armario.finalizadoEm || armario.dataFim) || new Date();
+            if (!inicio || !fim) return null;
+            return Math.max(0, Math.round((fim.getTime() - inicio.getTime()) / 60000));
+        }
+        function formatarDuracaoCurta(minutos) {
+            if (minutos === null || Number.isNaN(minutos)) return '-';
+            const horas = Math.floor(minutos / 60);
+            const mins = minutos % 60;
+            if (horas <= 0) return `${mins} min`;
+            return `${horas}h ${mins.toString().padStart(2, '0')}m`;
+        }
+        function obterArmariosFiltradosOperacional() {
+            const periodo = obterPeriodoOperacional();
+            const perfilFiltro = normalizarTexto(estado.dashboardOperacional.perfil);
+            const busca = estado.dashboardOperacional.busca;
+            const statusFiltro = normalizarTexto(estado.dashboardOperacional.status || 'todos');
+            return estado.armarios
+                .filter(armario => {
+                    const tipo = normalizarTexto(armario.tipo);
+                    return perfilFiltro === 'ambos' || !perfilFiltro || tipo === perfilFiltro;
+                })
+                .filter(armario => armarioDentroDoPeriodo(armario, periodo))
+                .filter(armario => armarioCorrespondeBusca(armario, busca))
+                .filter(armario => {
+                    if (!statusFiltro || statusFiltro === 'todos') return true;
+                    return normalizarTexto(armario.status) === statusFiltro;
+                });
+        }
         function armarioEhContingencia(armario) {
             if (!armario) return false;
             if (armario.ehContingencia) return true;
@@ -4530,64 +4637,49 @@
             renderizarArmariosVersao += 1;
             const versaoExecucao = renderizarArmariosVersao;
             elementos.armariosContainer.innerHTML = '';
-            if (elementos.dashboardSearch && elementos.dashboardSearch.value !== (estado.buscaDashboard || '')) {
-                elementos.dashboardSearch.value = estado.buscaDashboard || '';
-            }
-            const perfilNormalizado = normalizarTexto(estado.perfilAtual);
-            const unidadeFiltroNormalizado = normalizarTexto(estado.unidadeAtual);
-            const filtrosAtivos = obterFiltrosAtivosDashboard();
-            const termoBusca = estado.buscaDashboard;
-            const armariosParaExibir = estado.armarios
-                .filter(a => {
-                    const tipoNormalizado = normalizarTexto(a.tipo);
-                    const correspondePerfil = perfilNormalizado === 'geral' || perfilNormalizado === 'todos' || tipoNormalizado === perfilNormalizado;
-                    const correspondeUnidade = unidadeFiltroNormalizado === 'todas' || normalizarTexto(a.unidade) === unidadeFiltroNormalizado;
-                    return correspondePerfil && correspondeUnidade;
-                })
-                .filter(a => !(armarioEhContingencia(a) && normalizarTexto(a.status) === 'livre'))
-                .filter(a => armarioPassaNosFiltrosSelecionados(a, filtrosAtivos))
-                .filter(armario => !termoBusca || armarioCorrespondeBusca(armario, termoBusca));
+            const armariosParaExibir = obterArmariosFiltradosOperacional();
 
             const criarCardArmario = (armario) => {
-                const card = document.createElement('div');
-                const classeStatus = armarioEhContingencia(armario) ? 'contingencia' : armario.status;
-                card.className = `armario-card ${classeStatus}`;
+                const card = document.createElement('button');
+                const statusNormalizado = normalizarTexto(armario.status);
+                let classeStatus = 'livre';
+                if (statusNormalizado === 'em-uso') classeStatus = 'uso';
+                if (statusNormalizado === 'proximo') classeStatus = 'pendente';
+                if (statusNormalizado === 'vencido') classeStatus = 'atraso';
+                const dataInicio = tentarConverterParaData(armario.dataRegistro || armario.data);
+                const diasAtivo = dataInicio ? Math.floor((Date.now() - dataInicio.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                const destaquePermanencia = diasAtivo >= 2 && classeStatus !== 'livre';
+                card.type = 'button';
+                card.className = `armario-card status-${classeStatus}`;
                 card.dataset.id = armario.id;
-                if (armario.visitaEstendida) {
-                    card.classList.add('visita-estendida');
-                }
-                const statusTexto = armarioEhContingencia(armario)
-                    ? 'Contingência'
-                    : armario.status === 'livre'
-                        ? 'Livre'
-                        : armario.status === 'em-uso'
-                            ? 'Em uso'
-                            : armario.status === 'proximo'
-                                ? 'Próximo'
-                                : 'Vencido';
-                const statusIcones = {
-                    livre: 'fas fa-check',
-                    'em-uso': 'fas fa-user-clock',
-                    proximo: 'fas fa-exclamation-triangle',
-                    vencido: 'fas fa-times-circle',
-                    contingencia: 'fas fa-shield-alt'
-                };
-                const statusIcone = statusIcones[classeStatus] || 'fas fa-circle';
-                const nomePaciente = armario.status === 'livre'
-                    ? 'Disponível'
-                    : (armario.nomePaciente || '-');
+                card.setAttribute('role', 'listitem');
+                const statusTexto = {
+                    livre: 'Livre',
+                    uso: 'Em uso',
+                    pendente: 'Pendente',
+                    atraso: 'Atraso'
+                }[classeStatus] || 'Em uso';
+                const icone = classeStatus === 'livre'
+                    ? 'fas fa-unlock'
+                    : classeStatus === 'pendente'
+                        ? 'fas fa-hourglass-half'
+                        : classeStatus === 'atraso'
+                            ? 'fas fa-triangle-exclamation'
+                            : 'fas fa-lock';
+                const nomePaciente = armario.status === 'livre' ? 'Disponível' : (armario.nomePaciente || '-');
                 card.innerHTML = `
-                    <div class="armario-status-bar status-${classeStatus}" aria-hidden="true"></div>
-                    <div class="armario-header minimal">
-                        <div class="armario-identificacao">
-                            <span class="armario-number prominent">${armario.numero}</span>
-                        </div>
-                        <div class="armario-status-icon status-${classeStatus}" aria-label="${statusTexto}">
-                            <i class="${statusIcone}" aria-hidden="true"></i>
-                            <span class="sr-only">${statusTexto}</span>
+                    <div class="armario-card-header">
+                        <div class="locker-code"><i class="fas fa-lock"></i> ${armario.numero}</div>
+                        <span class="status-pill status-${classeStatus}">${statusTexto}</span>
+                    </div>
+                    <div class="armario-card-body">
+                        <p class="locker-owner" title="${nomePaciente}">${nomePaciente}</p>
+                        <div class="locker-meta">
+                            <span><i class="fas fa-id-card"></i> ${armario.tipo || '-'}</span>
+                            <span><i class="${icone}"></i> ${armario.horaInicio || '--:--'}</span>
                         </div>
                     </div>
-                    <div class="armario-paciente-line" title="${nomePaciente}">${nomePaciente}</div>
+                    ${destaquePermanencia ? '<div class="locker-badge">Uso prolongado</div>' : ''}
                 `;
                 card.addEventListener('click', () => abrirModalArmario(armario));
                 return card;
@@ -4633,55 +4725,178 @@
             agendarProcessamentoRenderizacao(processarLote);
         }
         function atualizarResumoDashboardLocal() {
+            const filtrados = obterArmariosFiltradosOperacional();
             const totais = {
+                total: filtrados.length,
                 livres: 0,
-                emUso: 0,
-                proximo: 0,
-                contingencia: 0,
-                vencidos: 0
+                ocupados: 0,
+                pendentes: 0,
+                atraso: 0
             };
-
-            const perfilFiltro = normalizarTexto(estado.perfilAtual);
-            const unidadeFiltro = normalizarTexto(estado.unidadeAtual);
-
-            estado.armarios.forEach(armario => {
-                const tipoNormalizado = normalizarTexto(armario.tipo);
-                const unidadeNormalizada = normalizarTexto(armario.unidade);
-
-                if (perfilFiltro !== 'geral' && perfilFiltro !== 'todos' && tipoNormalizado !== perfilFiltro) {
-                    return;
-                }
-
-                if (unidadeFiltro !== 'todas' && unidadeNormalizada !== unidadeFiltro) {
-                    return;
-                }
-
-                switch (armario.status) {
-                    case 'livre':
-                        totais.livres += 1;
-                        break;
-                    case 'em-uso':
-                        totais.emUso += 1;
-                        break;
-                    case 'proximo':
-                        totais.proximo += 1;
-                        break;
-                    case 'contingencia':
-                        totais.contingencia += 1;
-                        break;
-                    case 'vencido':
-                        totais.vencidos += 1;
-                        break;
-                    default:
-                        break;
+            let somaTempo = 0;
+            let registrosTempo = 0;
+            filtrados.forEach(armario => {
+                const status = normalizarTexto(armario.status);
+                if (status === 'livre') totais.livres += 1;
+                if (status === 'em-uso') totais.ocupados += 1;
+                if (status === 'proximo') totais.pendentes += 1;
+                if (status === 'vencido') totais.atraso += 1;
+                const tempo = calcularTempoUsoMinutos(armario);
+                if (tempo !== null) {
+                    somaTempo += tempo;
+                    registrosTempo += 1;
                 }
             });
+            const tempoMedio = registrosTempo ? Math.round(somaTempo / registrosTempo) : null;
+            if (elementos.cardsOperacionais.total) elementos.cardsOperacionais.total.textContent = totais.total;
+            if (elementos.cardsOperacionais.livres) elementos.cardsOperacionais.livres.textContent = totais.livres;
+            if (elementos.cardsOperacionais.ocupados) elementos.cardsOperacionais.ocupados.textContent = totais.ocupados;
+            if (elementos.cardsOperacionais.pendentes) elementos.cardsOperacionais.pendentes.textContent = totais.pendentes;
+            if (elementos.cardsOperacionais.atraso) elementos.cardsOperacionais.atraso.textContent = totais.atraso;
+            if (elementos.cardsOperacionais.tempoMedio) elementos.cardsOperacionais.tempoMedio.textContent = formatarDuracaoCurta(tempoMedio);
+            if (elementos.cardsOperacionais.movimentacoes) elementos.cardsOperacionais.movimentacoes.textContent = filtrados.length;
+        }
 
-            elementos.cardsCount.livres.textContent = totais.livres;
-            elementos.cardsCount.emUso.textContent = totais.emUso;
-            elementos.cardsCount.proximo.textContent = totais.proximo;
-            elementos.cardsCount.contingencia.textContent = totais.contingencia;
-            elementos.cardsCount.vencidos.textContent = totais.vencidos;
+        function atualizarIndicadoresOperacionais() {
+            const filtrados = obterArmariosFiltradosOperacional();
+            const periodo = obterPeriodoOperacional();
+            const estatisticas = {
+                usadosPeriodo: filtrados.filter(item => normalizarTexto(item.status) !== 'livre').length,
+                ativos: filtrados.filter(item => ['em-uso', 'proximo', 'vencido'].includes(normalizarTexto(item.status))).length,
+                iniciadosAntes: filtrados.filter(item => {
+                    const inicio = tentarConverterParaData(item.dataRegistro || item.data);
+                    return inicio && inicio < periodo.inicio;
+                }).length,
+                finalizadosPeriodo: filtrados.filter(item => {
+                    const fim = tentarConverterParaData(item.finalizadoEm || item.dataFim);
+                    return fim && fim >= periodo.inicio && fim <= periodo.fim;
+                }).length,
+                tempoMedio: null,
+                taxaOcupacao: '-'
+            };
+            let somaTempo = 0;
+            let registrosTempo = 0;
+            filtrados.forEach(item => {
+                const tempo = calcularTempoUsoMinutos(item);
+                if (tempo !== null) {
+                    somaTempo += tempo;
+                    registrosTempo += 1;
+                }
+            });
+            estatisticas.tempoMedio = registrosTempo ? Math.round(somaTempo / registrosTempo) : null;
+            estatisticas.taxaOcupacao = filtrados.length
+                ? `${Math.round((estatisticas.usadosPeriodo / Math.max(filtrados.length, 1)) * 100)}%`
+                : '-';
+
+            if (elementos.estatisticasOperacionais.usadosPeriodo) elementos.estatisticasOperacionais.usadosPeriodo.textContent = estatisticas.usadosPeriodo;
+            if (elementos.estatisticasOperacionais.ativosAgora) elementos.estatisticasOperacionais.ativosAgora.textContent = estatisticas.ativos;
+            if (elementos.estatisticasOperacionais.iniciadosAntes) elementos.estatisticasOperacionais.iniciadosAntes.textContent = estatisticas.iniciadosAntes;
+            if (elementos.estatisticasOperacionais.finalizadosPeriodo) elementos.estatisticasOperacionais.finalizadosPeriodo.textContent = estatisticas.finalizadosPeriodo;
+            if (elementos.estatisticasOperacionais.taxaOcupacao) elementos.estatisticasOperacionais.taxaOcupacao.textContent = estatisticas.taxaOcupacao;
+            if (elementos.estatisticasOperacionais.tempoMedio) elementos.estatisticasOperacionais.tempoMedio.textContent = formatarDuracaoCurta(estatisticas.tempoMedio);
+
+            const ocupacaoPorDia = {};
+            filtrados.forEach(item => {
+                const inicio = tentarConverterParaData(item.dataRegistro || item.data);
+                if (!inicio) return;
+                const chave = inicio.toISOString().slice(0, 10);
+                ocupacaoPorDia[chave] = (ocupacaoPorDia[chave] || 0) + 1;
+            });
+            const labels = Object.keys(ocupacaoPorDia).sort();
+            const dados = labels.map(label => ocupacaoPorDia[label]);
+            if (elementos.graficoOcupacaoDia) {
+                if (graficoOcupacaoDiaInstancia) {
+                    graficoOcupacaoDiaInstancia.destroy();
+                }
+                graficoOcupacaoDiaInstancia = new Chart(elementos.graficoOcupacaoDia, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Pico por dia',
+                            data: dados,
+                            backgroundColor: 'rgba(32, 131, 214, 0.45)',
+                            borderColor: 'rgba(32, 131, 214, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderizarTabelaOperacional() {
+            const tbody = elementos.tabelaOperacionalBody;
+            if (!tbody) return;
+            const registros = obterArmariosFiltradosOperacional()
+                .sort((a, b) => {
+                    const dataA = tentarConverterParaData(a.dataRegistro || a.data);
+                    const dataB = tentarConverterParaData(b.dataRegistro || b.data);
+                    return (dataB?.getTime() || 0) - (dataA?.getTime() || 0);
+                });
+            tbody.innerHTML = '';
+            if (!registros.length) {
+                const linha = document.createElement('tr');
+                const celula = document.createElement('td');
+                celula.colSpan = 7;
+                celula.textContent = 'Nenhum registro no período aplicado.';
+                linha.appendChild(celula);
+                tbody.appendChild(linha);
+                return;
+            }
+            registros.forEach(armario => {
+                const linha = document.createElement('tr');
+                const status = normalizarTexto(armario.status);
+                const inicio = tentarConverterParaData(armario.dataRegistro || armario.data);
+                const fim = tentarConverterParaData(armario.finalizadoEm || armario.dataFim) || null;
+                const tempoUso = calcularTempoUsoMinutos(armario);
+                linha.innerHTML = `
+                    <td>${armario.numero || '-'}</td>
+                    <td>${armario.tipo || '-'}</td>
+                    <td><span class="status-pill status-${status === 'em-uso' ? 'uso' : status === 'proximo' ? 'pendente' : status === 'vencido' ? 'atraso' : 'livre'}">${formatarStatusArmario(armario.status)}</span></td>
+                    <td>${inicio ? formatarDataHora(inicio) : '-'}</td>
+                    <td>${fim ? formatarDataHora(fim) : '-'}</td>
+                    <td>${formatarDuracaoCurta(tempoUso)}</td>
+                    <td><button class="btn btn-ghost" data-acao="detalhar" data-id="${armario.id}">Detalhes</button></td>
+                `;
+                const botao = linha.querySelector('button[data-acao="detalhar"]');
+                botao.addEventListener('click', () => abrirModalArmario(armario));
+                tbody.appendChild(linha);
+            });
+        }
+
+        function aplicarFiltrosOperacionais({ manterDatas = false } = {}) {
+            if (elementos.filtroDataInicioOperacional && !manterDatas) {
+                estado.dashboardOperacional.dataInicio = elementos.filtroDataInicioOperacional.value || '';
+            }
+            if (elementos.filtroDataFimOperacional && !manterDatas) {
+                estado.dashboardOperacional.dataFim = elementos.filtroDataFimOperacional.value || '';
+            }
+            atualizarDashboardImediato();
+        }
+
+        function limparFiltrosOperacionais() {
+            estado.dashboardOperacional = { ...estado.dashboardOperacional, perfil: 'ambos', dataInicio: '', dataFim: '', busca: '', status: 'todos' };
+            if (elementos.filtroPerfilOperacional?.length) {
+                elementos.filtroPerfilOperacional.forEach(radio => {
+                    radio.checked = radio.value === 'ambos';
+                });
+            }
+            if (elementos.filtroDataInicioOperacional) elementos.filtroDataInicioOperacional.value = '';
+            if (elementos.filtroDataFimOperacional) elementos.filtroDataFimOperacional.value = '';
+            if (elementos.buscaOperacional) elementos.buscaOperacional.value = '';
+            if (elementos.filtroStatusOperacional) elementos.filtroStatusOperacional.value = 'todos';
+            aplicarFiltrosOperacionais({ manterDatas: true });
         }
 
         function atualizarDashboardImediato() {
@@ -4692,6 +4907,8 @@
             if (estado.paginaAtual === 'dashboard') {
                 renderizarArmarios({ imediato: true });
             }
+            atualizarIndicadoresOperacionais();
+            renderizarTabelaOperacional();
         }
 
         function atualizarArmarioLocal(id, atualizacoes) {
