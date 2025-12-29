@@ -154,210 +154,72 @@
         <div id="pages-container">
             <!-- Monitor -->
             <div class="page active" id="dashboard">
-                <section class="operational-filters" aria-label="Filtros do dashboard">
-                    <div class="filter-tile" aria-label="Filtrar por perfil">
-                        <div class="filter-title"><i class="fas fa-user-shield"></i> Perfil</div>
-                        <div class="filter-options" id="perfil-filtro">
-                            <label class="filter-radio">
-                                <input type="radio" name="perfil-dashboard" value="visitante">
-                                <span>Visitante</span>
-                            </label>
-                            <label class="filter-radio">
-                                <input type="radio" name="perfil-dashboard" value="acompanhante">
-                                <span>Acompanhante</span>
-                            </label>
-                            <label class="filter-radio">
-                                <input type="radio" name="perfil-dashboard" value="ambos" checked>
-                                <span>Ambos</span>
-                            </label>
+                <!-- Cards Hero -->
+                <div class="cards-hero">
+                    <div class="card em-uso" data-filter="em-uso">
+                        <div class="card-header">
+                            <div class="card-icon"><i class="fas fa-user-clock"></i></div>
+                            <div class="card-title">Em uso</div>
                         </div>
+                        <div class="card-value" id="em-uso-count">0</div>
                     </div>
-                    <div class="filter-tile" aria-label="Filtrar por período">
-                        <div class="filter-title"><i class="fas fa-calendar-alt"></i> Período</div>
-                        <div class="period-grid">
-                            <label class="filter-field">
-                                <span>Data inicial</span>
-                                <input type="date" id="periodo-inicio">
-                            </label>
-                            <label class="filter-field">
-                                <span>Data final</span>
-                                <input type="date" id="periodo-fim">
-                            </label>
+                    <div class="card livre" data-filter="livre">
+                        <div class="card-header">
+                            <div class="card-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="card-title">Livres</div>
                         </div>
-                        <p class="filter-hint">Sem período selecionado, assume hoje e inclui usos em andamento.</p>
+                        <div class="card-value" id="livres-count">0</div>
                     </div>
-                    <div class="filter-actions">
-                        <button class="btn btn-secondary" id="limpar-filtros-operacionais">
-                            <i class="fas fa-rotate"></i> Limpar
-                        </button>
-                        <button class="btn btn-primary" id="aplicar-filtros-operacionais">
-                            <i class="fas fa-filter"></i> Aplicar
-                        </button>
+                    <div class="card proximo" data-filter="proximo">
+                        <div class="card-header">
+                            <div class="card-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                            <div class="card-title">Próximo do horário</div>
+                        </div>
+                        <div class="card-value" id="proximo-count">0</div>
                     </div>
-                </section>
-
-                <section class="operational-summary" aria-label="Resumo operacional">
-                    <article class="summary-card neutral" data-status="total">
-                        <div class="summary-icon"><i class="fas fa-lock"></i></div>
-                        <div class="summary-content">
-                            <p class="summary-label">Total de armários</p>
-                            <p class="summary-value" id="total-armarios">0</p>
-                            <p class="summary-sub">Cadastrados no recorte</p>
+                    <div class="card contingencia" data-filter="contingencia">
+                        <div class="card-header">
+                            <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
+                            <div class="card-title">Contingência</div>
                         </div>
-                    </article>
-                    <article class="summary-card success" data-status="livres">
-                        <div class="summary-icon"><i class="fas fa-unlock"></i></div>
-                        <div class="summary-content">
-                            <p class="summary-label">Armários livres</p>
-                            <p class="summary-value" id="armarios-livres">0</p>
-                            <p class="summary-sub">Disponíveis agora</p>
-                        </div>
-                    </article>
-                    <article class="summary-card info" data-status="ocupados">
-                        <div class="summary-icon"><i class="fas fa-user-clock"></i></div>
-                        <div class="summary-content">
-                            <p class="summary-label">Armários ocupados</p>
-                            <p class="summary-value" id="armarios-ocupados">0</p>
-                            <p class="summary-sub">Em uso no período</p>
-                        </div>
-                    </article>
-                    <article class="summary-card warning" data-status="pendencias">
-                        <div class="summary-icon"><i class="fas fa-hourglass-half"></i></div>
-                        <div class="summary-content">
-                            <p class="summary-label">Armários com pendência</p>
-                            <p class="summary-value" id="armarios-pendentes">0</p>
-                            <p class="summary-sub">Próximos do horário</p>
-                        </div>
-                    </article>
-                    <article class="summary-card danger" data-status="atraso">
-                        <div class="summary-icon"><i class="fas fa-triangle-exclamation"></i></div>
-                        <div class="summary-content">
-                            <p class="summary-label">Armários em atraso</p>
-                            <p class="summary-value" id="armarios-atraso">0</p>
-                            <p class="summary-sub">Ultrapassaram o prazo</p>
-                        </div>
-                    </article>
-                    <article class="summary-card time" data-status="tempo">
-                        <div class="summary-icon"><i class="fas fa-stopwatch"></i></div>
-                        <div class="summary-content">
-                            <p class="summary-label">Tempo médio de uso</p>
-                            <p class="summary-value" id="tempo-medio-uso">-</p>
-                            <p class="summary-sub">Recorte filtrado</p>
-                        </div>
-                    </article>
-                    <article class="summary-card neutral" data-status="movimentacoes">
-                        <div class="summary-icon"><i class="fas fa-box"></i></div>
-                        <div class="summary-content">
-                            <p class="summary-label">Movimentações</p>
-                            <p class="summary-value" id="movimentacoes-periodo">0</p>
-                            <p class="summary-sub">Registros no período</p>
-                        </div>
-                    </article>
-                </section>
-
-                <section class="locker-map" aria-label="Mapa visual de armários">
-                    <div class="section-header">
-                        <div>
-                            <h2>Armários em tempo real</h2>
-                            <p class="section-sub" id="mapa-contexto">Visualização considerando perfil e período filtrados.</p>
-                        </div>
-                        <div class="map-legend" aria-label="Legenda de status">
-                            <span class="legend-dot livre"></span> Livre
-                            <span class="legend-dot uso"></span> Em uso
-                            <span class="legend-dot pendente"></span> Pendente
-                            <span class="legend-dot atraso"></span> Atraso
-                        </div>
+                        <div class="card-value" id="contingencia-count">0</div>
                     </div>
-                    <div class="armarios-grid" id="armarios-container" role="list">
-                        <!-- Renderizado via JavaScript -->
+                    <div class="card vencido" data-filter="vencido">
+                        <div class="card-header">
+                            <div class="card-icon"><i class="fas fa-times-circle"></i></div>
+                            <div class="card-title">Vencidos</div>
+                        </div>
+                        <div class="card-value" id="vencidos-count">0</div>
                     </div>
-                </section>
-
-                <section class="operational-insights" aria-label="Indicadores operacionais">
-                    <div class="insight-panel" id="painel-indicadores">
-                        <div class="insight-header">
-                            <h3>Indicadores do período</h3>
-                            <p class="section-sub">Taxas e volumes recortados pelo período aplicado.</p>
-                        </div>
-                        <div class="insight-grid">
-                            <div class="insight-stat">
-                                <p class="stat-label">Taxa de ocupação</p>
-                                <p class="stat-value" id="taxa-ocupacao">-</p>
-                                <p class="stat-hint">Média no recorte</p>
-                            </div>
-                            <div class="insight-stat">
-                                <p class="stat-label">Usados no período</p>
-                                <p class="stat-value" id="usados-periodo">0</p>
-                                <p class="stat-hint">Inclui ativos e encerrados</p>
-                            </div>
-                            <div class="insight-stat">
-                                <p class="stat-label">Ativos agora</p>
-                                <p class="stat-value" id="ativos-agora">0</p>
-                                <p class="stat-hint">Em uso ou pendência</p>
-                            </div>
-                            <div class="insight-stat">
-                                <p class="stat-label">Iniciados antes do período</p>
-                                <p class="stat-value" id="iniciados-antes">0</p>
-                                <p class="stat-hint">Ainda considerados no recorte</p>
-                            </div>
-                            <div class="insight-stat">
-                                <p class="stat-label">Finalizados no período</p>
-                                <p class="stat-value" id="finalizados-periodo">0</p>
-                                <p class="stat-hint">Encerrados dentro do intervalo</p>
-                            </div>
-                            <div class="insight-stat">
-                                <p class="stat-label">Tempo médio de uso</p>
-                                <p class="stat-value" id="tempo-medio-periodo">-</p>
-                                <p class="stat-hint">Considera encerrados e ativos</p>
-                            </div>
-                        </div>
+                </div>
+                <!-- Filtros -->
+                <div class="filters">
+                    <div class="filters-group" aria-label="Filtros por status">
+                        <button class="filter-btn active" data-filter="todos">Todos</button>
+                        <button class="filter-btn" data-filter="livre">Livre</button>
+                        <button class="filter-btn" data-filter="em-uso">Em uso</button>
+                        <button class="filter-btn" data-filter="proximo">Próximo do horário</button>
+                        <button class="filter-btn" data-filter="vencido">Vencido</button>
+                        <button class="filter-btn" data-filter="contingencia">Contingência</button>
                     </div>
-                    <div class="insight-panel">
-                        <div class="insight-header">
-                            <h3>Pico de ocupação por dia</h3>
-                            <p class="section-sub">Leitura rápida por data.</p>
-                        </div>
-                        <canvas id="grafico-ocupacao-dia" aria-label="Gráfico de pico de ocupação"></canvas>
-                    </div>
-                </section>
-
-                <section class="operational-table" aria-label="Registros operacionais">
-                    <div class="section-header">
-                        <div>
-                            <h2>Visão detalhada</h2>
-                            <p class="section-sub">Lista pronta para ação rápida.</p>
-                        </div>
-                        <div class="table-tools">
-                            <div class="filter-search" aria-label="Busca operacional">
+                        <div class="contingencia-actions">
+                            <div class="filter-search" aria-label="Busca rápida">
                                 <i class="fas fa-search" aria-hidden="true"></i>
-                                <input type="text" id="operational-search" placeholder="Buscar por armário, paciente ou perfil">
+                                <input type="text" id="dashboard-search" placeholder="Buscar por paciente, prontuário ou armário" aria-label="Buscar por paciente, prontuário ou armário">
+                                <button class="filter-clear" id="dashboard-search-clear" type="button" aria-label="Limpar busca" aria-hidden="true">
+                                    <i class="fas fa-times" aria-hidden="true"></i>
+                                </button>
                             </div>
-                            <select id="operational-status-filter" aria-label="Filtrar por status">
-                                <option value="todos">Todos os status</option>
-                                <option value="livre">Livre</option>
-                                <option value="em-uso">Em uso</option>
-                                <option value="proximo">Pendente</option>
-                                <option value="vencido">Atraso</option>
-                            </select>
-                        </div>
+                        <button class="btn btn-ghost btn-contingencia" id="btn-contingencia" aria-label="Registrar contingência">
+                            <i class="fas fa-person-walking-luggage" aria-hidden="true"></i>
+                            Sem Armários
+                        </button>
                     </div>
-                    <div class="table-container">
-                        <table id="tabela-operacional">
-                            <thead>
-                                <tr>
-                                    <th>Armário</th>
-                                    <th>Perfil</th>
-                                    <th>Status</th>
-                                    <th>Início</th>
-                                    <th>Fim</th>
-                                    <th>Tempo em uso</th>
-                                    <th>Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </section>
+                </div>
+                <!-- Tabela de Armários -->
+                <div class="armarios-grid" id="armarios-container">
+                    <!-- Os armários serão carregados aqui via JavaScript -->
+                </div>
             </div>
             <!-- Dashboard Analítico -->
             <div class="page" id="dashboard-analitico">
