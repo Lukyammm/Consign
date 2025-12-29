@@ -36,6 +36,8 @@
                 notificacoes: [],
                 termos: {},
                 movimentacoes: {},
+                historicoVisitantes: [],
+                historicoAcompanhantes: [],
                 achados: {
                     itens: [],
                     carregando: false,
@@ -731,6 +733,18 @@
             logsFiltroUsuario: document.getElementById('logs-filtro-usuario'),
             logsBusca: document.getElementById('logs-busca'),
             logsBtnLimpar: document.getElementById('logs-btn-limpar'),
+            tabelaHistoricoVisitantesBody: document.querySelector('#tabela-historico-visitantes tbody'),
+            historicoVisitantesDataInicio: document.getElementById('historico-visitantes-data-inicio'),
+            historicoVisitantesDataFim: document.getElementById('historico-visitantes-data-fim'),
+            historicoVisitantesFiltroPessoa: document.getElementById('historico-visitantes-filtro-pessoa'),
+            historicoVisitantesBusca: document.getElementById('historico-visitantes-busca'),
+            historicoVisitantesBtnLimpar: document.getElementById('historico-visitantes-btn-limpar'),
+            tabelaHistoricoAcompanhantesBody: document.querySelector('#tabela-historico-acompanhantes tbody'),
+            historicoAcompanhantesDataInicio: document.getElementById('historico-acompanhantes-data-inicio'),
+            historicoAcompanhantesDataFim: document.getElementById('historico-acompanhantes-data-fim'),
+            historicoAcompanhantesFiltroPessoa: document.getElementById('historico-acompanhantes-filtro-pessoa'),
+            historicoAcompanhantesBusca: document.getElementById('historico-acompanhantes-busca'),
+            historicoAcompanhantesBtnLimpar: document.getElementById('historico-acompanhantes-btn-limpar'),
             tabelaLiberacao: document.getElementById('tabela-liberacao'),
             tabelaLiberacaoHead: document.querySelector('#tabela-liberacao thead tr'),
             tabelaLiberacaoBody: document.querySelector('#tabela-liberacao tbody'),
@@ -3665,6 +3679,38 @@
             if (elementos.logsBtnLimpar) {
                 elementos.logsBtnLimpar.addEventListener('click', limparFiltrosLogs);
             }
+            const aplicarFiltrosHistoricoVisitantesDebounced = debounce(aplicarFiltrosHistoricoVisitantes, 150);
+            if (elementos.historicoVisitantesDataInicio) {
+                elementos.historicoVisitantesDataInicio.addEventListener('change', aplicarFiltrosHistoricoVisitantesDebounced);
+            }
+            if (elementos.historicoVisitantesDataFim) {
+                elementos.historicoVisitantesDataFim.addEventListener('change', aplicarFiltrosHistoricoVisitantesDebounced);
+            }
+            if (elementos.historicoVisitantesFiltroPessoa) {
+                elementos.historicoVisitantesFiltroPessoa.addEventListener('input', aplicarFiltrosHistoricoVisitantesDebounced);
+            }
+            if (elementos.historicoVisitantesBusca) {
+                elementos.historicoVisitantesBusca.addEventListener('input', aplicarFiltrosHistoricoVisitantesDebounced);
+            }
+            if (elementos.historicoVisitantesBtnLimpar) {
+                elementos.historicoVisitantesBtnLimpar.addEventListener('click', limparFiltrosHistoricoVisitantes);
+            }
+            const aplicarFiltrosHistoricoAcompanhantesDebounced = debounce(aplicarFiltrosHistoricoAcompanhantes, 150);
+            if (elementos.historicoAcompanhantesDataInicio) {
+                elementos.historicoAcompanhantesDataInicio.addEventListener('change', aplicarFiltrosHistoricoAcompanhantesDebounced);
+            }
+            if (elementos.historicoAcompanhantesDataFim) {
+                elementos.historicoAcompanhantesDataFim.addEventListener('change', aplicarFiltrosHistoricoAcompanhantesDebounced);
+            }
+            if (elementos.historicoAcompanhantesFiltroPessoa) {
+                elementos.historicoAcompanhantesFiltroPessoa.addEventListener('input', aplicarFiltrosHistoricoAcompanhantesDebounced);
+            }
+            if (elementos.historicoAcompanhantesBusca) {
+                elementos.historicoAcompanhantesBusca.addEventListener('input', aplicarFiltrosHistoricoAcompanhantesDebounced);
+            }
+            if (elementos.historicoAcompanhantesBtnLimpar) {
+                elementos.historicoAcompanhantesBtnLimpar.addEventListener('click', limparFiltrosHistoricoAcompanhantes);
+            }
             const aplicarFiltrosTermosDebounced = debounce(() => carregarTabelaTermos({ recarregarArmarios: false }), 150);
             if (elementos.termoFiltroStatus) {
                 elementos.termoFiltroStatus.addEventListener('change', () => {
@@ -5184,62 +5230,38 @@
             }
         }
         async function carregarHistoricoVisitantes() {
-            const tbody = document.querySelector('#tabela-historico-visitantes tbody');
+            const tbody = elementos.tabelaHistoricoVisitantesBody;
             if (!tbody) return;
+            exibirEstadoTabelaHistorico(tbody, 'Carregando registros...', 'loading');
             const resultado = await callGoogleScript('getHistorico', { tipo: 'visitante' });
-            if (!resultado.success) return;
-            tbody.innerHTML = '';
-            const registros = (resultado.data || []).filter(item => usuarioPodeVerUnidade(item.unidade));
-            if (!registros.length) {
-                tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:12px; color:#5b6b86;">Nenhum registro encontrado.</td></tr>';
+            if (!resultado.success) {
+                estado.historicoVisitantes = [];
+                exibirEstadoTabelaHistorico(tbody, 'Não foi possível carregar o histórico.', 'error');
                 return;
             }
-            registros.forEach(historico => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${formatarData(historico.data)}</td>
-                    <td>${historico.armario}</td>
-                    <td>${historico.nome}</td>
-                    <td>${historico.paciente}</td>
-                    <td>${historico.leito}</td>
-                    <td>${historico.volumes}</td>
-                    <td>${historico.horaInicio}</td>
-                    <td>${historico.horaFim}</td>
-                    <td>${historico.whatsapp || '-'}</td>
-                    <td>${historico.status}</td>
-                    <td>${historico.usuario || '-'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+            estado.historicoVisitantes = (resultado.data || []).filter(item => usuarioPodeVerUnidade(item.unidade));
+            if (!estado.historicoVisitantes.length) {
+                exibirEstadoTabelaHistorico(tbody, 'Nenhum registro disponível.');
+                return;
+            }
+            aplicarFiltrosHistoricoVisitantes();
         }
         async function carregarHistoricoAcompanhantes() {
-            const tbody = document.querySelector('#tabela-historico-acompanhantes tbody');
+            const tbody = elementos.tabelaHistoricoAcompanhantesBody;
             if (!tbody) return;
+            exibirEstadoTabelaHistorico(tbody, 'Carregando registros...', 'loading');
             const resultado = await callGoogleScript('getHistorico', { tipo: 'acompanhante' });
-            if (!resultado.success) return;
-            tbody.innerHTML = '';
-            const registros = (resultado.data || []).filter(item => usuarioPodeVerUnidade(item.unidade));
-            if (!registros.length) {
-                tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:12px; color:#5b6b86;">Nenhum registro encontrado.</td></tr>';
+            if (!resultado.success) {
+                estado.historicoAcompanhantes = [];
+                exibirEstadoTabelaHistorico(tbody, 'Não foi possível carregar o histórico.', 'error');
                 return;
             }
-            registros.forEach(historico => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${formatarData(historico.data)}</td>
-                    <td>${historico.armario}</td>
-                    <td>${historico.nome}</td>
-                    <td>${historico.paciente}</td>
-                    <td>${historico.leito}</td>
-                    <td>${historico.volumes}</td>
-                    <td>${historico.horaInicio}</td>
-                    <td>${historico.horaFim}</td>
-                    <td>${historico.whatsapp || '-'}</td>
-                    <td>${historico.status}</td>
-                    <td>${historico.usuario || '-'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+            estado.historicoAcompanhantes = (resultado.data || []).filter(item => usuarioPodeVerUnidade(item.unidade));
+            if (!estado.historicoAcompanhantes.length) {
+                exibirEstadoTabelaHistorico(tbody, 'Nenhum registro disponível.');
+                return;
+            }
+            aplicarFiltrosHistoricoAcompanhantes();
         }
         function obterFiltrosTermo() {
             const filtrosAtuais = estado.filtrosTermos || filtrosTermoPadrao;
@@ -5693,6 +5715,31 @@
                 finalizar();
             }
         }
+        function exibirEstadoTabelaHistorico(tbody, mensagem, tipo = 'empty', colSpan = 11) {
+            if (!tbody) return;
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = colSpan;
+            td.textContent = mensagem;
+            td.className = tipo === 'loading' ? 'table-loading' : tipo === 'error' ? 'table-error' : 'table-empty';
+            tr.appendChild(td);
+            tbody.innerHTML = '';
+            tbody.appendChild(tr);
+        }
+        function obterDataHistorico(valorData) {
+            if (!valorData) return null;
+            const dataDireta = new Date(valorData);
+            if (!Number.isNaN(dataDireta.getTime())) return dataDireta;
+            if (typeof valorData === 'string' && valorData.includes('/')) {
+                const partes = valorData.split('/');
+                if (partes.length === 3) {
+                    const [dia, mes, ano] = partes;
+                    const data = new Date(`${ano}-${mes}-${dia}T00:00:00`);
+                    if (!Number.isNaN(data.getTime())) return data;
+                }
+            }
+            return null;
+        }
         function exibirEstadoTabelaLogs(mensagem, tipo = 'empty') {
             if (!elementos.tabelaLogsBody) return;
             const tr = document.createElement('tr');
@@ -5710,6 +5757,20 @@
             if (elementos.logsFiltroUsuario) elementos.logsFiltroUsuario.value = '';
             if (elementos.logsBusca) elementos.logsBusca.value = '';
             aplicarFiltrosLogs();
+        }
+        function limparFiltrosHistoricoVisitantes() {
+            if (elementos.historicoVisitantesDataInicio) elementos.historicoVisitantesDataInicio.value = '';
+            if (elementos.historicoVisitantesDataFim) elementos.historicoVisitantesDataFim.value = '';
+            if (elementos.historicoVisitantesFiltroPessoa) elementos.historicoVisitantesFiltroPessoa.value = '';
+            if (elementos.historicoVisitantesBusca) elementos.historicoVisitantesBusca.value = '';
+            aplicarFiltrosHistoricoVisitantes();
+        }
+        function limparFiltrosHistoricoAcompanhantes() {
+            if (elementos.historicoAcompanhantesDataInicio) elementos.historicoAcompanhantesDataInicio.value = '';
+            if (elementos.historicoAcompanhantesDataFim) elementos.historicoAcompanhantesDataFim.value = '';
+            if (elementos.historicoAcompanhantesFiltroPessoa) elementos.historicoAcompanhantesFiltroPessoa.value = '';
+            if (elementos.historicoAcompanhantesBusca) elementos.historicoAcompanhantesBusca.value = '';
+            aplicarFiltrosHistoricoAcompanhantes();
         }
         function aplicarFiltrosLogs() {
             if (!elementos.tabelaLogsBody) return;
@@ -5769,6 +5830,118 @@
             }
             estado.logs = Array.isArray(resultado.data) ? resultado.data : [];
             aplicarFiltrosLogs();
+        }
+        function aplicarFiltrosHistoricoVisitantes() {
+            const tbody = elementos.tabelaHistoricoVisitantesBody;
+            if (!tbody) return;
+            const registros = Array.isArray(estado.historicoVisitantes) ? estado.historicoVisitantes : [];
+            if (!registros.length) {
+                exibirEstadoTabelaHistorico(tbody, 'Nenhum registro disponível.');
+                return;
+            }
+
+            const dataInicioValor = elementos.historicoVisitantesDataInicio?.value || '';
+            const dataFimValor = elementos.historicoVisitantesDataFim?.value || '';
+            const filtroPessoa = normalizarTextoBusca(elementos.historicoVisitantesFiltroPessoa?.value);
+            const filtroBusca = normalizarTextoBusca(elementos.historicoVisitantesBusca?.value);
+
+            const dataInicio = dataInicioValor ? new Date(`${dataInicioValor}T00:00:00`) : null;
+            const dataFim = dataFimValor ? new Date(`${dataFimValor}T23:59:59`) : null;
+
+            const registrosFiltrados = registros.filter(registro => {
+                const dataRegistro = obterDataHistorico(registro.data);
+                if (dataInicio && (!dataRegistro || dataRegistro < dataInicio)) return false;
+                if (dataFim && (!dataRegistro || dataRegistro > dataFim)) return false;
+                if (filtroPessoa) {
+                    const alvoPessoa = normalizarTextoBusca(`${registro.nome} ${registro.paciente} ${registro.usuario}`);
+                    if (!alvoPessoa.includes(filtroPessoa)) return false;
+                }
+                if (filtroBusca) {
+                    const alvoBusca = normalizarTextoBusca(`${registro.armario} ${registro.leito} ${registro.status} ${registro.whatsapp} ${registro.horaInicio} ${registro.horaFim}`);
+                    if (!alvoBusca.includes(filtroBusca)) return false;
+                }
+                return true;
+            });
+
+            if (registrosFiltrados.length === 0) {
+                exibirEstadoTabelaHistorico(tbody, 'Nenhum registro encontrado com os filtros selecionados.');
+                return;
+            }
+
+            tbody.innerHTML = '';
+            registrosFiltrados.forEach(historico => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${formatarData(historico.data)}</td>
+                    <td>${historico.armario}</td>
+                    <td>${historico.nome}</td>
+                    <td>${historico.paciente}</td>
+                    <td>${historico.leito}</td>
+                    <td>${historico.volumes}</td>
+                    <td>${historico.horaInicio}</td>
+                    <td>${historico.horaFim}</td>
+                    <td>${historico.whatsapp || '-'}</td>
+                    <td>${historico.status}</td>
+                    <td>${historico.usuario || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        function aplicarFiltrosHistoricoAcompanhantes() {
+            const tbody = elementos.tabelaHistoricoAcompanhantesBody;
+            if (!tbody) return;
+            const registros = Array.isArray(estado.historicoAcompanhantes) ? estado.historicoAcompanhantes : [];
+            if (!registros.length) {
+                exibirEstadoTabelaHistorico(tbody, 'Nenhum registro disponível.');
+                return;
+            }
+
+            const dataInicioValor = elementos.historicoAcompanhantesDataInicio?.value || '';
+            const dataFimValor = elementos.historicoAcompanhantesDataFim?.value || '';
+            const filtroPessoa = normalizarTextoBusca(elementos.historicoAcompanhantesFiltroPessoa?.value);
+            const filtroBusca = normalizarTextoBusca(elementos.historicoAcompanhantesBusca?.value);
+
+            const dataInicio = dataInicioValor ? new Date(`${dataInicioValor}T00:00:00`) : null;
+            const dataFim = dataFimValor ? new Date(`${dataFimValor}T23:59:59`) : null;
+
+            const registrosFiltrados = registros.filter(registro => {
+                const dataRegistro = obterDataHistorico(registro.data);
+                if (dataInicio && (!dataRegistro || dataRegistro < dataInicio)) return false;
+                if (dataFim && (!dataRegistro || dataRegistro > dataFim)) return false;
+                if (filtroPessoa) {
+                    const alvoPessoa = normalizarTextoBusca(`${registro.nome} ${registro.paciente} ${registro.usuario}`);
+                    if (!alvoPessoa.includes(filtroPessoa)) return false;
+                }
+                if (filtroBusca) {
+                    const alvoBusca = normalizarTextoBusca(`${registro.armario} ${registro.leito} ${registro.status} ${registro.whatsapp} ${registro.horaInicio} ${registro.horaFim}`);
+                    if (!alvoBusca.includes(filtroBusca)) return false;
+                }
+                return true;
+            });
+
+            if (registrosFiltrados.length === 0) {
+                exibirEstadoTabelaHistorico(tbody, 'Nenhum registro encontrado com os filtros selecionados.');
+                return;
+            }
+
+            tbody.innerHTML = '';
+            registrosFiltrados.forEach(historico => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${formatarData(historico.data)}</td>
+                    <td>${historico.armario}</td>
+                    <td>${historico.nome}</td>
+                    <td>${historico.paciente}</td>
+                    <td>${historico.leito}</td>
+                    <td>${historico.volumes}</td>
+                    <td>${historico.horaInicio}</td>
+                    <td>${historico.horaFim}</td>
+                    <td>${historico.whatsapp || '-'}</td>
+                    <td>${historico.status}</td>
+                    <td>${historico.usuario || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
         function atualizarSeletoresUnidade() {
             if (!elementos.unitSelect) return;
