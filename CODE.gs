@@ -7342,7 +7342,7 @@ function getEstatisticasDashboard(tipoUsuario) {
 function verificarInicializacao() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var abas = [
-    'Histórico Visitantes', 
+    'Histórico Visitantes',
     'Histórico Acompanhantes', 
     'Visitantes', 
     'Acompanhantes', 
@@ -7359,6 +7359,572 @@ function verificarInicializacao() {
       return { success: true, inicializado: false };
     }
   }
-  
+
   return { success: true, inicializado: true };
+}
+
+// =========================
+// Dashboard Analítico (LOG/MOVIMENTOS)
+// =========================
+
+function obterOuCriarSheet(nome, cabecalhos) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(nome);
+  if (!sheet) {
+    sheet = ss.insertSheet(nome);
+  }
+  if (sheet.getLastRow() === 0 && Array.isArray(cabecalhos)) {
+    sheet.getRange(1, 1, 1, cabecalhos.length).setValues([cabecalhos]);
+  }
+  return sheet;
+}
+
+function inicializarAbasDashboard() {
+  var cabecalhosLog = [
+    'timestamp_criacao', 'timestamp_inicio', 'timestamp_conclusao', 'status',
+    'armario_id', 'usuario_solicitante', 'usuario_atendente', 'perfil',
+    'unidade', 'observacoes'
+  ];
+  var cabecalhosConfig = ['chave', 'valor', 'descricao'];
+  var cabecalhosSnapshots = [
+    'data', 'periodo', 'total', 'concluidas', 'canceladas', 'em_producao',
+    'abertas', 'sla', 'percentual_sla', 'tempo_medio_total', 'tempo_medio_atendimento'
+  ];
+
+  var logSheet = obterOuCriarSheet('LOG', cabecalhosLog);
+  obterOuCriarSheet('CONFIG', cabecalhosConfig);
+  obterOuCriarSheet('SNAPSHOTS', cabecalhosSnapshots);
+
+  var configSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CONFIG');
+  var ultimaLinhaConfig = configSheet.getLastRow();
+  if (ultimaLinhaConfig < 2) {
+    var defaults = [
+      ['sla_minutos', '30', 'Tempo limite em minutos para SLA'],
+      ['limite_backlog', '10', 'Quantidade máxima de chamados abertos'],
+      ['alerta_aberto_minutos', '60', 'Alerta para chamados abertos há mais de X minutos'],
+      ['alerta_armario_travado', '5', 'Eventos consecutivos sem conclusão para alertar'],
+      ['enviar_email_alerta', 'false', 'Enviar email quando disparar alerta (opcional)']
+    ];
+    configSheet.getRange(2, 1, defaults.length, defaults[0].length).setValues(defaults);
+  }
+
+  return logSheet;
+}
+
+function lerConfiguracoesDashboard() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CONFIG');
+  if (!sheet || sheet.getLastRow() < 2) {
+    return {};
+  }
+  var dados = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(3, sheet.getLastColumn())).getValues();
+  var mapa = {};
+  dados.forEach(function(linha) {
+    var chave = normalizarTextoBasico(linha[0]);
+    if (chave) {
+      mapa[chave] = linha[1];
+    }
+  });
+  return mapa;
+}
+
+function groupByDay(registros, timezone) {
+  var tz = timezone || obterTimeZoneAplicacao();
+  var mapa = {};
+  registros.forEach(function(item) {
+    var chave = gerarChaveDataComparacao(item.timestamp_criacao, tz);
+    if (!chave) {
+      return;
+    }
+    if (!mapa[chave]) {
+      mapa[chave] = [];
+    }
+    mapa[chave].push(item);
+  });
+  return mapa;
+}
+
+function groupByHour(registros, timezone) {
+  var tz = timezone || obterTimeZoneAplicacao();
+  var mapa = {};
+  registros.forEach(function(item) {
+    if (!(item.timestamp_criacao instanceof Date)) {
+      return;
+    }
+    var hora = Utilities.formatDate(item.timestamp_criacao, tz, 'HH');
+    if (!mapa[hora]) {
+      mapa[hora] = [];
+    }
+    mapa[hora].push(item);
+  });
+  return mapa;
+}
+
+function computeDurations(registros) {
+  return registros.map(function(item) {
+    var criacao = item.timestamp_criacao instanceof Date ? item.timestamp_criacao.getTime() : null;
+    var inicio = item.timestamp_inicio instanceof Date ? item.timestamp_inicio.getTime() : null;
+    var conclusao = item.timestamp_conclusao instanceof Date ? item.timestamp_conclusao.getTime() : null;
+
+    var fila = (inicio && criacao) ? Math.max((inicio - criacao) / 60000, 0) : null;
+    var atendimento = (conclusao && inicio) ? Math.max((conclusao - inicio) / 60000, 0) : null;
+    var total = (conclusao && criacao) ? Math.max((conclusao - criacao) / 60000, 0) : null;
+
+    return Object.assign({}, item, {
+      duracaoFilaMinutos: fila,
+      duracaoAtendimentoMinutos: atendimento,
+      duracaoTotalMinutos: total
+    });
+  });
+}
+
+function computePercentiles(valores, percentis) {
+  var lista = valores.filter(function(v) { return typeof v === 'number' && isFinite(v); }).sort(function(a, b) { return a - b; });
+  if (!lista.length) {
+    var vazio = {};
+    percentis.forEach(function(p) { vazio['p' + p] = null; });
+    return vazio;
+  }
+  return percentis.reduce(function(acc, p) {
+    var pos = (p / 100) * (lista.length - 1);
+    var base = Math.floor(pos);
+    var resto = pos - base;
+    var valor = lista[base];
+    if (lista[base + 1] !== undefined) {
+      valor = valor + resto * (lista[base + 1] - lista[base]);
+    }
+    acc['p' + p] = valor;
+    return acc;
+  }, {});
+}
+
+function computeSLACompliance(registros, limiteMinutos) {
+  if (!Number.isFinite(limiteMinutos) || limiteMinutos <= 0) {
+    return { total: registros.length, dentro: 0, percentual: 0 };
+  }
+  var total = registros.length;
+  var dentro = registros.filter(function(item) {
+    return typeof item.duracaoTotalMinutos === 'number' && item.duracaoTotalMinutos <= limiteMinutos;
+  }).length;
+  var percentual = total ? (dentro / total) * 100 : 0;
+  return { total: total, dentro: dentro, percentual: percentual };
+}
+
+function filtrarPeriodo(registros, inicio, fim) {
+  if (!inicio && !fim) {
+    return registros;
+  }
+  var inicioMs = inicio instanceof Date ? inicio.getTime() : null;
+  var fimMs = fim instanceof Date ? fim.getTime() + 86399999 : null;
+  return registros.filter(function(item) {
+    var momento = item.timestamp_criacao instanceof Date ? item.timestamp_criacao.getTime() : null;
+    if (momento === null) {
+      return false;
+    }
+    if (inicioMs !== null && momento < inicioMs) {
+      return false;
+    }
+    if (fimMs !== null && momento > fimMs) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function carregarLogPadronizado() {
+  var logSheet = inicializarAbasDashboard();
+  var ultimaLinha = logSheet.getLastRow();
+  if (ultimaLinha < 2) {
+    return [];
+  }
+  var ultimaColuna = logSheet.getLastColumn();
+  var cabecalhos = logSheet.getRange(1, 1, 1, ultimaColuna).getValues()[0];
+  var estrutura = { ultimaColuna: ultimaColuna, mapaIndices: {} };
+  cabecalhos.forEach(function(c, i) {
+    var chave = normalizarTextoBasico(c);
+    if (chave) { estrutura.mapaIndices[chave] = i; }
+  });
+
+  var linhas = logSheet.getRange(2, 1, ultimaLinha - 1, ultimaColuna).getValues();
+  var exibicao = logSheet.getRange(2, 1, ultimaLinha - 1, ultimaColuna).getDisplayValues();
+  var tz = obterTimeZoneAplicacao();
+
+  return linhas.map(function(linha, idx) {
+    var linhaExibicao = exibicao[idx] || [];
+    return {
+      timestamp_criacao: extrairDataValidaDaCelula(obterValorLinha(linha, estrutura, ['timestamp_criacao', 'data', 'momento'], null), linhaExibicao[obterIndiceColuna(estrutura, ['timestamp_criacao', 'data', 'momento'], 0)], tz),
+      timestamp_inicio: extrairDataValidaDaCelula(obterValorLinha(linha, estrutura, ['timestamp_inicio', 'inicio'], null), linhaExibicao[obterIndiceColuna(estrutura, ['timestamp_inicio', 'inicio'], 1)], tz),
+      timestamp_conclusao: extrairDataValidaDaCelula(obterValorLinha(linha, estrutura, ['timestamp_conclusao', 'conclusao'], null), linhaExibicao[obterIndiceColuna(estrutura, ['timestamp_conclusao', 'conclusao'], 2)], tz),
+      status: normalizarTextoBasico(obterValorLinha(linha, estrutura, 'status', 'aberto')) || 'aberto',
+      armario_id: obterValorLinha(linha, estrutura, ['armario_id', 'armario', 'numero'], ''),
+      usuario_solicitante: obterValorLinha(linha, estrutura, ['usuario_solicitante', 'solicitante', 'paciente'], ''),
+      usuario_atendente: obterValorLinha(linha, estrutura, ['usuario_atendente', 'atendente', 'usuario'], ''),
+      perfil: obterValorLinha(linha, estrutura, ['perfil', 'tipo'], ''),
+      unidade: obterValorLinha(linha, estrutura, ['unidade', 'setor'], ''),
+      observacoes: obterValorLinha(linha, estrutura, ['observacoes', 'descricao'], '')
+    };
+  }).filter(function(item) { return item.timestamp_criacao instanceof Date; });
+}
+
+function montarKpisDashboard(registros, config, periodoDescricao) {
+  var hoje = obterDataAtualNormalizada();
+  var ontem = new Date(hoje.getTime() - 86400000);
+  var inicioSemana = new Date(hoje.getTime() - (hoje.getDay() || 7) * 86400000 + 86400000);
+  var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  var slaMin = Number(config.sla_minutos) || 30;
+
+  function contarNoPeriodo(inicio, fim) {
+    return filtrarPeriodo(registros, inicio, fim).length;
+  }
+
+  var concluidas = registros.filter(function(r) { return r.status === 'entregue' || r.status === 'concluido' || r.status === 'encerrado'; });
+  var canceladas = registros.filter(function(r) { return r.status === 'cancelado'; });
+  var emProducao = registros.filter(function(r) { return r.status === 'em_producao' || r.status === 'andamento'; });
+  var abertas = registros.filter(function(r) { return r.status === 'aberto' || r.status === 'pendente'; });
+
+  var percentis = computePercentiles(registros.map(function(r) { return r.duracaoTotalMinutos; }), [50, 75, 90, 95, 99]);
+  var sla = computeSLACompliance(concluidas, slaMin);
+  var temposCompletos = concluidas.filter(function(r) { return typeof r.duracaoTotalMinutos === 'number'; });
+
+  var tempoMedioTotal = temposCompletos.reduce(function(acc, r) { return acc + r.duracaoTotalMinutos; }, 0) / (temposCompletos.length || 1);
+  var tempoMedioAtendimento = temposCompletos.reduce(function(acc, r) { return acc + (r.duracaoAtendimentoMinutos || 0); }, 0) / (temposCompletos.length || 1);
+  var tempoMedioFila = temposCompletos.reduce(function(acc, r) { return acc + (r.duracaoFilaMinutos || 0); }, 0) / (temposCompletos.length || 1);
+
+  return {
+    periodo: periodoDescricao || 'Personalizado',
+    solicitacoesHoje: contarNoPeriodo(hoje, hoje),
+    solicitacoesOntem: contarNoPeriodo(ontem, ontem),
+    solicitacoesSemana: contarNoPeriodo(inicioSemana, hoje),
+    solicitacoesMes: contarNoPeriodo(inicioMes, hoje),
+    abertasAgora: abertas.length,
+    emProducaoAgora: emProducao.length,
+    entreguesHoje: filtrarPeriodo(concluidas, hoje, hoje).length,
+    canceladasHoje: filtrarPeriodo(canceladas, hoje, hoje).length,
+    canceladasSemana: filtrarPeriodo(canceladas, inicioSemana, hoje).length,
+    canceladasMes: filtrarPeriodo(canceladas, inicioMes, hoje).length,
+    taxaConclusao: registros.length ? (concluidas.length / registros.length) * 100 : 0,
+    taxaCancelamento: registros.length ? (canceladas.length / registros.length) * 100 : 0,
+    tempoMedioTotal: tempoMedioTotal || 0,
+    tempoMedioAtendimento: tempoMedioAtendimento || 0,
+    tempoMedioFila: tempoMedioFila || 0,
+    p95: percentis.p95 || 0,
+    p99: percentis.p99 || 0,
+    slaPercentual: sla.percentual,
+    slaMinutos: slaMin,
+    concluidas: concluidas.length,
+    canceladas: canceladas.length
+  };
+}
+
+function calcularSeriesDashboard(registros, timezone) {
+  var tz = timezone || obterTimeZoneAplicacao();
+  var porDia = groupByDay(registros, tz);
+  var chavesDias = Object.keys(porDia).sort();
+  var serie = chavesDias.map(function(chave) {
+    return {
+      data: chave,
+      total: porDia[chave].length
+    };
+  });
+
+  var porStatus = {};
+  registros.forEach(function(r) {
+    var st = r.status || 'outros';
+    porStatus[st] = (porStatus[st] || 0) + 1;
+  });
+
+  var porHora = groupByHour(registros, tz);
+  var horas = [];
+  for (var i = 0; i < 24; i++) {
+    var chaveHora = ('0' + i).slice(-2);
+    horas.push({ hora: chaveHora, total: (porHora[chaveHora] || []).length });
+  }
+
+  var heatmap = {};
+  registros.forEach(function(r) {
+    if (!(r.timestamp_criacao instanceof Date)) return;
+    var dia = r.timestamp_criacao.getDay();
+    var hora = ('0' + r.timestamp_criacao.getHours()).slice(-2);
+    var chave = dia + '-' + hora;
+    heatmap[chave] = (heatmap[chave] || 0) + 1;
+  });
+
+  return { serieDia: serie, status: porStatus, horas: horas, heatmap: heatmap };
+}
+
+function gerarTabelaArmarios(registros) {
+  var mapa = {};
+  registros.forEach(function(r) {
+    var id = r.armario_id || 'Sem identificação';
+    if (!mapa[id]) {
+      mapa[id] = { total: 0, abertos: 0, cancelados: 0, tempos: [], ultima: null, statusAtual: '' };
+    }
+    mapa[id].total += 1;
+    if (r.status === 'aberto' || r.status === 'pendente') { mapa[id].abertos += 1; }
+    if (r.status === 'cancelado') { mapa[id].cancelados += 1; }
+    if (typeof r.duracaoTotalMinutos === 'number') { mapa[id].tempos.push(r.duracaoTotalMinutos); }
+    if (r.timestamp_criacao && (!mapa[id].ultima || mapa[id].ultima < r.timestamp_criacao)) {
+      mapa[id].ultima = r.timestamp_criacao;
+      mapa[id].statusAtual = r.status;
+    }
+  });
+
+  return Object.keys(mapa).map(function(id) {
+    var item = mapa[id];
+    var percentis = computePercentiles(item.tempos, [95]);
+    var media = item.tempos.length ? item.tempos.reduce(function(a, b) { return a + b; }, 0) / item.tempos.length : 0;
+    return {
+      armario_id: id,
+      total: item.total,
+      abertos: item.abertos,
+      cancelados: item.cancelados,
+      tempoMedio: media,
+      p95: percentis.p95 || 0,
+      ultima: item.ultima,
+      statusAtual: item.statusAtual
+    };
+  }).sort(function(a, b) { return b.total - a.total; });
+}
+
+function gerarTopLista(registros, campo) {
+  var mapa = {};
+  registros.forEach(function(r) {
+    var chave = r[campo] || 'Não informado';
+    mapa[chave] = (mapa[chave] || 0) + 1;
+  });
+  return Object.keys(mapa).map(function(chave) {
+    return { chave: chave, total: mapa[chave] };
+  }).sort(function(a, b) { return b.total - a.total; }).slice(0, 5);
+}
+
+function gerarHistograma(registros, campo, passo) {
+  var bins = {};
+  var largura = passo || 10;
+  registros.forEach(function(r) {
+    var valor = r[campo];
+    if (typeof valor !== 'number' || !isFinite(valor)) return;
+    var faixa = Math.floor(valor / largura) * largura;
+    var chave = faixa + ' - ' + (faixa + largura);
+    bins[chave] = (bins[chave] || 0) + 1;
+  });
+  return Object.keys(bins).sort(function(a, b) {
+    var numA = parseInt(a, 10); var numB = parseInt(b, 10); return numA - numB;
+  }).map(function(chave) { return { faixa: chave, total: bins[chave] }; });
+}
+
+function gerarParetoArmarios(registros) {
+  var contagem = gerarTopLista(registros, 'armario_id');
+  var total = contagem.reduce(function(acc, item) { return acc + item.total; }, 0) || 1;
+  var acumulado = 0;
+  return contagem.map(function(item) {
+    acumulado += item.total;
+    return Object.assign({}, item, { percentualAcumulado: (acumulado / total) * 100 });
+  });
+}
+
+function getDashboardAnalytics(params) {
+  var permissao = validarPermissaoAdmin({ usuarioId: params && params.usuarioId ? params.usuarioId : usuarioContextoRequisicaoId });
+  if (!permissao.ok) {
+    return { success: false, error: permissao.error || 'Acesso negado' };
+  }
+
+  var cache = CacheService.getScriptCache();
+  var chaveCache = 'dashboard_' + Utilities.base64EncodeWebSafe(JSON.stringify(params || {})).slice(0, 80);
+  var cacheado = cache.get(chaveCache);
+  if (cacheado) {
+    try {
+      return JSON.parse(cacheado);
+    } catch (e) {
+      // ignora
+    }
+  }
+
+  var config = lerConfiguracoesDashboard();
+  var registros = computeDurations(carregarLogPadronizado());
+
+  var inicio = params && params.dataInicio ? interpretarDataParametroSeguro(params.dataInicio) : null;
+  var fim = params && params.dataFim ? interpretarDataParametroSeguro(params.dataFim) : null;
+  var filtrados = filtrarPeriodo(registros, inicio, fim);
+
+  if (params && params.status && params.status !== 'todos') {
+    var statusFiltro = normalizarTextoBasico(params.status);
+    filtrados = filtrados.filter(function(r) { return normalizarTextoBasico(r.status) === statusFiltro; });
+  }
+  if (params && params.unidade && params.unidade !== 'todas') {
+    var unidadeFiltro = normalizarTextoBasico(params.unidade);
+    filtrados = filtrados.filter(function(r) { return normalizarTextoBasico(r.unidade) === unidadeFiltro; });
+  }
+  ['armario_id', 'perfil', 'usuario_solicitante', 'usuario_atendente'].forEach(function(campo) {
+    if (params && params[campo]) {
+      var valorFiltro = normalizarTextoBasico(params[campo]);
+      if (valorFiltro) {
+        filtrados = filtrados.filter(function(r) { return normalizarTextoBasico(r[campo]) === valorFiltro; });
+      }
+    }
+  });
+  if (params && params.apenasForaSla) {
+    var slaMinutos = Number(config.sla_minutos) || 30;
+    filtrados = filtrados.filter(function(r) { return typeof r.duracaoTotalMinutos === 'number' && r.duracaoTotalMinutos > slaMinutos; });
+  }
+
+  var kpis = montarKpisDashboard(filtrados, config, params && params.periodoDescricao);
+  var series = calcularSeriesDashboard(filtrados, params && params.timezone);
+  var tabelaArmarios = gerarTabelaArmarios(filtrados);
+  var histFila = gerarHistograma(filtrados, 'duracaoFilaMinutos', 10);
+  var histAtendimento = gerarHistograma(filtrados, 'duracaoAtendimentoMinutos', 10);
+  var histTotal = gerarHistograma(filtrados, 'duracaoTotalMinutos', 10);
+
+  var resultado = {
+    success: true,
+    kpis: kpis,
+    series: series,
+    armarios: tabelaArmarios,
+    topArmarios: gerarTopLista(filtrados, 'armario_id'),
+    topSolicitantes: gerarTopLista(filtrados, 'usuario_solicitante'),
+    topAtendentes: gerarTopLista(filtrados, 'usuario_atendente'),
+    paretoArmarios: gerarParetoArmarios(filtrados),
+    histogramas: {
+      fila: histFila,
+      atendimento: histAtendimento,
+      total: histTotal
+    },
+    alertas: gerarAlertasDashboard(filtrados, config),
+    filtrosDisponiveis: {
+      unidades: Array.from(new Set(registros.map(function(r) { return r.unidade || 'Não informado'; }))).filter(Boolean),
+      perfis: Array.from(new Set(registros.map(function(r) { return r.perfil || 'Não informado'; }))).filter(Boolean)
+    }
+  };
+
+  cache.put(chaveCache, JSON.stringify(resultado), 120);
+  return resultado;
+}
+
+function gerarAlertasDashboard(registros, config) {
+  var alertas = [];
+  var slaMin = Number(config.sla_minutos) || 30;
+  var backlogLimite = Number(config.limite_backlog) || 0;
+  var abertoMinutos = Number(config.alerta_aberto_minutos) || 0;
+  var travadoLimite = Number(config.alerta_armario_travado) || 0;
+
+  var agora = new Date();
+  var abertos = registros.filter(function(r) { return r.status === 'aberto' || r.status === 'pendente'; });
+  if (backlogLimite && abertos.length > backlogLimite) {
+    alertas.push({ tipo: 'warning', mensagem: 'Backlog acima do limite: ' + abertos.length + ' solicitações abertas.' });
+  }
+
+  if (abertoMinutos) {
+    var limiteMs = abertoMinutos * 60000;
+    abertos.forEach(function(r) {
+      if (r.timestamp_criacao && (agora - r.timestamp_criacao) > limiteMs) {
+        alertas.push({ tipo: 'danger', mensagem: 'Solicitação aberta há mais de ' + abertoMinutos + ' minutos (Armário ' + (r.armario_id || 'N/I') + ').' });
+      }
+    });
+  }
+
+  if (travadoLimite) {
+    var contagemArmario = {};
+    registros.forEach(function(r) {
+      var id = r.armario_id || 'Sem identificação';
+      if (!contagemArmario[id]) { contagemArmario[id] = { total: 0, concluidas: 0 }; }
+      contagemArmario[id].total += 1;
+      if (r.status === 'entregue' || r.status === 'concluido' || r.status === 'encerrado') {
+        contagemArmario[id].concluidas += 1;
+      }
+    });
+    Object.keys(contagemArmario).forEach(function(id) {
+      var info = contagemArmario[id];
+      if (info.total >= travadoLimite && info.concluidas === 0) {
+        alertas.push({ tipo: 'warning', mensagem: 'Armário ' + id + ' com muitas movimentações sem conclusão.' });
+      }
+    });
+  }
+
+  var slaEstouro = registros.filter(function(r) { return typeof r.duracaoTotalMinutos === 'number' && r.duracaoTotalMinutos > slaMin; });
+  if (slaEstouro.length) {
+    alertas.push({ tipo: 'info', mensagem: slaEstouro.length + ' solicitações fora do SLA de ' + slaMin + ' min.' });
+  }
+
+  return alertas;
+}
+
+function exportarDashboardCsv(params) {
+  var resultado = getDashboardAnalytics(params);
+  if (!resultado.success) {
+    return resultado;
+  }
+  var registros = computeDurations(carregarLogPadronizado());
+  var filtrados = filtrarPeriodo(registros, params && params.dataInicio ? interpretarDataParametroSeguro(params.dataInicio) : null, params && params.dataFim ? interpretarDataParametroSeguro(params.dataFim) : null);
+  var cabecalhos = ['timestamp_criacao', 'timestamp_inicio', 'timestamp_conclusao', 'status', 'armario_id', 'usuario_solicitante', 'usuario_atendente', 'perfil', 'unidade', 'observacoes'];
+  var linhas = filtrados.map(function(r) {
+    return cabecalhos.map(function(c) {
+      var valor = r[c];
+      if (valor instanceof Date) {
+        return Utilities.formatDate(valor, obterTimeZoneAplicacao(), 'yyyy-MM-dd HH:mm:ss');
+      }
+      return valor || '';
+    });
+  });
+  var conteudo = [cabecalhos].concat(linhas).map(function(l) { return l.join(';'); }).join('\n');
+  return {
+    success: true,
+    fileName: 'dashboard_' + new Date().toISOString().slice(0, 10) + '.csv',
+    content: Utilities.base64Encode(conteudo)
+  };
+}
+
+function salvarSnapshotDashboard(params) {
+  var resultado = getDashboardAnalytics(params);
+  if (!resultado.success) {
+    return resultado;
+  }
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SNAPSHOTS');
+  if (!sheet) {
+    inicializarAbasDashboard();
+    sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SNAPSHOTS');
+  }
+  var kpis = resultado.kpis;
+  var linha = [
+    new Date(),
+    kpis.periodo,
+    kpis.solicitacoesMes,
+    kpis.concluidas,
+    kpis.canceladas,
+    kpis.emProducaoAgora,
+    kpis.abertasAgora,
+    kpis.slaMinutos,
+    kpis.slaPercentual,
+    kpis.tempoMedioTotal,
+    kpis.tempoMedioAtendimento
+  ];
+  sheet.appendRow(linha);
+  return { success: true, mensagem: 'Snapshot salvo' };
+}
+
+function gerarRelatorioDashboard(params) {
+  var resultado = getDashboardAnalytics(params);
+  if (!resultado.success) {
+    return resultado;
+  }
+  var doc = DocumentApp.create('Relatorio Dashboard - ' + new Date().toISOString());
+  var body = doc.getBody();
+  body.appendParagraph('Dashboard - Resumo').setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  var k = resultado.kpis;
+  body.appendParagraph('Período: ' + (k.periodo || 'Personalizado'));
+  body.appendParagraph('Solicitações no mês: ' + k.solicitacoesMes);
+  body.appendParagraph('Taxa de conclusão: ' + k.taxaConclusao.toFixed(1) + '%');
+  body.appendParagraph('Taxa de cancelamento: ' + k.taxaCancelamento.toFixed(1) + '%');
+  body.appendParagraph('Tempo médio total: ' + k.tempoMedioTotal.toFixed(1) + ' min');
+  body.appendParagraph('P95: ' + k.p95.toFixed(1) + ' min | P99: ' + k.p99.toFixed(1) + ' min');
+  body.appendParagraph('SLA (' + k.slaMinutos + ' min): ' + k.slaPercentual.toFixed(1) + '% dentro');
+  body.appendParagraph('Top Armários:');
+  var lista = body.appendListItem('');
+  resultado.topArmarios.forEach(function(item) {
+    lista.appendSublistItem(item.chave + ' - ' + item.total + ' eventos');
+  });
+  body.appendParagraph('Alertas ativos:');
+  if (resultado.alertas.length) {
+    resultado.alertas.forEach(function(a) { body.appendParagraph('- ' + a.mensagem); });
+  } else {
+    body.appendParagraph('Nenhum alerta no período.');
+  }
+  return { success: true, url: doc.getUrl(), docId: doc.getId() };
 }

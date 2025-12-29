@@ -54,6 +54,23 @@
                 },
                 usuarios: [],
                 logs: [],
+                dashboardBi: {
+                    filtros: {
+                        periodo: '7d',
+                        dataInicio: '',
+                        dataFim: '',
+                        status: 'todos',
+                        unidade: 'todas',
+                        armario: '',
+                        perfil: '',
+                        solicitante: '',
+                        atendente: '',
+                        foraSla: false
+                    },
+                    carregando: false,
+                    dados: null,
+                    graficos: {}
+                },
                 carregamentoTermosId: 0,
                 filtrosTermos: {
                     status: 'todos',
@@ -651,6 +668,52 @@
             headerUserGreeting: document.getElementById('header-user-greeting'),
             headerUserGreetingRole: document.getElementById('header-user-greeting-role'),
             headerUserGreetingShift: document.getElementById('header-user-greeting-shift'),
+            dashboardPeriodo: document.getElementById('dashboard-periodo'),
+            dashboardDataInicio: document.getElementById('dashboard-data-inicio'),
+            dashboardDataFim: document.getElementById('dashboard-data-fim'),
+            dashboardStatus: document.getElementById('dashboard-status'),
+            dashboardUnidade: document.getElementById('dashboard-unidade'),
+            dashboardArmario: document.getElementById('dashboard-armario'),
+            dashboardPerfil: document.getElementById('dashboard-perfil'),
+            dashboardSolicitante: document.getElementById('dashboard-solicitante'),
+            dashboardAtendente: document.getElementById('dashboard-atendente'),
+            dashboardForaSla: document.getElementById('dashboard-fora-sla'),
+            dashboardAplicar: document.getElementById('btn-dashboard-aplicar'),
+            dashboardAlertas: document.getElementById('dashboard-alertas'),
+            dashboardExportar: document.getElementById('btn-dashboard-exportar'),
+            dashboardPdf: document.getElementById('btn-dashboard-pdf'),
+            dashboardSnapshot: document.getElementById('btn-dashboard-snapshot'),
+            kpis: {
+                hoje: document.getElementById('kpi-hoje'),
+                ontem: document.getElementById('kpi-ontem'),
+                semana: document.getElementById('kpi-semana'),
+                mes: document.getElementById('kpi-mes'),
+                abertas: document.getElementById('kpi-abertas'),
+                producao: document.getElementById('kpi-producao'),
+                conclusao: document.getElementById('kpi-conclusao'),
+                cancelamento: document.getElementById('kpi-cancelamento'),
+                tempoTotal: document.getElementById('kpi-tempo-total'),
+                tempoAtendimento: document.getElementById('kpi-tempo-atendimento'),
+                tempoFila: document.getElementById('kpi-tempo-fila'),
+                p95: document.getElementById('kpi-p95'),
+                p99: document.getElementById('kpi-p99'),
+                sla: document.getElementById('kpi-sla'),
+                slaMeta: document.getElementById('kpi-sla-meta')
+            },
+            listasTop: {
+                armarios: document.getElementById('lista-armarios'),
+                solicitantes: document.getElementById('lista-solicitantes'),
+                atendentes: document.getElementById('lista-atendentes')
+            },
+            tabelaArmariosDashboard: document.getElementById('tabela-armarios-dashboard'),
+            heatmapGrid: document.getElementById('heatmap-grid'),
+            graficoSerie: document.getElementById('grafico-serie'),
+            graficoStatus: document.getElementById('grafico-status'),
+            graficoHora: document.getElementById('grafico-hora'),
+            graficoHistFila: document.getElementById('grafico-hist-fila'),
+            graficoHistAtendimento: document.getElementById('grafico-hist-atendimento'),
+            graficoHistTotal: document.getElementById('grafico-hist-total'),
+            graficoPareto: document.getElementById('grafico-pareto'),
             avatarModal: document.getElementById('avatar-modal'),
             avatarModalBackdrop: document.getElementById('avatar-modal-backdrop'),
             avatarModalClose: document.getElementById('avatar-modal-close'),
@@ -1213,7 +1276,7 @@
         atualizarPainelNotificacoes(false);
         const customSelectorInstances = new WeakMap();
         const customSelectorStore = new Set();
-        const paginasRestritasUsuario = new Set(['cadastro-armarios', 'cadastro-unidades', 'usuarios', 'logs']);
+        const paginasRestritasUsuario = new Set(['cadastro-armarios', 'cadastro-unidades', 'usuarios', 'logs', 'dashboard-analitico']);
         let aplicacaoInicializada = false;
         let loginInicializado = false;
         let eventosInicializados = false;
@@ -2238,6 +2301,7 @@
             aprimorarSeletoresCabecalho();
             inicializarCanvasAssinatura();
             inicializarEventos();
+            atualizarPeriodoDashboardAnalitico();
             await carregarDadosIniciais();
             atualizarCabecalhoUsuario();
             if (!turnoIntervalId) {
@@ -3354,6 +3418,22 @@
                     elementos.dashboardSearch.focus();
                 });
             }
+            // Dashboard analítico
+            if (elementos.dashboardPeriodo) {
+                elementos.dashboardPeriodo.addEventListener('change', atualizarPeriodoDashboardAnalitico);
+            }
+            if (elementos.dashboardAplicar) {
+                elementos.dashboardAplicar.addEventListener('click', () => carregarDashboardAnalitico(true));
+            }
+            if (elementos.dashboardExportar) {
+                elementos.dashboardExportar.addEventListener('click', exportarDashboardCsvCliente);
+            }
+            if (elementos.dashboardPdf) {
+                elementos.dashboardPdf.addEventListener('click', gerarRelatorioDashboardCliente);
+            }
+            if (elementos.dashboardSnapshot) {
+                elementos.dashboardSnapshot.addEventListener('click', salvarSnapshotDashboardCliente);
+            }
             if (elementos.contingenciaButton) {
                 elementos.contingenciaButton.addEventListener('click', abrirCadastroContingencia);
             }
@@ -3863,7 +3943,11 @@
             estado.paginaAtual = pagina;
 
             // Carregar dados específicos da página
-            carregarDadosTabelas();
+            if (pagina === 'dashboard-analitico') {
+                carregarDashboardAnalitico();
+            } else {
+                carregarDadosTabelas();
+            }
         }
         // Atualizar interface baseada no perfil
         function atualizarInterface() {
@@ -10216,6 +10300,283 @@
 
                 notificationList.appendChild(item);
             });
+        }
+
+        // Dashboard analítico
+        function atualizarPeriodoDashboardAnalitico() {
+            if (!elementos.dashboardPeriodo) return;
+            const valor = elementos.dashboardPeriodo.value;
+            const hoje = new Date();
+            const fimPadrao = hoje.toISOString().slice(0, 10);
+            let inicio = '';
+            switch (valor) {
+                case 'hoje':
+                    inicio = fimPadrao;
+                    break;
+                case '7d':
+                    inicio = new Date(hoje.getTime() - 6 * 86400000).toISOString().slice(0, 10);
+                    break;
+                case '30d':
+                    inicio = new Date(hoje.getTime() - 29 * 86400000).toISOString().slice(0, 10);
+                    break;
+                case 'mes':
+                    inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10);
+                    break;
+                default:
+                    inicio = elementos.dashboardDataInicio?.value || '';
+                    break;
+            }
+            if (elementos.dashboardDataInicio && valor !== 'personalizado') {
+                elementos.dashboardDataInicio.value = inicio;
+            }
+            if (elementos.dashboardDataFim && valor !== 'personalizado') {
+                elementos.dashboardDataFim.value = fimPadrao;
+            }
+            const alvo = estado.dashboardBi.filtros;
+            alvo.periodo = valor;
+            alvo.dataInicio = elementos.dashboardDataInicio?.value || '';
+            alvo.dataFim = elementos.dashboardDataFim?.value || '';
+        }
+
+        function obterFiltrosDashboardAnalitico() {
+            const alvo = estado.dashboardBi.filtros;
+            alvo.periodo = elementos.dashboardPeriodo?.value || '7d';
+            alvo.dataInicio = elementos.dashboardDataInicio?.value || '';
+            alvo.dataFim = elementos.dashboardDataFim?.value || '';
+            alvo.status = elementos.dashboardStatus?.value || 'todos';
+            alvo.unidade = elementos.dashboardUnidade?.value || 'todas';
+            alvo.armario = (elementos.dashboardArmario?.value || '').trim();
+            alvo.perfil = (elementos.dashboardPerfil?.value || '').trim();
+            alvo.solicitante = (elementos.dashboardSolicitante?.value || '').trim();
+            alvo.atendente = (elementos.dashboardAtendente?.value || '').trim();
+            alvo.foraSla = Boolean(elementos.dashboardForaSla?.checked);
+            return { ...alvo };
+        }
+
+        function preencherFiltrosDashboardDisponiveis(dados) {
+            if (elementos.dashboardUnidade && dados?.filtrosDisponiveis?.unidades) {
+                const atual = elementos.dashboardUnidade.value;
+                elementos.dashboardUnidade.innerHTML = '<option value="todas">Todas</option>' +
+                    dados.filtrosDisponiveis.unidades.map(u => `<option value="${u}">${u}</option>`).join('');
+                elementos.dashboardUnidade.value = atual || 'todas';
+            }
+        }
+
+        function renderizarAlertasDashboard(alertas = []) {
+            if (!elementos.dashboardAlertas) return;
+            elementos.dashboardAlertas.innerHTML = '';
+            if (!alertas.length) {
+                const vazio = document.createElement('div');
+                vazio.className = 'alerta-item info';
+                vazio.textContent = 'Nenhum alerta ativo no período.';
+                elementos.dashboardAlertas.appendChild(vazio);
+                return;
+            }
+            alertas.forEach(alerta => {
+                const div = document.createElement('div');
+                div.className = `alerta-item ${alerta.tipo || 'info'}`;
+                div.textContent = alerta.mensagem;
+                elementos.dashboardAlertas.appendChild(div);
+            });
+        }
+
+        function renderizarKpisDashboard(kpis) {
+            if (!kpis || !elementos.kpis) return;
+            elementos.kpis.hoje.textContent = kpis.solicitacoesHoje || 0;
+            elementos.kpis.ontem.textContent = kpis.solicitacoesOntem || 0;
+            elementos.kpis.semana.textContent = kpis.solicitacoesSemana || 0;
+            elementos.kpis.mes.textContent = kpis.solicitacoesMes || 0;
+            elementos.kpis.abertas.textContent = kpis.abertasAgora || 0;
+            elementos.kpis.producao.textContent = kpis.emProducaoAgora || 0;
+            elementos.kpis.conclusao.textContent = `${(kpis.taxaConclusao || 0).toFixed(1)}%`;
+            elementos.kpis.cancelamento.textContent = `${(kpis.taxaCancelamento || 0).toFixed(1)}%`;
+            elementos.kpis.tempoTotal.textContent = `${(kpis.tempoMedioTotal || 0).toFixed(1)} min`;
+            elementos.kpis.tempoAtendimento.textContent = `${(kpis.tempoMedioAtendimento || 0).toFixed(1)} min`;
+            elementos.kpis.tempoFila.textContent = `${(kpis.tempoMedioFila || 0).toFixed(1)} min`;
+            elementos.kpis.p95.textContent = (kpis.p95 || 0).toFixed(1);
+            elementos.kpis.p99.textContent = (kpis.p99 || 0).toFixed(1);
+            elementos.kpis.sla.textContent = `${(kpis.slaPercentual || 0).toFixed(1)}%`;
+            elementos.kpis.slaMeta.textContent = kpis.slaMinutos || 0;
+        }
+
+        function renderizarListaTop(elemento, lista) {
+            if (!elemento) return;
+            elemento.innerHTML = '';
+            (lista || []).forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${item.chave}</span><strong>${item.total}</strong>`;
+                elemento.appendChild(li);
+            });
+        }
+
+        function renderizarTabelaArmariosDashboard(lista) {
+            const tbody = elementos.tabelaArmariosDashboard?.querySelector('tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            (lista || []).forEach(item => {
+                const tr = document.createElement('tr');
+                const dataFormatada = item.ultima ? new Date(item.ultima).toLocaleString('pt-BR') : '-';
+                tr.innerHTML = `
+                    <td>${item.armario_id}</td>
+                    <td>${item.total}</td>
+                    <td>${item.abertos}</td>
+                    <td>${item.cancelados}</td>
+                    <td>${(item.tempoMedio || 0).toFixed(1)} min</td>
+                    <td>${(item.p95 || 0).toFixed(1)} min</td>
+                    <td>${dataFormatada}</td>
+                    <td>${item.statusAtual || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function criarOuAtualizarGrafico(chave, ctx, tipo, dados) {
+            if (!ctx) return;
+            const graficos = estado.dashboardBi.graficos;
+            if (graficos[chave]) {
+                graficos[chave].destroy();
+            }
+            graficos[chave] = new Chart(ctx, { type: tipo, data: dados.data, options: dados.options || {} });
+        }
+
+        function renderizarHeatmapDashboard(heatmap) {
+            if (!elementos.heatmapGrid) return;
+            const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            elementos.heatmapGrid.innerHTML = '';
+            for (let dia = 0; dia < 7; dia++) {
+                for (let hora = 0; hora < 24; hora += 3) {
+                    const chave = `${dia}-${('0' + hora).slice(-2)}`;
+                    const valor = heatmap[chave] || 0;
+                    const intensidade = Math.min(1, valor / 10);
+                    const cor = `rgba(59,130,246,${0.15 + intensidade * 0.65})`;
+                    const div = document.createElement('div');
+                    div.className = 'heatmap-cell';
+                    div.style.background = cor;
+                    div.innerHTML = `<div>${dias[dia]} ${('0' + hora).slice(-2)}h</div><strong>${valor}</strong>`;
+                    elementos.heatmapGrid.appendChild(div);
+                }
+            }
+        }
+
+        function renderizarGraficosDashboard(dados) {
+            if (!dados) return;
+            const serie = dados.series?.serieDia || [];
+            criarOuAtualizarGrafico('serie', elementos.graficoSerie, 'line', {
+                data: {
+                    labels: serie.map(s => s.data),
+                    datasets: [{ label: 'Solicitações', data: serie.map(s => s.total), borderColor: '#2563eb', fill: false }]
+                }
+            });
+            const status = dados.series?.status || {};
+            const labelsStatus = Object.keys(status);
+            criarOuAtualizarGrafico('status', elementos.graficoStatus, 'bar', {
+                data: { labels: labelsStatus, datasets: [{ label: 'Volume', data: labelsStatus.map(l => status[l]), backgroundColor: '#10b981' }] }
+            });
+            const horas = dados.series?.horas || [];
+            criarOuAtualizarGrafico('hora', elementos.graficoHora, 'bar', {
+                data: { labels: horas.map(h => h.hora), datasets: [{ label: 'Volume', data: horas.map(h => h.total), backgroundColor: '#6366f1' }] },
+                options: { scales: { x: { ticks: { maxTicksLimit: 12 } } } }
+            });
+            renderizarHeatmapDashboard(dados.series?.heatmap || {});
+
+            const histFila = dados.histogramas?.fila || [];
+            criarOuAtualizarGrafico('histFila', elementos.graficoHistFila, 'bar', {
+                data: { labels: histFila.map(h => h.faixa), datasets: [{ label: 'Fila (min)', data: histFila.map(h => h.total), backgroundColor: '#f97316' }] }
+            });
+            const histAt = dados.histogramas?.atendimento || [];
+            criarOuAtualizarGrafico('histAt', elementos.graficoHistAtendimento, 'bar', {
+                data: { labels: histAt.map(h => h.faixa), datasets: [{ label: 'Atendimento (min)', data: histAt.map(h => h.total), backgroundColor: '#8b5cf6' }] }
+            });
+            const histTotal = dados.histogramas?.total || [];
+            criarOuAtualizarGrafico('histTotal', elementos.graficoHistTotal, 'bar', {
+                data: { labels: histTotal.map(h => h.faixa), datasets: [{ label: 'Total (min)', data: histTotal.map(h => h.total), backgroundColor: '#0ea5e9' }] }
+            });
+            const pareto = dados.paretoArmarios || [];
+            criarOuAtualizarGrafico('pareto', elementos.graficoPareto, 'line', {
+                data: {
+                    labels: pareto.map(p => p.chave),
+                    datasets: [{ label: 'Percentual acumulado', data: pareto.map(p => p.percentualAcumulado), borderColor: '#ef4444', fill: false }]
+                },
+                options: { scales: { y: { suggestedMax: 100 } } }
+            });
+        }
+
+        function renderizarDashboardAnalitico(dados) {
+            if (!dados?.success) return;
+            preencherFiltrosDashboardDisponiveis(dados);
+            renderizarKpisDashboard(dados.kpis);
+            renderizarAlertasDashboard(dados.alertas);
+            renderizarListaTop(elementos.listasTop.armarios, dados.topArmarios);
+            renderizarListaTop(elementos.listasTop.solicitantes, dados.topSolicitantes);
+            renderizarListaTop(elementos.listasTop.atendentes, dados.topAtendentes);
+            renderizarTabelaArmariosDashboard(dados.armarios);
+            renderizarGraficosDashboard(dados);
+        }
+
+        async function carregarDashboardAnalitico(forcar = false) {
+            if (estado.dashboardBi.carregando) return;
+            if (!estado.autenticado) return;
+            if (!forcar && estado.dashboardBi.dados && estado.paginaAtual !== 'dashboard-analitico') return;
+            estado.dashboardBi.carregando = true;
+            try {
+                const filtros = obterFiltrosDashboardAnalitico();
+                const resposta = await callGoogleScript('getDashboardAnalytics', {
+                    dataInicio: filtros.dataInicio,
+                    dataFim: filtros.dataFim,
+                    status: filtros.status,
+                    unidade: filtros.unidade,
+                    armario_id: filtros.armario,
+                    perfil: filtros.perfil,
+                    usuario_solicitante: filtros.solicitante,
+                    usuario_atendente: filtros.atendente,
+                    apenasForaSla: filtros.foraSla,
+                    periodoDescricao: filtros.periodo
+                });
+                if (resposta?.success) {
+                    estado.dashboardBi.dados = resposta;
+                    renderizarDashboardAnalitico(resposta);
+                } else {
+                    mostrarErro(resposta?.error || 'Falha ao carregar dashboard.');
+                }
+            } catch (erro) {
+                console.error('Erro ao carregar dashboard analítico:', erro);
+                mostrarErro('Erro ao carregar dashboard analítico');
+            } finally {
+                estado.dashboardBi.carregando = false;
+            }
+        }
+
+        async function exportarDashboardCsvCliente() {
+            const filtros = obterFiltrosDashboardAnalitico();
+            const resposta = await callGoogleScript('exportarDashboardCsv', filtros);
+            if (!resposta?.success) {
+                mostrarErro(resposta?.error || 'Não foi possível exportar.');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = 'data:text/csv;base64,' + resposta.content;
+            link.download = resposta.fileName || 'dashboard.csv';
+            link.click();
+        }
+
+        async function gerarRelatorioDashboardCliente() {
+            const filtros = obterFiltrosDashboardAnalitico();
+            const resposta = await callGoogleScript('gerarRelatorioDashboard', filtros);
+            if (!resposta?.success) {
+                mostrarErro(resposta?.error || 'Não foi possível gerar relatório.');
+                return;
+            }
+            window.open(resposta.url, '_blank');
+        }
+
+        async function salvarSnapshotDashboardCliente() {
+            const filtros = obterFiltrosDashboardAnalitico();
+            const resposta = await callGoogleScript('salvarSnapshotDashboard', filtros);
+            if (!resposta?.success) {
+                mostrarErro(resposta?.error || 'Não foi possível salvar snapshot.');
+                return;
+            }
+            mostrarSucesso('Snapshot salvo com sucesso.');
         }
        
         // Funções globais para uso nos eventos HTML
