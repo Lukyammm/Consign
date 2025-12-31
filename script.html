@@ -2611,7 +2611,12 @@
             });
 
             if (resultado.success) {
-                const armariosProcessados = (resultado.data || []).map(armario => ({
+                const armariosOriginais = Array.isArray(resultado.data) ? resultado.data : [];
+                if (!Array.isArray(resultado.data)) {
+                    console.warn('Resposta de armários não estava em formato de lista, ignorando valores inválidos');
+                }
+
+                const armariosProcessados = armariosOriginais.map(armario => ({
                     ...armario,
                     id: normalizarIdentificador(armario.id),
                     idPlanilha: armario.idPlanilha !== undefined && armario.idPlanilha !== null
@@ -4553,7 +4558,8 @@
             const unidadeFiltroNormalizado = normalizarTexto(estado.unidadeAtual);
             const filtrosAtivos = obterFiltrosAtivosDashboard();
             const termoBusca = estado.buscaDashboard;
-            const armariosParaExibir = estado.armarios
+            const listaArmarios = Array.isArray(estado.armarios) ? estado.armarios : [];
+            const armariosParaExibir = listaArmarios
                 .filter(a => {
                     const tipoNormalizado = normalizarTexto(a.tipo);
                     const correspondePerfil = perfilNormalizado === 'geral' || perfilNormalizado === 'todos' || tipoNormalizado === perfilNormalizado;
@@ -4619,6 +4625,14 @@
                 return;
             }
 
+            const fragmentInicial = document.createDocumentFragment();
+            const loteInicial = 30;
+            const armariosIniciais = armariosParaExibir.slice(0, loteInicial);
+            armariosIniciais.forEach(armario => {
+                fragmentInicial.appendChild(criarCardArmario(armario));
+            });
+            elementos.armariosContainer.appendChild(fragmentInicial);
+
             const processarLote = (deadline) => {
                 if (versaoExecucao !== renderizarArmariosVersao) return;
                 const tamanhoLote = 50;
@@ -4645,7 +4659,7 @@
                 }
             };
 
-            renderizarArmarios.indiceAtual = 0;
+            renderizarArmarios.indiceAtual = armariosIniciais.length;
             agendarProcessamentoRenderizacao(processarLote);
         }
         function atualizarResumoDashboardLocal() {
@@ -5339,7 +5353,8 @@
                 exibirEstadoTabelaHistorico(tbody, 'Não foi possível carregar o histórico.', 'error');
                 return;
             }
-            estado.historicoVisitantes = (resultado.data || []).filter(item => usuarioPodeVerUnidade(item.unidade));
+            const historicoVisitantes = Array.isArray(resultado.data) ? resultado.data : [];
+            estado.historicoVisitantes = historicoVisitantes.filter(item => usuarioPodeVerUnidade(item.unidade));
             if (!estado.historicoVisitantes.length) {
                 exibirEstadoTabelaHistorico(tbody, 'Nenhum registro disponível.');
                 return;
@@ -5356,7 +5371,8 @@
                 exibirEstadoTabelaHistorico(tbody, 'Não foi possível carregar o histórico.', 'error');
                 return;
             }
-            estado.historicoAcompanhantes = (resultado.data || []).filter(item => usuarioPodeVerUnidade(item.unidade));
+            const historicoAcompanhantes = Array.isArray(resultado.data) ? resultado.data : [];
+            estado.historicoAcompanhantes = historicoAcompanhantes.filter(item => usuarioPodeVerUnidade(item.unidade));
             if (!estado.historicoAcompanhantes.length) {
                 exibirEstadoTabelaHistorico(tbody, 'Nenhum registro disponível.');
                 return;
