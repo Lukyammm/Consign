@@ -42,6 +42,7 @@
             --light-color: var(--color-neutral-100);
             --text-color: var(--color-neutral-700);
             --muted-color: var(--color-neutral-500);
+            --text-light: color-mix(in srgb, var(--text-color) 78%, white 22%);
             --surface-color: var(--color-surface);
             --bg-color: var(--color-background);
             --border-color: var(--color-neutral-200);
@@ -236,6 +237,7 @@
             --color-neutral-900: #F8FAFC;
             --color-surface: #111827;
             --color-background: #0B1120;
+            --text-light: color-mix(in srgb, var(--color-neutral-0) 92%, var(--muted-color) 8%);
 
             --status-livre: #5FBF9C;
             --status-em-uso: #6B8BC7;
@@ -456,6 +458,35 @@
             letter-spacing: 0.02em;
             color: color-mix(in srgb, var(--text-color) 86%, var(--muted-color) 14%);
             font-weight: 700;
+        }
+        [data-theme="dark"] .lf-filters {
+            background: color-mix(in srgb, var(--color-background) 78%, var(--surface-color) 22%);
+            border-color: color-mix(in srgb, var(--color-neutral-900) 18%, transparent);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+        }
+        [data-theme="dark"] .lf-filters::after {
+            opacity: 0.22;
+        }
+        [data-theme="dark"] .lf-filters .filter-group {
+            background: color-mix(in srgb, var(--surface-color) 92%, var(--color-background) 8%);
+            border-color: color-mix(in srgb, var(--color-neutral-900) 18%, transparent);
+            box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-neutral-0) 10%, transparent);
+        }
+        [data-theme="dark"] .lf-filters .input-icon,
+        [data-theme="dark"] .lf-filters .range-field {
+            background: color-mix(in srgb, var(--surface-color) 94%, var(--color-background) 6%);
+            border-color: color-mix(in srgb, var(--color-neutral-900) 16%, transparent);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.32);
+        }
+        [data-theme="dark"] .lf-filters .input-icon input,
+        [data-theme="dark"] .lf-filters .range-field input[type="date"],
+        [data-theme="dark"] .lf-filters select {
+            color: var(--color-neutral-0);
+        }
+        [data-theme="dark"] .lf-filters select,
+        [data-theme="dark"] .lf-filters input[type="date"] {
+            background: color-mix(in srgb, var(--surface-color) 92%, var(--color-background) 8%);
+            border-color: color-mix(in srgb, var(--color-neutral-900) 18%, transparent);
         }
         .lf-filters .input-icon {
             display: flex;
@@ -2098,6 +2129,22 @@
             backdrop-filter: blur(10px);
             border: 1px solid var(--card-border);
             background: color-mix(in srgb, var(--surface-color) 84%, var(--bg-color) 16%);
+        }
+        [data-theme="dark"] .cards-hero {
+            background: color-mix(in srgb, var(--color-background) 84%, transparent);
+            border: 1px solid color-mix(in srgb, var(--color-neutral-900) 14%, transparent);
+            padding: 12px;
+            border-radius: 16px;
+        }
+        [data-theme="dark"] .cards-hero .card {
+            background: color-mix(in srgb, var(--surface-color) 88%, var(--color-background) 12%);
+            color: var(--color-neutral-0);
+            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.38);
+            border-color: color-mix(in srgb, var(--color-neutral-900) 18%, transparent);
+        }
+        [data-theme="dark"] .cards-hero .card .card-value,
+        [data-theme="dark"] .cards-hero .card .card-title {
+            color: inherit;
         }
         .cards-hero .card {
             display: flex;
@@ -4800,6 +4847,17 @@
         .wizard-select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+        [data-theme="dark"] .wizard-input,
+        [data-theme="dark"] .wizard-textarea,
+        [data-theme="dark"] .wizard-select {
+            background: color-mix(in srgb, var(--surface-color) 90%, var(--color-background) 10%);
+            color: var(--color-neutral-0);
+            border-color: color-mix(in srgb, var(--color-neutral-900) 18%, transparent);
+        }
+        [data-theme="dark"] .wizard-input::placeholder,
+        [data-theme="dark"] .wizard-textarea::placeholder {
+            color: color-mix(in srgb, var(--color-neutral-0) 62%, var(--muted-color) 38%);
         }
         [data-theme="dark"] #termo-prontuario-busca.wizard-input {
             color: var(--color-neutral-0);

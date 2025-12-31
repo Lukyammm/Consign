@@ -3622,6 +3622,21 @@
                 elementos.termoNascimento.addEventListener('input', () => normalizarCampoDataNascimento(elementos.termoNascimento));
                 elementos.termoNascimento.addEventListener('blur', () => finalizarCampoDataNascimento(elementos.termoNascimento));
             }
+            if (elementos.termoSetor) {
+                const garantirSetoresDisponiveis = async () => {
+                    if (estado.setores && estado.setores.length) {
+                        atualizarOpcoesSetorTermo();
+                        return;
+                    }
+                    try {
+                        await carregarSetores();
+                    } catch (erroCarregamento) {
+                        console.error('Erro ao recarregar setores no termo:', erroCarregamento);
+                    }
+                };
+                elementos.termoSetor.addEventListener('focus', garantirSetoresDisponiveis);
+                elementos.termoSetor.addEventListener('click', garantirSetoresDisponiveis);
+            }
             if (elementos.termoOriConfirmBtn && elementos.termoOriConfirmInput) {
                 elementos.termoOriConfirmBtn.addEventListener('click', () => {
                     const novoEstado = !elementos.termoOriConfirmInput.checked;
