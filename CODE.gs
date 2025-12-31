@@ -7806,6 +7806,12 @@ function getDashboardAnalytics(params) {
   var config = lerConfiguracoesDashboard();
   var registros = computeDurations(carregarLogPadronizado());
 
+  var setoresCadastro = getSetores();
+  var unidadesDisponiveis = [];
+  if (setoresCadastro && setoresCadastro.success && Array.isArray(setoresCadastro.data)) {
+    unidadesDisponiveis = setoresCadastro.data;
+  }
+
   var inicio = params && params.dataInicio ? interpretarDataParametroSeguro(params.dataInicio) : null;
   var fim = params && params.dataFim ? interpretarDataParametroSeguro(params.dataFim) : null;
   var filtrados = filtrarPeriodo(registros, inicio, fim);
@@ -7845,7 +7851,6 @@ function getDashboardAnalytics(params) {
       unidade: r.unidade,
       usuario_solicitante: r.usuario_solicitante,
       usuario_atendente: r.usuario_atendente,
-      observacoes: r.observacoes,
       timestamp_criacao: r.timestamp_criacao,
       timestamp_inicio: r.timestamp_inicio,
       timestamp_conclusao: r.timestamp_conclusao,
@@ -7870,12 +7875,16 @@ function getDashboardAnalytics(params) {
     alertas: gerarAlertasDashboard(filtrados, config),
     registrosPeriodo: registrosPeriodo,
     filtrosDisponiveis: {
-      unidades: Array.from(new Set(registros.map(function(r) { return r.unidade || 'Não informado'; }))).filter(Boolean),
-      perfis: Array.from(new Set(registros.map(function(r) { return r.perfil || 'Não informado'; }))).filter(Boolean)
+      unidades: unidadesDisponiveis.length ? unidadesDisponiveis : Array.from(new Set(registros.map(function(r) { return r.unidade || 'Não informado'; }))).filter(Boolean),
+      perfis: Array.from(new Set(registros.map(function(r) { return r.perfil || 'Não informado'; })).filter(Boolean))
     }
   };
 
-  cache.put(chaveCache, JSON.stringify(resultado), 120);
+  try {
+    cache.put(chaveCache, JSON.stringify(resultado), 120);
+  } catch (erroCache) {
+    registrarLog('AVISO', 'Dashboard sem cache (payload grande): ' + erroCache);
+  }
   return resultado;
 }
 
