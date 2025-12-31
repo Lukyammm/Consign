@@ -1754,8 +1754,15 @@
             if (!usuario) {
                 return [];
             }
-            const unidadesNormalizadas = normalizarListaDeUnidades(usuario.unidades);
+            const unidadesNormalizadas = normalizarListaDeUnidades(usuario.unidades)
+                .filter(valor => {
+                    const normalizado = normalizarTexto(valor);
+                    return normalizado && !['null', 'undefined', 'nenhum', 'none', '-'].includes(normalizado);
+                });
             if (perfilAtualEhAdmin() || unidadesNormalizadas.some(valor => normalizarTexto(valor) === 'all')) {
+                return null;
+            }
+            if (!unidadesNormalizadas.length) {
                 return null;
             }
             return unidadesNormalizadas;
