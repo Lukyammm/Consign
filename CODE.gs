@@ -1,6 +1,11 @@
 // Configuração inicial
 function doGet() {
   var template = HtmlService.createTemplateFromFile('index');
+  try {
+    template.scriptUrl = ScriptApp.getService().getUrl();
+  } catch (e) {
+    template.scriptUrl = '';
+  }
   return template.evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
