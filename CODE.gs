@@ -7225,17 +7225,20 @@ function getLogs() {
 
 // Funções para notificações
 function getNotificacoes() {
-  try {
-    var agora = new Date();
-    var notificacoes = [];
+    try {
+      var agora = new Date();
+      var notificacoes = [];
 
-    var armariosVisitantes = getArmarios('visitante');
-    var armariosAcompanhantes = getArmarios('acompanhante');
+      var armariosVisitantes = getArmarios('visitante');
+      var armariosAcompanhantes = getArmarios('acompanhante');
 
-    // Verificar armários vencidos e próximos do vencimento (visitantes e acompanhantes)
-    [armariosVisitantes, armariosAcompanhantes].forEach(function(resultado) {
-      if (resultado && resultado.success) {
-        resultado.data.forEach(function(armario) {
+      var listasArmarios = [armariosVisitantes, armariosAcompanhantes].map(function(resultado) {
+        return resultado && resultado.success && Array.isArray(resultado.data) ? resultado.data : [];
+      });
+
+      // Verificar armários vencidos e próximos do vencimento (visitantes e acompanhantes)
+      listasArmarios.forEach(function(listaArmarios) {
+        listaArmarios.forEach(function(armario) {
           if (armario.status === 'em-uso' && armario.horaPrevista) {
             try {
               var hoje = new Date().toISOString().split('T')[0];
@@ -7260,33 +7263,33 @@ function getNotificacoes() {
             }
           }
         });
-      }
-    });
-
-    // Aviso para movimentação de contingência quando houver armários livres
-    if (armariosAcompanhantes && armariosAcompanhantes.success) {
-      var contigencias = armariosAcompanhantes.data.filter(function(item) {
-        return normalizarTextoBasico(item.status) === 'contingencia';
-      });
-      var livres = armariosAcompanhantes.data.filter(function(item) {
-        return normalizarTextoBasico(item.status) === 'livre';
       });
 
-      if (contigencias.length && livres.length) {
-        notificacoes.unshift({
-          tipo: 'warning',
-          titulo: 'Há armários livres para mover contingências',
-          tempo: `${livres.length} livre(s) para ${contigencias.length} contingência(s)`
+      // Aviso para movimentação de contingência quando houver armários livres
+      var listaAcompanhantes = listasArmarios[1] || [];
+      if (listaAcompanhantes.length) {
+        var contigencias = listaAcompanhantes.filter(function(item) {
+          return normalizarTextoBasico(item.status) === 'contingencia';
         });
+        var livres = listaAcompanhantes.filter(function(item) {
+          return normalizarTextoBasico(item.status) === 'livre';
+        });
+
+        if (contigencias.length && livres.length) {
+          notificacoes.unshift({
+            tipo: 'warning',
+            titulo: 'Há armários livres para mover contingências',
+            tempo: `${livres.length} livre(s) para ${contigencias.length} contingência(s)`
+          });
+        }
       }
+
+      return { success: true, data: notificacoes };
+
+    } catch (error) {
+      return { success: false, error: error.toString() };
     }
-
-    return { success: true, data: notificacoes };
-
-  } catch (error) {
-    return { success: false, error: error.toString() };
   }
-}
 
 // Função para obter estatísticas do Monitor
 function getEstatisticasDashboard(tipoUsuario) {
