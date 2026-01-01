@@ -1,6 +1,61 @@
 <script>
-        // URL do Google Apps Script - ATUALIZE COM SUA URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbGb6sQR1auYsyTB-kwPos7Cd7swLuTUDiAzzpwTPW2cj76ykYzKYgBDXA-g5ef7pbpw/exec';
+        // URL do Google Apps Script - preenchida automaticamente pelo template
+        const SCRIPT_URL = '<?= typeof scriptUrl !== "undefined" ? scriptUrl : '' ?>';
+        let scriptUrlValidaCache = false;
+        let avisoScriptUrlExibido = false;
+        function validarScriptUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return false;
+            }
+            try {
+                const parsed = new URL(url);
+                return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+            } catch (erro) {
+                console.error('URL do WebApp inválida:', erro);
+                return false;
+            }
+        }
+        function bloquearAplicacaoPorUrlInvalida() {
+            if (avisoScriptUrlExibido) {
+                return false;
+            }
+            avisoScriptUrlExibido = true;
+            if (typeof elementos !== 'undefined') {
+                if (elementos.loginSubmit) {
+                    elementos.loginSubmit.disabled = true;
+                }
+                if (elementos.loginFeedback) {
+                    elementos.loginFeedback.textContent = 'URL do WebApp ausente ou inválida. Publique o Apps Script e acesse pela URL implantada.';
+                    elementos.loginFeedback.classList.add('is-error');
+                }
+                if (elementos.appShell) {
+                    elementos.appShell.classList.add('hidden');
+                }
+                if (elementos.loginContainer) {
+                    elementos.loginContainer.classList.remove('hidden');
+                }
+            }
+            mostrarErro('URL do WebApp não configurada. Publique o Apps Script e acesse o endereço implantado antes de tentar o login.');
+            return false;
+        }
+        function liberarAplicacaoSeUrlValida() {
+            if (typeof elementos !== 'undefined' && elementos.loginSubmit) {
+                elementos.loginSubmit.disabled = false;
+            }
+            if (typeof elementos !== 'undefined' && elementos.loginFeedback) {
+                elementos.loginFeedback.textContent = '';
+                elementos.loginFeedback.classList.remove('is-error');
+            }
+            avisoScriptUrlExibido = false;
+        }
+        function garantirScriptUrlConfigurada() {
+            scriptUrlValidaCache = validarScriptUrl(SCRIPT_URL);
+            if (!scriptUrlValidaCache) {
+                return bloquearAplicacaoPorUrlInvalida();
+            }
+            liberarAplicacaoSeUrlValida();
+            return true;
+        }
         // Estado da aplicação
         function criarEstadoLiberacaoInicial() {
             return {
@@ -1793,6 +1848,13 @@
                 return true;
             }
             const referenciaNormalizada = normalizarTexto(referencia);
+
+            // Se as unidades ainda não foram carregadas, não devemos bloquear a visualização
+            // para evitar que o monitor fique vazio durante o carregamento inicial.
+            if (!Array.isArray(estado.unidades) || !estado.unidades.length) {
+                return true;
+            }
+
             const unidadeEncontrada = estado.unidades.find(unidade => {
                 const nomeNormalizado = normalizarTexto(unidade.nome);
                 return nomeNormalizado === referenciaNormalizada || String(unidade.id) === referencia;
@@ -2162,6 +2224,7 @@
             inicializarTema();
             atualizarOpcoesSetorTermo();
             atualizarResponsavelMovimentacaoInfo();
+            garantirScriptUrlConfigurada();
             inicializarLogin();
         });
         function aguardar(ms) {
@@ -2193,6 +2256,9 @@
             const intervaloBaseConfigurado = Number.isFinite(opcoes.intervaloInicial) && opcoes.intervaloInicial > 0
                 ? opcoes.intervaloInicial
                 : 400;
+            if (!garantirScriptUrlConfigurada()) {
+                return { success: false, error: 'URL do WebApp não configurada', _erroNotificado: true };
+            }
             const payload = { ...(data || {}) };
             if (!Object.prototype.hasOwnProperty.call(payload, 'usuarioId')) {
                 const usuarioAtual = obterUsuarioAutenticado();
@@ -2351,6 +2417,10 @@
             }
             elementos.loginForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
+                if (!garantirScriptUrlConfigurada()) {
+                    atualizarFeedbackLogin('error', 'Publique o Apps Script e abra o WebApp pela URL implantada.');
+                    return;
+                }
                 const usuarioLogin = elementos.loginUsuario?.value.trim();
                 const senha = elementos.loginSenha?.value.trim();
                 atualizarFeedbackLogin();

@@ -1,7 +1,7 @@
 # Consign
 
 ## Instalação
-1. Publique o projeto como WebApp no Google Apps Script mantendo o acesso aos usuários autorizados.
+1. Publique o projeto como WebApp no Google Apps Script mantendo o acesso aos usuários autorizados. A URL pública é injetada automaticamente no front-end; acesse o sistema sempre pelo endereço implantado para evitar falha de comunicação.
 2. Atualize o `PASTA_DRIVE_FOTOS_ID` em `CODE.gs` se precisar apontar para outra pasta do Drive.
 3. Certifique-se de que a planilha tenha a aba **Registro de Imagens** (é criada automaticamente no primeiro uso) para indexar as fotos salvas nos termos e nas movimentações.
 
