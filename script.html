@@ -5121,7 +5121,6 @@
             return estado.armarios
                 .filter(armario => normalizarTexto(armario.tipo) === 'acompanhante')
                 .filter(armario => normalizarTexto(armario.status) === 'livre')
-                .filter(armario => normalizarTexto(armario.unidade) === 'nac eletiva')
                 .filter(armario => !armarioEhContingencia(armario))
                 .filter(armario => usuarioPodeVerUnidade(armario.unidade))
                 .filter(armario => {
