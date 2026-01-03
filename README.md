@@ -19,15 +19,6 @@
 
 - **Encerramento e liberação unificados:** a finalização do termo e a liberação do armário agora ocorrem em uma única ação para reduzir o tempo de espera e manter o fluxo mais ágil.
 
-## Monitor BI (novo)
-### Passo a passo de instalação
-1. Publique ou atualize o WebApp no Apps Script e garanta que os usuários tenham permissão de acesso.
-2. Abra a planilha vinculada e confirme que as abas `LOG`, `CONFIG` e `SNAPSHOTS` foram criadas automaticamente ao acessar o Monitor (ou crie manualmente com os cabeçalhos padrão descritos abaixo).
-3. Na aba `CONFIG`, ajuste os parâmetros:
-   - `sla_minutos` (meta em minutos)
-   - `limite_backlog`, `alerta_aberto_minutos`, `alerta_armario_travado_minutos`, `email_alertas` (opcional)
-4. Preencha a aba `LOG` com as colunas: `timestamp_criacao`, `timestamp_inicio`, `timestamp_conclusao`, `status`, `armario_id`, `usuario_solicitante`, `usuario_atendente`, `perfil`, `unidade`, `observacoes`.
-5. Publique as alterações; o front já carrega o Chart.js e os botões de exportação (CSV/PDF) e snapshot diário.
 
 ### Configuração de permissões
 - Leitura/escrita na planilha (LOG, CONFIG, SNAPSHOTS) para cálculos, alertas e snapshots.
