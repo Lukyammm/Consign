@@ -1,61 +1,6 @@
 <script>
-        // URL do Google Apps Script - preenchida automaticamente pelo template
-        const SCRIPT_URL = '<?= typeof scriptUrl !== "undefined" ? scriptUrl : '' ?>';
-        let scriptUrlValidaCache = false;
-        let avisoScriptUrlExibido = false;
-        function validarScriptUrl(url) {
-            if (!url || typeof url !== 'string') {
-                return false;
-            }
-            try {
-                const parsed = new URL(url);
-                return parsed.protocol === 'https:' || parsed.protocol === 'http:';
-            } catch (erro) {
-                console.error('URL do WebApp inválida:', erro);
-                return false;
-            }
-        }
-        function bloquearAplicacaoPorUrlInvalida() {
-            if (avisoScriptUrlExibido) {
-                return false;
-            }
-            avisoScriptUrlExibido = true;
-            if (typeof elementos !== 'undefined') {
-                if (elementos.loginSubmit) {
-                    elementos.loginSubmit.disabled = true;
-                }
-                if (elementos.loginFeedback) {
-                    elementos.loginFeedback.textContent = 'URL do WebApp ausente ou inválida. Publique o Apps Script e acesse pela URL implantada.';
-                    elementos.loginFeedback.classList.add('is-error');
-                }
-                if (elementos.appShell) {
-                    elementos.appShell.classList.add('hidden');
-                }
-                if (elementos.loginContainer) {
-                    elementos.loginContainer.classList.remove('hidden');
-                }
-            }
-            mostrarErro('URL do WebApp não configurada. Publique o Apps Script e acesse o endereço implantado antes de tentar o login.');
-            return false;
-        }
-        function liberarAplicacaoSeUrlValida() {
-            if (typeof elementos !== 'undefined' && elementos.loginSubmit) {
-                elementos.loginSubmit.disabled = false;
-            }
-            if (typeof elementos !== 'undefined' && elementos.loginFeedback) {
-                elementos.loginFeedback.textContent = '';
-                elementos.loginFeedback.classList.remove('is-error');
-            }
-            avisoScriptUrlExibido = false;
-        }
-        function garantirScriptUrlConfigurada() {
-            scriptUrlValidaCache = validarScriptUrl(SCRIPT_URL);
-            if (!scriptUrlValidaCache) {
-                return bloquearAplicacaoPorUrlInvalida();
-            }
-            liberarAplicacaoSeUrlValida();
-            return true;
-        }
+        // URL do Google Apps Script - ATUALIZE COM SUA URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbGb6sQR1auYsyTB-kwPos7Cd7swLuTUDiAzzpwTPW2cj76ykYzKYgBDXA-g5ef7pbpw/exec';
         // Estado da aplicação
         function criarEstadoLiberacaoInicial() {
             return {
@@ -109,23 +54,6 @@
                 },
                 usuarios: [],
                 logs: [],
-                dashboardBi: {
-                    filtros: {
-                        dataInicio: '',
-                        dataFim: '',
-                        status: 'todos',
-                        unidade: 'todas',
-                        armario: '',
-                        perfil: 'ambos'
-                    },
-                    carregando: false,
-                    dados: null,
-                    graficos: {},
-                    registros: [],
-                    buscaTabela: '',
-                    slaMinutos: 30,
-                    operacionalArmarios: []
-                },
                 carregamentoTermosId: 0,
                 filtrosTermos: {
                     status: 'todos',
@@ -723,41 +651,6 @@
             headerUserGreeting: document.getElementById('header-user-greeting'),
             headerUserGreetingRole: document.getElementById('header-user-greeting-role'),
             headerUserGreetingShift: document.getElementById('header-user-greeting-shift'),
-            dashboardDataInicio: document.getElementById('dashboard-data-inicio'),
-            dashboardDataFim: document.getElementById('dashboard-data-fim'),
-            dashboardStatus: document.getElementById('dashboard-status'),
-            dashboardUnidade: document.getElementById('dashboard-unidade'),
-            dashboardArmario: document.getElementById('dashboard-armario'),
-            dashboardPerfilRadios: document.querySelectorAll('input[name="dashboard-perfil"]'),
-            dashboardAplicar: document.getElementById('btn-dashboard-aplicar'),
-            dashboardAlertas: document.getElementById('dashboard-alertas'),
-            dashboardExportar: document.getElementById('btn-dashboard-exportar'),
-            dashboardPdf: document.getElementById('btn-dashboard-pdf'),
-            dashboardSnapshot: document.getElementById('btn-dashboard-snapshot'),
-            dashboardResumoCards: document.querySelectorAll('#dashboard-resumo .resumo-card'),
-            dashboardResumoValores: {
-                total: document.getElementById('card-total-armarios'),
-                livres: document.getElementById('card-armarios-livres'),
-                ocupados: document.getElementById('card-armarios-ocupados'),
-                pendentes: document.getElementById('card-armarios-pendentes'),
-                atrasados: document.getElementById('card-armarios-atrasados'),
-                tempoMedio: document.getElementById('card-tempo-medio'),
-                movimentacoes: document.getElementById('card-movimentacoes')
-            },
-            dashboardIndicadores: {
-                ocupacao: document.getElementById('indicador-ocupacao'),
-                usados: document.getElementById('indicador-usados'),
-                ativos: document.getElementById('indicador-ativos'),
-                iniciadosAntes: document.getElementById('indicador-iniciados-antes'),
-                finalizados: document.getElementById('indicador-finalizados'),
-                tempoMedio: document.getElementById('indicador-tempo-medio'),
-                pico: document.getElementById('indicador-pico')
-            },
-            tabelaArmariosDashboard: document.getElementById('tabela-armarios-dashboard'),
-            graficoSerie: document.getElementById('grafico-serie'),
-            graficoStatus: document.getElementById('grafico-status'),
-            dashboardMapaArmarios: document.getElementById('dashboard-mapa-armarios'),
-            dashboardTableBusca: document.getElementById('dashboard-table-busca'),
             avatarModal: document.getElementById('avatar-modal'),
             avatarModalBackdrop: document.getElementById('avatar-modal-backdrop'),
             avatarModalClose: document.getElementById('avatar-modal-close'),
@@ -1320,7 +1213,7 @@
         atualizarPainelNotificacoes(false);
         const customSelectorInstances = new WeakMap();
         const customSelectorStore = new Set();
-        const paginasRestritasUsuario = new Set(['cadastro-armarios', 'cadastro-unidades', 'usuarios', 'logs', 'dashboard-analitico']);
+        const paginasRestritasUsuario = new Set(['cadastro-armarios', 'cadastro-unidades', 'usuarios', 'logs']);
         let aplicacaoInicializada = false;
         let loginInicializado = false;
         let eventosInicializados = false;
@@ -1809,15 +1702,8 @@
             if (!usuario) {
                 return [];
             }
-            const unidadesNormalizadas = normalizarListaDeUnidades(usuario.unidades)
-                .filter(valor => {
-                    const normalizado = normalizarTexto(valor);
-                    return normalizado && !['null', 'undefined', 'nenhum', 'none', '-'].includes(normalizado);
-                });
+            const unidadesNormalizadas = normalizarListaDeUnidades(usuario.unidades);
             if (perfilAtualEhAdmin() || unidadesNormalizadas.some(valor => normalizarTexto(valor) === 'all')) {
-                return null;
-            }
-            if (!unidadesNormalizadas.length) {
                 return null;
             }
             return unidadesNormalizadas;
@@ -1848,13 +1734,6 @@
                 return true;
             }
             const referenciaNormalizada = normalizarTexto(referencia);
-
-            // Se as unidades ainda não foram carregadas, não devemos bloquear a visualização
-            // para evitar que o monitor fique vazio durante o carregamento inicial.
-            if (!Array.isArray(estado.unidades) || !estado.unidades.length) {
-                return true;
-            }
-
             const unidadeEncontrada = estado.unidades.find(unidade => {
                 const nomeNormalizado = normalizarTexto(unidade.nome);
                 return nomeNormalizado === referenciaNormalizada || String(unidade.id) === referencia;
@@ -2224,7 +2103,6 @@
             inicializarTema();
             atualizarOpcoesSetorTermo();
             atualizarResponsavelMovimentacaoInfo();
-            garantirScriptUrlConfigurada();
             inicializarLogin();
         });
         function aguardar(ms) {
@@ -2256,9 +2134,6 @@
             const intervaloBaseConfigurado = Number.isFinite(opcoes.intervaloInicial) && opcoes.intervaloInicial > 0
                 ? opcoes.intervaloInicial
                 : 400;
-            if (!garantirScriptUrlConfigurada()) {
-                return { success: false, error: 'URL do WebApp não configurada', _erroNotificado: true };
-            }
             const payload = { ...(data || {}) };
             if (!Object.prototype.hasOwnProperty.call(payload, 'usuarioId')) {
                 const usuarioAtual = obterUsuarioAutenticado();
@@ -2363,7 +2238,6 @@
             aprimorarSeletoresCabecalho();
             inicializarCanvasAssinatura();
             inicializarEventos();
-            atualizarPeriodoDashboardAnalitico();
             await carregarDadosIniciais();
             atualizarCabecalhoUsuario();
             if (!turnoIntervalId) {
@@ -2417,10 +2291,6 @@
             }
             elementos.loginForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
-                if (!garantirScriptUrlConfigurada()) {
-                    atualizarFeedbackLogin('error', 'Publique o Apps Script e abra o WebApp pela URL implantada.');
-                    return;
-                }
                 const usuarioLogin = elementos.loginUsuario?.value.trim();
                 const senha = elementos.loginSenha?.value.trim();
                 atualizarFeedbackLogin();
@@ -2681,12 +2551,7 @@
             });
 
             if (resultado.success) {
-                const armariosOriginais = Array.isArray(resultado.data) ? resultado.data : [];
-                if (!Array.isArray(resultado.data)) {
-                    console.warn('Resposta de armários não estava em formato de lista, ignorando valores inválidos');
-                }
-
-                const armariosProcessados = armariosOriginais.map(armario => ({
+                const armariosProcessados = (resultado.data || []).map(armario => ({
                     ...armario,
                     id: normalizarIdentificador(armario.id),
                     idPlanilha: armario.idPlanilha !== undefined && armario.idPlanilha !== null
@@ -3489,42 +3354,6 @@
                     elementos.dashboardSearch.focus();
                 });
             }
-            // Dashboard analítico
-            if (elementos.dashboardAplicar) {
-                elementos.dashboardAplicar.addEventListener('click', () => carregarDashboardAnalitico(true));
-            }
-            if (elementos.dashboardPerfilRadios) {
-                elementos.dashboardPerfilRadios.forEach(radio => {
-                    radio.addEventListener('change', () => carregarDashboardAnalitico(true));
-                });
-            }
-            if (elementos.dashboardResumoCards) {
-                elementos.dashboardResumoCards.forEach(card => {
-                    card.addEventListener('click', () => {
-                        const status = card.dataset.status || 'todos';
-                        if (elementos.dashboardStatus) {
-                            const alvo = (status === 'tempo' || status === 'movimentacoes') ? 'todos' : status;
-                            elementos.dashboardStatus.value = alvo;
-                        }
-                        carregarDashboardAnalitico(true);
-                    });
-                });
-            }
-            if (elementos.dashboardTableBusca) {
-                elementos.dashboardTableBusca.addEventListener('input', () => {
-                    estado.dashboardBi.buscaTabela = elementos.dashboardTableBusca.value || '';
-                    renderizarTabelaArmariosDashboard(estado.dashboardBi.operacionalArmarios || []);
-                });
-            }
-            if (elementos.dashboardExportar) {
-                elementos.dashboardExportar.addEventListener('click', exportarDashboardCsvCliente);
-            }
-            if (elementos.dashboardPdf) {
-                elementos.dashboardPdf.addEventListener('click', gerarRelatorioDashboardCliente);
-            }
-            if (elementos.dashboardSnapshot) {
-                elementos.dashboardSnapshot.addEventListener('click', salvarSnapshotDashboardCliente);
-            }
             if (elementos.contingenciaButton) {
                 elementos.contingenciaButton.addEventListener('click', abrirCadastroContingencia);
             }
@@ -3691,21 +3520,6 @@
             if (elementos.termoNascimento) {
                 elementos.termoNascimento.addEventListener('input', () => normalizarCampoDataNascimento(elementos.termoNascimento));
                 elementos.termoNascimento.addEventListener('blur', () => finalizarCampoDataNascimento(elementos.termoNascimento));
-            }
-            if (elementos.termoSetor) {
-                const garantirSetoresDisponiveis = async () => {
-                    if (estado.setores && estado.setores.length) {
-                        atualizarOpcoesSetorTermo();
-                        return;
-                    }
-                    try {
-                        await carregarSetores();
-                    } catch (erroCarregamento) {
-                        console.error('Erro ao recarregar setores no termo:', erroCarregamento);
-                    }
-                };
-                elementos.termoSetor.addEventListener('focus', garantirSetoresDisponiveis);
-                elementos.termoSetor.addEventListener('click', garantirSetoresDisponiveis);
             }
             if (elementos.termoOriConfirmBtn && elementos.termoOriConfirmInput) {
                 elementos.termoOriConfirmBtn.addEventListener('click', () => {
@@ -4049,11 +3863,7 @@
             estado.paginaAtual = pagina;
 
             // Carregar dados específicos da página
-            if (pagina === 'dashboard-analitico') {
-                carregarDashboardAnalitico();
-            } else {
-                carregarDadosTabelas();
-            }
+            carregarDadosTabelas();
         }
         // Atualizar interface baseada no perfil
         function atualizarInterface() {
@@ -4643,8 +4453,7 @@
             const unidadeFiltroNormalizado = normalizarTexto(estado.unidadeAtual);
             const filtrosAtivos = obterFiltrosAtivosDashboard();
             const termoBusca = estado.buscaDashboard;
-            const listaArmarios = Array.isArray(estado.armarios) ? estado.armarios : [];
-            const armariosParaExibir = listaArmarios
+            const armariosParaExibir = estado.armarios
                 .filter(a => {
                     const tipoNormalizado = normalizarTexto(a.tipo);
                     const correspondePerfil = perfilNormalizado === 'geral' || perfilNormalizado === 'todos' || tipoNormalizado === perfilNormalizado;
@@ -4710,14 +4519,6 @@
                 return;
             }
 
-            const fragmentInicial = document.createDocumentFragment();
-            const loteInicial = 30;
-            const armariosIniciais = armariosParaExibir.slice(0, loteInicial);
-            armariosIniciais.forEach(armario => {
-                fragmentInicial.appendChild(criarCardArmario(armario));
-            });
-            elementos.armariosContainer.appendChild(fragmentInicial);
-
             const processarLote = (deadline) => {
                 if (versaoExecucao !== renderizarArmariosVersao) return;
                 const tamanhoLote = 50;
@@ -4744,7 +4545,7 @@
                 }
             };
 
-            renderizarArmarios.indiceAtual = armariosIniciais.length;
+            renderizarArmarios.indiceAtual = 0;
             agendarProcessamentoRenderizacao(processarLote);
         }
         function atualizarResumoDashboardLocal() {
@@ -5438,8 +5239,7 @@
                 exibirEstadoTabelaHistorico(tbody, 'Não foi possível carregar o histórico.', 'error');
                 return;
             }
-            const historicoVisitantes = Array.isArray(resultado.data) ? resultado.data : [];
-            estado.historicoVisitantes = historicoVisitantes.filter(item => usuarioPodeVerUnidade(item.unidade));
+            estado.historicoVisitantes = (resultado.data || []).filter(item => usuarioPodeVerUnidade(item.unidade));
             if (!estado.historicoVisitantes.length) {
                 exibirEstadoTabelaHistorico(tbody, 'Nenhum registro disponível.');
                 return;
@@ -5456,8 +5256,7 @@
                 exibirEstadoTabelaHistorico(tbody, 'Não foi possível carregar o histórico.', 'error');
                 return;
             }
-            const historicoAcompanhantes = Array.isArray(resultado.data) ? resultado.data : [];
-            estado.historicoAcompanhantes = historicoAcompanhantes.filter(item => usuarioPodeVerUnidade(item.unidade));
+            estado.historicoAcompanhantes = (resultado.data || []).filter(item => usuarioPodeVerUnidade(item.unidade));
             if (!estado.historicoAcompanhantes.length) {
                 exibirEstadoTabelaHistorico(tbody, 'Nenhum registro disponível.');
                 return;
@@ -10417,422 +10216,6 @@
 
                 notificationList.appendChild(item);
             });
-        }
-
-        // Dashboard analítico
-        function obterDataHojeIso() {
-            return new Date().toISOString().slice(0, 10);
-        }
-
-        function obterPerfilFiltroDashboard() {
-            if (!elementos.dashboardPerfilRadios) return 'ambos';
-            for (const radio of elementos.dashboardPerfilRadios) {
-                if (radio.checked) return radio.value || 'ambos';
-            }
-            return 'ambos';
-        }
-
-        function garantirIntervaloPreenchido() {
-            const hoje = obterDataHojeIso();
-            if (elementos.dashboardDataInicio && !elementos.dashboardDataInicio.value) {
-                elementos.dashboardDataInicio.value = hoje;
-            }
-            if (elementos.dashboardDataFim && !elementos.dashboardDataFim.value) {
-                elementos.dashboardDataFim.value = hoje;
-            }
-        }
-
-        function obterIntervaloDashboard() {
-            garantirIntervaloPreenchido();
-            const inicio = elementos.dashboardDataInicio?.value || obterDataHojeIso();
-            const fim = elementos.dashboardDataFim?.value || inicio;
-            const inicioDate = new Date(`${inicio}T00:00:00`);
-            const fimDate = new Date(`${fim}T00:00:00`);
-            return {
-                inicio,
-                fim,
-                inicioDate,
-                fimDate,
-                inicioMs: inicioDate.getTime(),
-                fimMs: fimDate.getTime() + 86399999,
-                descricao: inicio === fim ? formatarData(inicio) : `${formatarData(inicio)} a ${formatarData(fim)}`
-            };
-        }
-
-        function obterFiltrosDashboardAnalitico() {
-            const intervalo = obterIntervaloDashboard();
-            const alvo = estado.dashboardBi.filtros;
-            alvo.dataInicio = intervalo.inicio;
-            alvo.dataFim = intervalo.fim;
-            alvo.status = elementos.dashboardStatus?.value || 'todos';
-            alvo.unidade = elementos.dashboardUnidade?.value || 'todas';
-            alvo.armario = (elementos.dashboardArmario?.value || '').trim();
-            alvo.perfil = obterPerfilFiltroDashboard();
-            return { ...alvo };
-        }
-
-        function preencherFiltrosDashboardDisponiveis(dados) {
-            if (elementos.dashboardUnidade && dados?.filtrosDisponiveis?.unidades) {
-                const atual = elementos.dashboardUnidade.value;
-                elementos.dashboardUnidade.innerHTML = '<option value="todas">Todas</option>' +
-                    dados.filtrosDisponiveis.unidades.map(u => `<option value="${u}">${u}</option>`).join('');
-                elementos.dashboardUnidade.value = atual || 'todas';
-            }
-        }
-
-        function renderizarAlertasDashboard(alertas = []) {
-            if (!elementos.dashboardAlertas) return;
-            elementos.dashboardAlertas.innerHTML = '';
-            if (!alertas.length) {
-                const vazio = document.createElement('div');
-                vazio.className = 'alerta-item info';
-                vazio.textContent = 'Nenhum alerta ativo no período.';
-                elementos.dashboardAlertas.appendChild(vazio);
-                return;
-            }
-            alertas.forEach(alerta => {
-                const div = document.createElement('div');
-                div.className = `alerta-item ${alerta.tipo || 'info'}`;
-                div.textContent = alerta.mensagem;
-                elementos.dashboardAlertas.appendChild(div);
-            });
-        }
-
-        function normalizarRegistrosDashboard(lista) {
-            return (lista || []).map(item => {
-                const inicio = item.timestamp_inicio ? new Date(item.timestamp_inicio) : null;
-                const fim = item.timestamp_conclusao ? new Date(item.timestamp_conclusao) : null;
-                const criacao = item.timestamp_criacao ? new Date(item.timestamp_criacao) : null;
-                return {
-                    ...item,
-                    inicio,
-                    fim,
-                    criacao,
-                    inicioMs: inicio instanceof Date ? inicio.getTime() : (criacao instanceof Date ? criacao.getTime() : null),
-                    fimMs: fim instanceof Date ? fim.getTime() : null,
-                    criacaoMs: criacao instanceof Date ? criacao.getTime() : null,
-                    statusLimpo: normalizarTexto(item.status || ''),
-                    perfilLimpo: normalizarTexto(item.perfil || '')
-                };
-            });
-        }
-
-        function calcularDuracaoMinutos(registro, fimMsReferencia) {
-            if (!registro || registro.inicioMs === null || registro.inicioMs === undefined) return 0;
-            const fimMs = registro.fimMs !== null && registro.fimMs !== undefined ? registro.fimMs : fimMsReferencia;
-            if (!fimMs) return 0;
-            return Math.max((fimMs - registro.inicioMs) / 60000, 0);
-        }
-
-        function definirStatusOperacional(registro, intervalo, slaMinutos) {
-            if (!registro || registro.inicioMs === null || registro.inicioMs === undefined) return 'livre';
-            const ativo = registro.fimMs === null || registro.fimMs >= intervalo.inicioMs;
-            if (!ativo) return 'livre';
-            const base = registro.statusLimpo || '';
-            let status = 'ocupado';
-            if (base.includes('pend')) status = 'pendente';
-            const duracao = calcularDuracaoMinutos(registro, intervalo.fimMs);
-            if (duracao > (slaMinutos || 30) && (status === 'ocupado' || status === 'pendente')) {
-                status = 'atraso';
-            }
-            return status;
-        }
-
-        function construirMapaOperacional(registros, dados) {
-            const intervalo = obterIntervaloDashboard();
-            const slaMin = estado.dashboardBi.slaMinutos || dados?.kpis?.slaMinutos || 30;
-            const filtros = estado.dashboardBi.filtros || {};
-            const base = registros.map(registro => {
-                const statusOperacional = definirStatusOperacional(registro, intervalo, slaMin);
-                const duracaoMinutos = calcularDuracaoMinutos(registro, intervalo.fimMs);
-                return { ...registro, statusOperacional, duracaoMinutos };
-            }).filter(r => {
-                if (filtros.perfil && filtros.perfil !== 'ambos' && r.perfilLimpo !== normalizarTexto(filtros.perfil)) return false;
-                if (filtros.unidade && filtros.unidade !== 'todas' && normalizarTexto(r.unidade) !== normalizarTexto(filtros.unidade)) return false;
-                if (filtros.armario && !normalizarTexto(r.armario_id || '').includes(normalizarTexto(filtros.armario))) return false;
-                if (filtros.status && filtros.status !== 'todos' && r.statusOperacional !== filtros.status) return false;
-                return true;
-            });
-
-            const mapa = new Map();
-            base.forEach(registro => {
-                const id = registro.armario_id || 'Sem identificação';
-                const atual = mapa.get(id);
-                if (!atual || (registro.inicioMs || 0) > (atual.inicioMs || 0)) {
-                    mapa.set(id, registro);
-                }
-            });
-
-            const cadastro = estado.cadastroArmarios || [];
-            cadastro.forEach(item => {
-                const id = item.numero || item.id || item.armario_id;
-                if (id && !mapa.has(id)) {
-                    mapa.set(id, {
-                        armario_id: id,
-                        statusOperacional: 'livre',
-                        duracaoMinutos: 0,
-                        perfil: item.tipo || '',
-                        unidade: item.unidade || ''
-                    });
-                }
-            });
-
-            const armarios = Array.from(mapa.values()).map(item => {
-                const diasAtivo = item.duracaoMinutos ? Math.floor(item.duracaoMinutos / 1440) : 0;
-                return { ...item, diasAtivo };
-            });
-
-            const contagem = { total: armarios.length, livres: 0, ocupados: 0, pendentes: 0, atrasados: 0 };
-            let somaDuracao = 0; let totalDuracao = 0; let ativos = 0; let iniciadosAntes = 0; let finalizados = 0;
-            armarios.forEach(item => {
-                contagem[item.statusOperacional] = (contagem[item.statusOperacional] || 0) + 1;
-                if (['ocupado', 'pendente', 'atraso'].includes(item.statusOperacional)) ativos += 1;
-                if (item.duracaoMinutos) { somaDuracao += item.duracaoMinutos; totalDuracao += 1; }
-                if (item.inicioMs && item.inicioMs < intervalo.inicioMs) iniciadosAntes += 1;
-                if (item.fimMs && item.fimMs >= intervalo.inicioMs && item.fimMs <= intervalo.fimMs) finalizados += 1;
-            });
-
-            const tempoMedio = totalDuracao ? somaDuracao / totalDuracao : 0;
-            const ocupacao = contagem.total ? ((contagem.ocupados + contagem.pendentes + contagem.atrasados) / contagem.total) * 100 : 0;
-            const pico = (dados?.series?.serieDia || []).reduce((max, dia) => Math.max(max, dia.total || 0), 0);
-
-            return {
-                armarios,
-                contagem,
-                tempoMedio,
-                ativos,
-                iniciadosAntes,
-                finalizados,
-                ocupacao,
-                pico,
-                movimentacoes: base.length,
-                intervalo,
-                slaMin
-            };
-        }
-
-        function renderizarResumoOperacional(resumo) {
-            if (!resumo || !elementos.dashboardResumoValores) return;
-            const valores = elementos.dashboardResumoValores;
-            valores.total.textContent = resumo.contagem.total || 0;
-            valores.livres.textContent = resumo.contagem.livres || 0;
-            valores.ocupados.textContent = resumo.contagem.ocupados || 0;
-            valores.pendentes.textContent = resumo.contagem.pendentes || 0;
-            valores.atrasados.textContent = resumo.contagem.atrasados || 0;
-            valores.tempoMedio.textContent = `${(resumo.tempoMedio || 0).toFixed(1)} min`;
-            valores.movimentacoes.textContent = resumo.movimentacoes || 0;
-        }
-
-        function renderizarIndicadoresOperacionais(resumo) {
-            if (!resumo || !elementos.dashboardIndicadores) return;
-            elementos.dashboardIndicadores.ocupacao.textContent = `${(resumo.ocupacao || 0).toFixed(1)}%`;
-            elementos.dashboardIndicadores.usados.textContent = resumo.contagem.total || 0;
-            elementos.dashboardIndicadores.ativos.textContent = resumo.ativos || 0;
-            elementos.dashboardIndicadores.iniciadosAntes.textContent = resumo.iniciadosAntes || 0;
-            elementos.dashboardIndicadores.finalizados.textContent = resumo.finalizados || 0;
-            elementos.dashboardIndicadores.tempoMedio.textContent = `${(resumo.tempoMedio || 0).toFixed(1)} min`;
-            elementos.dashboardIndicadores.pico.textContent = resumo.pico || 0;
-        }
-
-        function renderizarMapaArmarios(armarios) {
-            const container = elementos.dashboardMapaArmarios;
-            if (!container) return;
-            container.innerHTML = '';
-            if (!armarios || !armarios.length) {
-                container.innerHTML = '<div class="table-empty">Nenhum armário dentro do filtro selecionado.</div>';
-                return;
-            }
-            const ordenados = [...armarios].sort((a, b) => (a.armario_id || '').localeCompare(b.armario_id || ''));
-            ordenados.forEach(item => {
-                const duracao = `${(item.duracaoMinutos || 0).toFixed(0)} min`;
-                const longRun = item.diasAtivo >= 2;
-                const card = document.createElement('button');
-                card.type = 'button';
-                card.className = `armario-card status-${item.statusOperacional || 'livre'}${longRun ? ' long-run' : ''}`;
-                card.innerHTML = `
-                    <div class="armario-top">
-                        <span class="armario-id"><i class="fas fa-lock"></i> ${item.armario_id || 'N/I'}</span>
-                        <span class="armario-status">${(item.statusOperacional || 'Livre').toUpperCase()}</span>
-                    </div>
-                    <div class="armario-meta">Perfil: ${item.perfil || '---'} • Unidade: ${item.unidade || '---'}</div>
-                    <div class="armario-duracao"><i class="fas fa-clock"></i> ${duracao}</div>
-                    ${longRun ? '<div class="armario-meta"><strong>Ativo há vários dias</strong></div>' : ''}
-                `;
-                card.addEventListener('click', () => abrirDetalheArmarioDashboard(item));
-                container.appendChild(card);
-            });
-        }
-
-        function abrirDetalheArmarioDashboard(item) {
-            const inicio = item.inicio ? formatarDataHora(item.inicio) : 'Sem registro';
-            const fim = item.fim ? formatarDataHora(item.fim) : 'Em aberto';
-            const duracao = `${(item.duracaoMinutos || 0).toFixed(1)} min`;
-            const status = (item.statusOperacional || 'livre').toUpperCase();
-            const html = `
-                <div class="dashboard-modal-grid">
-                    <div><strong>Perfil:</strong> ${item.perfil || '---'}</div>
-                    <div><strong>Status:</strong> ${status}</div>
-                    <div><strong>Início:</strong> ${inicio}</div>
-                    <div><strong>Fim:</strong> ${fim}</div>
-                    <div><strong>Tempo total:</strong> ${duracao}</div>
-                    <div><strong>Unidade:</strong> ${item.unidade || '---'}</div>
-                    <div><strong>Solicitante:</strong> ${item.usuario_solicitante || '---'}</div>
-                    <div><strong>Atendente:</strong> ${item.usuario_atendente || '---'}</div>
-                </div>`;
-            Swal.fire({
-                title: `Armário ${item.armario_id || 'N/I'}`,
-                html,
-                icon: 'info',
-                confirmButtonText: 'Fechar'
-            });
-        }
-
-        function renderizarTabelaArmariosDashboard(armarios) {
-            const tbody = elementos.tabelaArmariosDashboard?.querySelector('tbody');
-            if (!tbody) return;
-            const termo = normalizarTexto(estado.dashboardBi.buscaTabela || '');
-            tbody.innerHTML = '';
-            const lista = (armarios || []).filter(item => {
-                if (!termo) return true;
-                const alvo = `${item.armario_id || ''} ${item.perfil || ''} ${item.statusOperacional || ''} ${item.unidade || ''}`;
-                return normalizarTexto(alvo).includes(termo);
-            }).sort((a, b) => (b.inicioMs || 0) - (a.inicioMs || 0));
-            if (!lista.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Nenhum registro encontrado.</td></tr>';
-                return;
-            }
-            lista.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${item.armario_id || 'N/I'}</td>
-                    <td>${item.perfil || '-'}</td>
-                    <td><span class="status-label ${item.statusOperacional || 'livre'}">${(item.statusOperacional || 'Livre').toUpperCase()}</span></td>
-                    <td>${item.inicio ? formatarDataHora(item.inicio) : '-'}</td>
-                    <td>${item.fim ? formatarDataHora(item.fim) : '-'}</td>
-                    <td>${(item.duracaoMinutos || 0).toFixed(1)} min</td>
-                    <td><button class="btn-small" type="button">Detalhar</button></td>
-                `;
-                tr.querySelector('button')?.addEventListener('click', () => abrirDetalheArmarioDashboard(item));
-                tbody.appendChild(tr);
-            });
-        }
-
-        function criarOuAtualizarGrafico(chave, ctx, tipo, dados) {
-            if (!ctx) return;
-            const graficos = estado.dashboardBi.graficos;
-            if (graficos[chave]) {
-                graficos[chave].destroy();
-            }
-            graficos[chave] = new Chart(ctx, { type: tipo, data: dados.data, options: dados.options || {} });
-        }
-
-        function renderizarGraficosDashboard(dados, resumo) {
-            if (!dados) return;
-            const serie = dados.series?.serieDia || [];
-            criarOuAtualizarGrafico('serie', elementos.graficoSerie, 'line', {
-                data: {
-                    labels: serie.map(s => s.data),
-                    datasets: [{ label: 'Movimentações', data: serie.map(s => s.total), borderColor: '#2563eb', fill: false }]
-                }
-            });
-            const statusLabels = ['livre', 'ocupado', 'pendente', 'atraso'];
-            criarOuAtualizarGrafico('status', elementos.graficoStatus, 'bar', {
-                data: {
-                    labels: statusLabels.map(s => s.toUpperCase()),
-                    datasets: [{
-                        label: 'Quantidade',
-                        data: statusLabels.map(s => resumo?.contagem?.[s] || 0),
-                        backgroundColor: ['#16a34a', '#2563eb', '#f59e0b', '#dc2626']
-                    }]
-                }
-            });
-        }
-
-        function renderizarDashboardAnalitico(dados) {
-            if (!dados?.success) return;
-            preencherFiltrosDashboardDisponiveis(dados);
-            const registros = estado.dashboardBi.registros || [];
-            const resumo = construirMapaOperacional(registros, dados);
-            estado.dashboardBi.operacionalArmarios = resumo.armarios;
-            renderizarResumoOperacional(resumo);
-            renderizarIndicadoresOperacionais(resumo);
-            renderizarAlertasDashboard(dados.alertas);
-            renderizarMapaArmarios(resumo.armarios);
-            renderizarGraficosDashboard(dados, resumo);
-            renderizarTabelaArmariosDashboard(resumo.armarios);
-        }
-
-        async function carregarDashboardAnalitico(forcar = false) {
-            if (estado.dashboardBi.carregando) return;
-            if (!estado.autenticado) return;
-            if (!forcar && estado.dashboardBi.dados && estado.paginaAtual !== 'dashboard-analitico') return;
-            estado.dashboardBi.carregando = true;
-            estado.dashboardBi.operacionalArmarios = [];
-            try {
-                const filtros = obterFiltrosDashboardAnalitico();
-                const statusApi = ['aberto', 'em_producao', 'entregue', 'cancelado', 'todos'].includes(filtros.status) ? filtros.status : 'todos';
-                const resposta = await callGoogleScript('getDashboardAnalytics', {
-                    dataInicio: filtros.dataInicio,
-                    dataFim: filtros.dataFim,
-                    status: statusApi,
-                    unidade: filtros.unidade,
-                    armario_id: filtros.armario,
-                    perfil: filtros.perfil === 'ambos' ? '' : filtros.perfil,
-                    periodoDescricao: filtros.dataInicio === filtros.dataFim ? formatarData(filtros.dataInicio) : `${formatarData(filtros.dataInicio)} a ${formatarData(filtros.dataFim)}`
-                });
-                if (resposta?.success) {
-                    estado.dashboardBi.dados = resposta;
-                    estado.dashboardBi.slaMinutos = resposta.kpis?.slaMinutos || estado.dashboardBi.slaMinutos;
-                    estado.dashboardBi.registros = normalizarRegistrosDashboard(resposta.registrosPeriodo || []);
-                    renderizarDashboardAnalitico(resposta);
-                } else {
-                    mostrarErro(resposta?.error || 'Falha ao carregar dashboard.');
-                }
-            } catch (erro) {
-                console.error('Erro ao carregar dashboard analítico:', erro);
-                mostrarErro('Erro ao carregar dashboard analítico');
-            } finally {
-                estado.dashboardBi.carregando = false;
-            }
-        }
-
-        async function exportarDashboardCsvCliente() {
-            const filtros = obterFiltrosDashboardAnalitico();
-            const statusApi = ['aberto', 'em_producao', 'entregue', 'cancelado', 'todos'].includes(filtros.status) ? filtros.status : 'todos';
-            const payload = { ...filtros, status: statusApi, perfil: filtros.perfil === 'ambos' ? '' : filtros.perfil };
-            const resposta = await callGoogleScript('exportarDashboardCsv', payload);
-            if (!resposta?.success) {
-                mostrarErro(resposta?.error || 'Não foi possível exportar.');
-                return;
-            }
-            const link = document.createElement('a');
-            link.href = 'data:text/csv;base64,' + resposta.content;
-            link.download = resposta.fileName || 'dashboard.csv';
-            link.click();
-        }
-
-        async function gerarRelatorioDashboardCliente() {
-            const filtros = obterFiltrosDashboardAnalitico();
-            const statusApi = ['aberto', 'em_producao', 'entregue', 'cancelado', 'todos'].includes(filtros.status) ? filtros.status : 'todos';
-            const payload = { ...filtros, status: statusApi, perfil: filtros.perfil === 'ambos' ? '' : filtros.perfil };
-            const resposta = await callGoogleScript('gerarRelatorioDashboard', payload);
-            if (!resposta?.success) {
-                mostrarErro(resposta?.error || 'Não foi possível gerar relatório.');
-                return;
-            }
-            window.open(resposta.url, '_blank');
-        }
-
-        async function salvarSnapshotDashboardCliente() {
-            const filtros = obterFiltrosDashboardAnalitico();
-            const statusApi = ['aberto', 'em_producao', 'entregue', 'cancelado', 'todos'].includes(filtros.status) ? filtros.status : 'todos';
-            const payload = { ...filtros, status: statusApi, perfil: filtros.perfil === 'ambos' ? '' : filtros.perfil };
-            const resposta = await callGoogleScript('salvarSnapshotDashboard', payload);
-            if (!resposta?.success) {
-                mostrarErro(resposta?.error || 'Não foi possível salvar snapshot.');
-                return;
-            }
-            mostrarSucesso('Snapshot salvo com sucesso.');
         }
        
         // Funções globais para uso nos eventos HTML
