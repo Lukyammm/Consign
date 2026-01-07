@@ -3476,7 +3476,7 @@
                     }
                 });
             });
-            [document.getElementById('leito'), elementos.termoLeito].forEach(campo => aplicarMascaraLeitoCampo(campo));
+            [elementos.termoLeito].forEach(campo => aplicarMascaraLeitoCampo(campo));
             elementos.usuarioForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 salvarUsuario();
