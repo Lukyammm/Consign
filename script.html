@@ -30,6 +30,7 @@
                 paginaAtual: 'dashboard',
                 armarios: [],
                 armariosCarregados: false,
+                armariosIncluemTermos: false,
                 cadastroArmarios: [],
                 unidades: [],
                 setores: [],
@@ -2427,11 +2428,12 @@
                 setTimeout(atualizar, 0);
             }
         }
-        function salvarArmariosNoCache(armarios) {
+        function salvarArmariosNoCache(armarios, incluirTermos) {
             try {
                 sessionStorage.setItem(ARMARIOS_CACHE_KEY, JSON.stringify({
                     armarios,
-                    atualizadoEm: Date.now()
+                    atualizadoEm: Date.now(),
+                    incluirTermos: Boolean(incluirTermos)
                 }));
             } catch (error) {
                 console.warn('Não foi possível salvar armários no cache', error);
@@ -2443,7 +2445,7 @@
                 if (!dados) {
                     return false;
                 }
-                const { armarios, atualizadoEm } = JSON.parse(dados);
+                const { armarios, atualizadoEm, incluirTermos } = JSON.parse(dados);
                 if (!atualizadoEm || (Date.now() - atualizadoEm) > ARMARIOS_CACHE_TTL_MS) {
                     sessionStorage.removeItem(ARMARIOS_CACHE_KEY);
                     return false;
@@ -2453,6 +2455,7 @@
                 }
                 estado.armarios = armarios;
                 estado.armariosCarregados = true;
+                estado.armariosIncluemTermos = Boolean(incluirTermos);
                 renderizarArmarios();
                 agendarAtualizacaoResumoDashboard();
                 return true;
@@ -2497,7 +2500,10 @@
 
                 const carregamentoArmariosPromise = (async () => {
                     await inicializacaoPromise;
-                    return executarCarregamentoSeguro('carregar armários', () => carregarArmarios({ forcarAtualizacao: true }));
+                    return executarCarregamentoSeguro(
+                        'carregar armários',
+                        () => carregarArmarios({ forcarAtualizacao: true, incluirTermos: false })
+                    );
                 })();
                 const carregamentoUnidadesPromise = inicializacaoPromise.then(() => executarCarregamentoSeguro('carregar unidades', carregarUnidades));
                 const carregamentoSetoresPromise = inicializacaoPromise.then(() => executarCarregamentoSeguro('carregar setores', carregarSetores));
@@ -2537,17 +2543,31 @@
                 mostrarErro('Erro ao carregar dados do sistema');
             }
         }
-        async function carregarArmarios({ forcarAtualizacao = false } = {}) {
+        async function carregarArmarios({
+            forcarAtualizacao = false,
+            incluirTermos,
+            incluirInternacoes = false
+        } = {}) {
             if (!estado.autenticado) {
                 return false;
             }
+            const incluirTermosNormalizado = incluirTermos === undefined
+                ? Boolean(estado.armariosIncluemTermos)
+                : Boolean(incluirTermos);
+            const incluirInternacoesNormalizado = incluirInternacoes !== undefined ? Boolean(incluirInternacoes) : false;
+
             if (!forcarAtualizacao && estado.armariosCarregados) {
-                return true;
+                if (incluirTermosNormalizado && !estado.armariosIncluemTermos) {
+                    forcarAtualizacao = true;
+                } else {
+                    return true;
+                }
             }
 
             const resultado = await callGoogleScript('getArmarios', {
                 tipo: 'todos',
-                incluirInternacoes: false
+                incluirInternacoes: incluirInternacoesNormalizado,
+                incluirTermos: incluirTermosNormalizado
             });
 
             if (resultado.success) {
@@ -2565,9 +2585,10 @@
                 }));
                 estado.armarios = filtrarListaPorPermissao(armariosProcessados, item => item.unidade);
                 estado.armariosCarregados = true;
+                estado.armariosIncluemTermos = incluirTermosNormalizado;
                 estado.movimentacoes = {};
                 agendarAtualizacaoResumoDashboard();
-                salvarArmariosNoCache(estado.armarios);
+                salvarArmariosNoCache(estado.armarios, incluirTermosNormalizado);
                 return true;
             }
 
@@ -5027,7 +5048,7 @@
             const tbodyVisitantes = document.querySelector('#tabela-visitantes tbody');
             if (!tbodyVisitantes) return;
             if (recarregarArmarios || !estado.armariosCarregados) {
-                await carregarArmarios();
+                await carregarArmarios({ forcarAtualizacao: recarregarArmarios, incluirTermos: false });
             }
             tbodyVisitantes.innerHTML = '';
             const filtroNormalizado = normalizarTexto(unidadeFiltro);
@@ -5073,7 +5094,7 @@
             const tbodyAcompanhantes = document.querySelector('#tabela-acompanhantes tbody');
             if (!tbodyAcompanhantes) return;
             if (recarregarArmarios || !estado.armariosCarregados) {
-                await carregarArmarios();
+                await carregarArmarios({ forcarAtualizacao: recarregarArmarios, incluirTermos: true });
             }
             tbodyAcompanhantes.innerHTML = '';
             const filtroNormalizado = normalizarTexto(unidadeFiltro);
@@ -5331,7 +5352,7 @@
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:16px; color:#5b6b86;">Carregando termos...</td></tr>';
 
             if (recarregarArmarios || !estado.armariosCarregados) {
-                await carregarArmarios();
+                await carregarArmarios({ forcarAtualizacao: recarregarArmarios, incluirTermos: true });
             }
             if (estado.carregamentoTermosId !== carregamentoId) return;
 

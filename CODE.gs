@@ -1464,7 +1464,11 @@ function handlePost(e) {
   try {
     switch(action) {
       case 'getArmarios':
-        return ContentService.createTextOutput(JSON.stringify(getArmarios(e.parameter.tipo, e.parameter.incluirInternacoes)))
+        return ContentService.createTextOutput(JSON.stringify(getArmarios(
+          e.parameter.tipo,
+          e.parameter.incluirInternacoes,
+          e.parameter.incluirTermos
+        )))
           .setMimeType(ContentService.MimeType.JSON);
       
       case 'cadastrarArmario':
@@ -2030,19 +2034,25 @@ function obterRegistroBaseVitaePorProntuario(prontuarioEntrada, prontuarioSemZer
   }
 }
 
-function getArmarios(tipo, incluirInternacoes) {
+function getArmarios(tipo, incluirInternacoes, incluirTermos) {
   var tipoNormalizadoOriginal = normalizarTextoBasico(tipo);
   if (!tipoNormalizadoOriginal) {
     tipoNormalizadoOriginal = 'geral';
   }
 
   var incluirInternacoesNormalizado = converterParaBoolean(incluirInternacoes);
+  var incluirTermosNormalizado = incluirTermos === undefined ? true : converterParaBoolean(incluirTermos);
   var chaveCacheTipo = tipoNormalizadoOriginal;
   if (chaveCacheTipo === 'admin' || chaveCacheTipo === 'ambos' || chaveCacheTipo === 'todos') {
     chaveCacheTipo = 'geral';
   }
 
-  var chaveCache = montarChaveCache('armarios', chaveCacheTipo, incluirInternacoesNormalizado ? 'com-internacoes' : 'sem-internacoes');
+  var chaveCache = montarChaveCache(
+    'armarios',
+    chaveCacheTipo,
+    incluirInternacoesNormalizado ? 'com-internacoes' : 'sem-internacoes',
+    incluirTermosNormalizado ? 'com-termos' : 'sem-termos'
+  );
 
   return executarComCache(chaveCache, CACHE_TTL_ARMARIOS, function() {
     try {
@@ -2052,7 +2062,7 @@ function getArmarios(tipo, incluirInternacoes) {
         tipoNormalizado === 'ambos' || tipoNormalizado === 'todos' || tipoNormalizado === 'geral';
       var termosMap = {};
 
-      if (incluirTermos) {
+      if (incluirTermos && incluirTermosNormalizado) {
         var termosInfo = obterTermosRegistrados();
         termosInfo.termos.forEach(function(termo) {
           if (!termo) {
@@ -7213,8 +7223,8 @@ function getNotificacoes() {
     var agora = new Date();
     var notificacoes = [];
 
-    var armariosVisitantes = getArmarios('visitante');
-    var armariosAcompanhantes = getArmarios('acompanhante');
+    var armariosVisitantes = getArmarios('visitante', false, false);
+    var armariosAcompanhantes = getArmarios('acompanhante', false, false);
 
     // Verificar armários vencidos e próximos do vencimento (visitantes e acompanhantes)
     [armariosVisitantes, armariosAcompanhantes].forEach(function(resultado) {
@@ -7301,7 +7311,7 @@ function getEstatisticasDashboard(tipoUsuario) {
     var agora = new Date();
 
     tipos.forEach(function(tipo) {
-      var armarios = getArmarios(tipo);
+      var armarios = getArmarios(tipo, false, false);
       if (armarios.success) {
         armarios.data.forEach(function(armario) {
           if (armario.status === 'livre') {
