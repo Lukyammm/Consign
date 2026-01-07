@@ -260,7 +260,7 @@
             --login-label: var(--muted-color);
             --login-input-bg: color-mix(in srgb, var(--color-surface) 88%, var(--color-background) 12%);
             --login-feedback-bg: color-mix(in srgb, var(--color-background) 70%, transparent);
-            --login-logo-filter: brightness(0) invert(1);
+            --login-logo-filter: none;
         }
         [data-theme="pink"] {
             --color-primary-500: #C98AAD;
@@ -4442,6 +4442,8 @@
             border-radius: 12px;
             border: 1px solid var(--border-color);
             background: var(--surface-color);
+            color: var(--input-text);
+            caret-color: var(--input-text);
             font: inherit;
             outline: none;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
