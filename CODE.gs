@@ -567,6 +567,10 @@ const CACHE_TTL_ARMARIOS = 120;
 const CACHE_TTL_HISTORICO = 90;
 const CACHE_TTL_MOVIMENTACOES = 45;
 const CACHE_TTL_INDICE_ARMARIOS = 30;
+const LOCK_TIMEOUT_MS = 25000;
+const RETRY_MAX_TENTATIVAS = 3;
+const RETRY_INTERVALO_MS = 180;
+const LIMIAR_LOG_LENTO_MS = 1200;
 
 // Configuração da planilha de liberações externas
 const PLANILHA_LIBERACAO_ID = '1UR6ynp6nxbpVMephgKkT8_YDc_ih5bYK565IebfojPI';
@@ -599,6 +603,60 @@ function montarChaveCache() {
   }
 
   return CACHE_PREFIXO + ':' + partes.join(':');
+}
+
+function executarComLock(chave, callback) {
+  var lock = LockService.getScriptLock();
+  var lockAdquirido = false;
+  try {
+    lock.waitLock(LOCK_TIMEOUT_MS);
+    lockAdquirido = true;
+    return callback();
+  } finally {
+    if (lockAdquirido) {
+      try {
+        lock.releaseLock();
+      } catch (erroLock) {
+        // Ignorado propositalmente
+      }
+    }
+  }
+}
+
+function ehErroTransitorio(mensagem) {
+  var texto = (mensagem || '').toString().toLowerCase();
+  if (!texto) {
+    return false;
+  }
+  return texto.indexOf('service invoked too many times') !== -1 ||
+    texto.indexOf('rate limit') !== -1 ||
+    texto.indexOf('temporarily unavailable') !== -1 ||
+    texto.indexOf('internal error') !== -1 ||
+    texto.indexOf('timed out') !== -1 ||
+    texto.indexOf('lock timeout') !== -1 ||
+    texto.indexOf('exceeded maximum execution time') !== -1;
+}
+
+function executarComRetry(callback, opcoes) {
+  var maxTentativas = opcoes && opcoes.maxTentativas ? opcoes.maxTentativas : RETRY_MAX_TENTATIVAS;
+  var intervaloInicial = opcoes && opcoes.intervaloMs ? opcoes.intervaloMs : RETRY_INTERVALO_MS;
+  var ultimaFalha = null;
+
+  for (var tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+    try {
+      return callback(tentativa);
+    } catch (erro) {
+      ultimaFalha = erro;
+      var mensagem = erro && erro.message ? erro.message : erro;
+      var podeTentarNovamente = tentativa < maxTentativas && ehErroTransitorio(mensagem);
+      if (!podeTentarNovamente) {
+        throw erro;
+      }
+      Utilities.sleep(Math.min(intervaloInicial * Math.pow(2, tentativa - 1), 1200));
+    }
+  }
+
+  throw ultimaFalha || new Error('Falha após tentativas de retry.');
 }
 
 function executarComCache(chave, ttl, fornecedor) {
@@ -1458,6 +1516,47 @@ function limparContextoUsuario() {
 
 function handlePost(e) {
   var action = e.parameter.action;
+  var inicioExecucao = Date.now();
+  var acoesComLock = {
+    cadastrarArmario: true,
+    atualizarHorarioVisitante: true,
+    atualizarDadosArmario: true,
+    finalizarELiberarArmario: true,
+    liberarArmario: true,
+    cadastrarUsuario: true,
+    atualizarUsuario: true,
+    excluirUsuario: true,
+    registrarContingencia: true,
+    registrarContingenciaTermo: true,
+    salvarMovimentacao: true,
+    finalizarMovimentacoesArmario: true,
+    cadastrarArmarioFisico: true,
+    criarArmariosUso: true,
+    cadastrarUnidade: true,
+    alternarStatusUnidade: true,
+    salvarTermoCompleto: true,
+    finalizarTermo: true,
+    cadastrarPertencePerdido: true,
+    atualizarPertencePerdido: true,
+    registrarContatoPertence: true,
+    excluirPertencePerdido: true
+  };
+
+  if (acoesComLock[action] && (!e.parameter._lockApplied || e.parameter._lockApplied !== '1')) {
+    var parametrosComLock = {};
+    for (var chaveLock in e.parameter) {
+      if (Object.prototype.hasOwnProperty.call(e.parameter, chaveLock)) {
+        parametrosComLock[chaveLock] = e.parameter[chaveLock];
+      }
+    }
+    parametrosComLock._lockApplied = '1';
+
+    return executarComRetry(function() {
+      return executarComLock(action, function() {
+        return handlePost({ parameter: parametrosComLock });
+      });
+    });
+  }
 
   definirContextoUsuario(e && e.parameter);
 
@@ -1649,6 +1748,10 @@ function handlePost(e) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   } finally {
+    var duracaoMs = Date.now() - inicioExecucao;
+    if (duracaoMs >= LIMIAR_LOG_LENTO_MS) {
+      console.log('Ação lenta detectada:', action, '| duração(ms):', duracaoMs);
+    }
     limparContextoUsuario();
   }
 }
