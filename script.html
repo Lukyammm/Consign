@@ -112,6 +112,10 @@
             }
         };
         const SESSAO_TTL_MS = 1000 * 60 * 60 * 8; // 8 horas
+        const CACHE_CHAMADAS_LEITURA_MS = 45 * 1000;
+        const cacheChamadasLeitura = new Map();
+        const acoesLeituraComCache = new Set(['getArmarios', 'getUnidades', 'getSetores', 'getUsuarios', 'getNotificacoes']);
+
         const AVATAR_OPTIONS = [
             {
                 id: 'avatar-none',
@@ -2127,6 +2131,15 @@
             erro.mensagemUsuario = mensagemUsuario;
             return erro;
         }
+        function criarChaveCacheChamada(action, entradas) {
+            const pares = Array.isArray(entradas) ? [...entradas] : [];
+            pares.sort((a, b) => a[0].localeCompare(b[0]));
+            return `${action}:${JSON.stringify(pares)}`;
+        }
+        function limparCacheLeiturasCliente() {
+            cacheChamadasLeitura.clear();
+        }
+
         // Função para chamar o Google Apps Script
         async function callGoogleScript(action, data = {}, opcoes = {}) {
             const tentativasConfiguradas = Number.isFinite(opcoes.tentativas) && opcoes.tentativas > 0
@@ -2167,6 +2180,19 @@
                 }
             });
 
+            const usarCache = opcoes.cache !== false && acoesLeituraComCache.has(action);
+            const ttlCache = Number.isFinite(opcoes.ttlCacheMs) && opcoes.ttlCacheMs > 0 ? opcoes.ttlCacheMs : CACHE_CHAMADAS_LEITURA_MS;
+            const chaveCache = usarCache ? criarChaveCacheChamada(action, entradas) : '';
+            if (usarCache && chaveCache) {
+                const cacheAtual = cacheChamadasLeitura.get(chaveCache);
+                if (cacheAtual && cacheAtual.expiraEm > Date.now()) {
+                    return cacheAtual.valor;
+                }
+                if (cacheAtual) {
+                    cacheChamadasLeitura.delete(chaveCache);
+                }
+            }
+
             let atraso = intervaloBaseConfigurado;
             const maxTentativas = Math.max(1, tentativasConfiguradas);
 
@@ -2195,7 +2221,17 @@
                     }
 
                     try {
-                        return JSON.parse(textoResposta);
+                        const resposta = JSON.parse(textoResposta);
+                        if (usarCache && resposta && resposta.success && chaveCache) {
+                            cacheChamadasLeitura.set(chaveCache, {
+                                valor: resposta,
+                                expiraEm: Date.now() + ttlCache
+                            });
+                        }
+                        if (!acoesLeituraComCache.has(action) && resposta && resposta.success) {
+                            limparCacheLeiturasCliente();
+                        }
+                        return resposta;
                     } catch (parseError) {
                         console.error(`Falha ao interpretar a resposta da ação ${action}:`, parseError, textoResposta);
                         const mensagem = `Resposta inválida do servidor (ação: ${action})`;
