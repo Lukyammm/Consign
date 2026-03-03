@@ -6327,7 +6327,7 @@
                 const statusNormalizado = normalizarTexto(armario.status).replace(/\s+/g, '-');
                 const botoesApoio = `
                     <div class="armario-modal-actions">
-                        <button id="btn-imagens-armario" class="armario-modal-action-btn" type="button">Registros em imagens</button>
+                        ${armario.tipo === 'acompanhante' ? '<button id="btn-imagens-armario" class="armario-modal-action-btn" type="button">Registros em imagens</button>' : ''}
                         ${armario.tipo === 'visitante' ? '<button id="btn-editar-horario" class="armario-modal-action-btn" type="button">Editar horário/visita</button>' : ''}
                     </div>`;
                 const moverContingenciaHtml = ehContingencia
@@ -8178,7 +8178,8 @@
                 delete elementos.termoNascimento.dataset.isoValue;
             }
             sincronizarCienciaOrientacoes(false);
-            setEstadoCarregamentoTermo(true);
+            setEstadoCarregamentoTermo(false);
+            atualizarFeedbackBuscaProntuarioTermo('Carregando dados já salvos do termo...', 'is-loading');
             const preCadastro = termoPreCadastro && identificadores && normalizarIdentificador(termoPreCadastro.id) === identificadores.idPlanilha
                 ? termoPreCadastro
                 : null;
@@ -8203,6 +8204,7 @@
                 } finally {
                     preencherCamposTermo(armario, termoDados, preCadastro);
                     setEstadoCarregamentoTermo(false);
+                    atualizarFeedbackBuscaProntuarioTermo('');
                 }
             })();
         }
@@ -9643,9 +9645,6 @@
             const conteudoImagens = imagens.length
                 ? `<div class="registro-imagens-grid">${imagens.map(item => `
                         <article class="registro-imagem-card">
-                            <div class="registro-imagem-thumb">
-                                <img src="${item.url}" alt="${item.titulo}" loading="lazy">
-                            </div>
                             <div class="registro-imagem-info">
                                 <p class="registro-imagem-contexto">${item.contexto || ''}</p>
                                 <h4 class="registro-imagem-titulo">${item.titulo}</h4>
