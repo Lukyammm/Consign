@@ -8178,7 +8178,7 @@
                 delete elementos.termoNascimento.dataset.isoValue;
             }
             sincronizarCienciaOrientacoes(false);
-            setEstadoCarregamentoTermo(false);
+            setEstadoCarregamentoTermo(true);
             atualizarFeedbackBuscaProntuarioTermo('Carregando dados já salvos do termo...', 'is-loading');
             const preCadastro = termoPreCadastro && identificadores && normalizarIdentificador(termoPreCadastro.id) === identificadores.idPlanilha
                 ? termoPreCadastro
