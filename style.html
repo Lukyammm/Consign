@@ -6511,6 +6511,18 @@
             padding: var(--layout-padding);
         }
 
+        .app-shell > .sidebar {
+            grid-column: 1;
+        }
+
+        .app-shell > .main-content {
+            grid-column: 2;
+        }
+
+        .sidebar-backdrop {
+            display: none;
+        }
+
         .sidebar {
             border-radius: 28px;
             overflow: hidden;
@@ -6695,6 +6707,10 @@
                 grid-template-columns: 1fr;
                 padding: 12px;
                 gap: 12px;
+            }
+
+            .app-shell > .main-content {
+                grid-column: 1;
             }
 
             #pages-container {
