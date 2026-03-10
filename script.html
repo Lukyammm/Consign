@@ -8731,10 +8731,14 @@
                     status: 'Em andamento'
                 };
                 const atualizacoesLocais = {
+                    status: 'em-uso',
                     termoAplicado: true,
                     termoFinalizado: false,
                     termoStatus: 'em andamento',
-                    termoInfo: termoInfoAtualizado
+                    termoInfo: termoInfoAtualizado,
+                    volumes: obterResumoVolumesTicket(dadosTermo.volumes, armarioAtual.volumes),
+                    horaInicio: armarioAtual.horaInicio || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                    dataRegistro: armarioAtual.dataRegistro || agoraIso
                 };
                 if (dadosTermo.acompanhante) {
                     atualizacoesLocais.nomeVisitante = dadosTermo.acompanhante;
@@ -8780,7 +8784,6 @@
                 return;
             }
             if (resultado?.success) {
-                const dadosImpressao = montarDadosImpressaoReserva(armarioAtual, dadosTermo, identificadores);
                 try {
                     await atualizarDadosPosOperacao('Atualizando informações do armário...', null, {
                         modoRapido: true,
@@ -8790,9 +8793,6 @@
                     console.error('Erro ao atualizar dados após salvar termo:', erroAtualizacao);
                 }
                 mostrarSucesso('Etapa inicial do termo registrada. Finalize o termo ao encerrar o armário.');
-                if (deveGerarImpressaoReserva(identificadores?.tipo || armarioAtual.tipo || '')) {
-                    abrirModalImpressaoReserva(dadosImpressao);
-                }
             } else {
                 const persistiu = await confirmarPersistenciaArmario({
                     idInterface: armarioIdLocal,
