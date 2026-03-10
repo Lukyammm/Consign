@@ -4687,6 +4687,43 @@
             elementos.cardsCount.vencidos.textContent = totais.vencidos;
         }
 
+
+        async function confirmarPersistenciaArmario({ idInterface = '', idPlanilha = '', tipo = '', validarTermo = false } = {}) {
+            try {
+                const tipoNormalizado = normalizarTexto(tipo || '');
+                if (tipoNormalizado === 'acompanhante') {
+                    await carregarArmarios({ forcarAtualizacao: true, incluirTermos: true });
+                } else {
+                    await carregarArmarios({ forcarAtualizacao: true, incluirTermos: false });
+                }
+
+                const alvoPlanilha = normalizarIdentificador(idPlanilha || '');
+                const alvoInterface = normalizarIdentificador(idInterface || '');
+                const armarioAtual = estado.armarios.find(item => {
+                    if (alvoPlanilha && normalizarIdentificador(item.idPlanilha) === alvoPlanilha) {
+                        return true;
+                    }
+                    if (alvoInterface && normalizarIdentificador(item.id) === alvoInterface) {
+                        return true;
+                    }
+                    return false;
+                });
+
+                if (!armarioAtual || normalizarTexto(armarioAtual.status) !== 'em-uso') {
+                    return false;
+                }
+
+                if (validarTermo) {
+                    return Boolean(armarioAtual.termoAplicado || normalizarTexto(armarioAtual.termoStatus) === 'em andamento');
+                }
+
+                return true;
+            } catch (erroConfirmacao) {
+                console.error('Erro ao confirmar persistência do armário:', erroConfirmacao);
+                return false;
+            }
+        }
+
         function atualizarDashboardImediato() {
             atualizarResumoDashboardLocal();
             ajustarFiltrosDashboardParaPerfil();
@@ -7223,12 +7260,24 @@
                     });
                     mostrarSucesso('Armário cadastrado com sucesso');
 
-                    callGoogleScript('cadastrarArmario', dados)
-                        .then(resultado => {
+                    (async () => {
+                        try {
+                            const resultado = await callGoogleScript('cadastrarArmario', dados);
                             if (resultado.success) {
                                 sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
                                 return;
                             }
+
+                            const persistiu = await confirmarPersistenciaArmario({
+                                idInterface: idParaAtualizacao,
+                                idPlanilha,
+                                tipo
+                            });
+                            if (persistiu) {
+                                sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
+                                return;
+                            }
+
                             notificarErroPadrao(resultado);
                             if (idParaAtualizacao && snapshotArmario) {
                                 restaurarArmarioLocal(idParaAtualizacao, snapshotArmario);
@@ -7237,18 +7286,28 @@
                                     console.error('Erro ao atualizar tabelas após rollback do cadastro:', erro);
                                 });
                             }
-                        })
-                        .catch(erro => {
+                        } catch (erro) {
                             console.error('Erro ao cadastrar armário:', erro);
+                            const persistiu = await confirmarPersistenciaArmario({
+                                idInterface: idParaAtualizacao,
+                                idPlanilha,
+                                tipo
+                            });
+                            if (persistiu) {
+                                sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
+                                return;
+                            }
+
                             mostrarErro('Não foi possível cadastrar o armário. Tente novamente.');
                             if (idParaAtualizacao && snapshotArmario) {
                                 restaurarArmarioLocal(idParaAtualizacao, snapshotArmario);
                                 atualizarDashboardImediato();
-                                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
-                                    console.error('Erro ao atualizar tabelas após rollback do cadastro:', erro);
+                                carregarDadosTabelas({ recarregarArmarios: false }).catch(erroAtualizacao => {
+                                    console.error('Erro ao atualizar tabelas após rollback do cadastro:', erroAtualizacao);
                                 });
                             }
-                        });
+                        }
+                    })();
                 }
             } finally {
                 finalizarLoading();
@@ -8703,6 +8762,17 @@
                 resultado = await promessaSalvamento;
             } catch (erroSalvar) {
                 console.error('Erro ao salvar termo:', erroSalvar);
+                const persistiu = await confirmarPersistenciaArmario({
+                    idInterface: armarioIdLocal,
+                    idPlanilha: identificadores?.idPlanilha || '',
+                    tipo: 'acompanhante',
+                    validarTermo: true
+                });
+                if (persistiu) {
+                    sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
+                    mostrarSucesso('Etapa inicial do termo registrada. Finalize o termo ao encerrar o armário.');
+                    return;
+                }
                 mostrarErro('Não foi possível registrar o termo agora. Tente novamente.');
                 if (armarioIdLocal) {
                     restaurarArmarioLocal(armarioIdLocal, snapshotArmario);
@@ -8724,6 +8794,17 @@
                     abrirModalImpressaoReserva(dadosImpressao);
                 }
             } else {
+                const persistiu = await confirmarPersistenciaArmario({
+                    idInterface: armarioIdLocal,
+                    idPlanilha: identificadores?.idPlanilha || '',
+                    tipo: 'acompanhante',
+                    validarTermo: true
+                });
+                if (persistiu) {
+                    sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
+                    mostrarSucesso('Etapa inicial do termo registrada. Finalize o termo ao encerrar o armário.');
+                    return;
+                }
                 notificarErroPadrao(resultado);
                 if (armarioIdLocal) {
                     restaurarArmarioLocal(armarioIdLocal, snapshotArmario);
