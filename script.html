@@ -7184,71 +7184,27 @@
                         ocultarOverlay();
                     }
                 } else {
-                    let idParaAtualizacao = armarioChave;
-                    if (!idParaAtualizacao && idPlanilha) {
-                        const armarioEstado = estado.armarios.find(item => normalizarIdentificador(item.idPlanilha) === idPlanilha);
-                        if (armarioEstado) {
-                            idParaAtualizacao = armarioEstado.id;
-                        }
+                    const ocultarOverlay = mostrarOverlayCarregamento('Reservando armário...');
+                    let resultado;
+                    try {
+                        resultado = await callGoogleScript('cadastrarArmario', dados);
+                    } catch (erroCadastro) {
+                        console.error('Erro ao cadastrar armário:', erroCadastro);
+                        mostrarErro('Não foi possível cadastrar o armário. Tente novamente.');
+                        return;
+                    } finally {
+                        ocultarOverlay();
                     }
 
-                    const snapshotArmario = idParaAtualizacao ? clonarArmario(obterArmarioPorId(idParaAtualizacao)) : null;
-                    if (idParaAtualizacao) {
-                        const agora = new Date();
-                        const horaInicioLocal = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                        const atualizacoesLocais = {
-                            status: 'em-uso',
-                            nomeVisitante: dados.nomeVisitante,
-                            nomePaciente: dados.nomePaciente,
-                            leito: dados.leito,
-                            volumes: volumesInformados,
-                            whatsapp: dados.whatsapp,
-                            horaInicio: horaInicioLocal,
-                            horaPrevista: dados.horaPrevista || '',
-                            visitaEstendida: visitaEstendida,
-                            dataRegistro: agora.toISOString(),
-                            tipo: tipo
-                        };
-                        const atualizado = atualizarArmarioLocal(idParaAtualizacao, atualizacoesLocais);
-                        if (!atualizado) {
-                            console.warn('Armário não encontrado no estado local para atualização imediata:', idParaAtualizacao);
-                        }
+                    if (!resultado?.success) {
+                        notificarErroPadrao(resultado);
+                        return;
                     }
 
                     fecharModalArmario();
                     limparRascunhoArmario();
-                    atualizarDashboardImediato();
-                    carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
-                        console.error('Erro ao atualizar tabelas localmente após cadastro:', erro);
-                    });
+                    await sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
                     mostrarSucesso('Armário cadastrado com sucesso');
-
-                    callGoogleScript('cadastrarArmario', dados)
-                        .then(resultado => {
-                            if (resultado.success) {
-                                sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
-                                return;
-                            }
-                            notificarErroPadrao(resultado);
-                            if (idParaAtualizacao && snapshotArmario) {
-                                restaurarArmarioLocal(idParaAtualizacao, snapshotArmario);
-                                atualizarDashboardImediato();
-                                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
-                                    console.error('Erro ao atualizar tabelas após rollback do cadastro:', erro);
-                                });
-                            }
-                        })
-                        .catch(erro => {
-                            console.error('Erro ao cadastrar armário:', erro);
-                            mostrarErro('Não foi possível cadastrar o armário. Tente novamente.');
-                            if (idParaAtualizacao && snapshotArmario) {
-                                restaurarArmarioLocal(idParaAtualizacao, snapshotArmario);
-                                atualizarDashboardImediato();
-                                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
-                                    console.error('Erro ao atualizar tabelas após rollback do cadastro:', erro);
-                                });
-                            }
-                        });
                 }
             } finally {
                 finalizarLoading();
@@ -8596,21 +8552,6 @@
             }
         }
 
-        function notificarReservaEmSegundoPlano() {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'info',
-                title: 'Reserva iniciada',
-                text: 'Reservando armário em segundo plano...',
-                showConfirmButton: false,
-                timer: 1800,
-                timerProgressBar: true,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-        }
 
         async function aplicarTermo() {
             if (termoArmarioAtual === null) return;
@@ -8619,8 +8560,6 @@
                 mostrarErro('Armário não encontrado para registrar o termo.');
                 return;
             }
-            const snapshotArmario = clonarArmario(armarioAtual);
-            const armarioIdLocal = armarioAtual.id;
             const identificadores = montarIdentificadoresArmario(armarioAtual);
             // Capturar a assinatura do canvas
             const canvas = elementos.termoAssinaturaCanvas;
@@ -8660,57 +8599,20 @@
                 };
             }
             dadosTermo.tipo = identificadores?.tipo || 'acompanhante';
-            if (armarioIdLocal) {
-                const agoraIso = new Date().toISOString();
-                const termoInfoAtualizado = {
-                    ...(armarioAtual.termoInfo || {}),
-                    aplicadoEm: agoraIso,
-                    acompanhante: dadosTermo.acompanhante,
-                    paciente: dadosTermo.paciente,
-                    prontuario: dadosTermo.prontuario,
-                    leito: dadosTermo.leito,
-                    status: 'Em andamento'
-                };
-                const atualizacoesLocais = {
-                    termoAplicado: true,
-                    termoFinalizado: false,
-                    termoStatus: 'em andamento',
-                    termoInfo: termoInfoAtualizado
-                };
-                if (dadosTermo.acompanhante) {
-                    atualizacoesLocais.nomeVisitante = dadosTermo.acompanhante;
-                }
-                if (dadosTermo.paciente) {
-                    atualizacoesLocais.nomePaciente = dadosTermo.paciente;
-                }
-                if (dadosTermo.leito) {
-                    atualizacoesLocais.leito = dadosTermo.leito;
-                }
-                if (dadosTermo.prontuario) {
-                    atualizacoesLocais.prontuario = dadosTermo.prontuario;
-                }
-                atualizarArmarioLocal(armarioIdLocal, atualizacoesLocais);
-                atualizarDashboardImediato();
-                carregarDadosTabelas({ recarregarArmarios: false }).catch(erro => {
-                    console.error('Erro ao atualizar tabelas localmente após aplicar termo:', erro);
-                });
-            }
-            const promessaSalvamento = callGoogleScript('salvarTermoCompleto', dadosTermo);
-            notificarReservaEmSegundoPlano();
-            fecharTermoModal();
+            const ocultarOverlay = mostrarOverlayCarregamento('Reservando armário e registrando termo...');
             let resultado;
             try {
-                resultado = await promessaSalvamento;
+                resultado = await callGoogleScript('salvarTermoCompleto', dadosTermo);
             } catch (erroSalvar) {
                 console.error('Erro ao salvar termo:', erroSalvar);
                 mostrarErro('Não foi possível registrar o termo agora. Tente novamente.');
-                if (armarioIdLocal) {
-                    restaurarArmarioLocal(armarioIdLocal, snapshotArmario);
-                }
                 return;
+            } finally {
+                ocultarOverlay();
             }
             if (resultado?.success) {
                 const dadosImpressao = montarDadosImpressaoReserva(armarioAtual, dadosTermo, identificadores);
+                fecharTermoModal();
                 try {
                     await atualizarDadosPosOperacao('Atualizando informações do armário...', null, {
                         modoRapido: true,
@@ -8725,9 +8627,6 @@
                 }
             } else {
                 notificarErroPadrao(resultado);
-                if (armarioIdLocal) {
-                    restaurarArmarioLocal(armarioIdLocal, snapshotArmario);
-                }
             }
         }
         function fecharTermoModal() {
