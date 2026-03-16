@@ -3040,6 +3040,7 @@
         function preencherCamposPacienteBaseVitae(dados) {
             if (!dados || typeof dados !== 'object') return;
             const campoPaciente = document.getElementById('nome-paciente');
+            const campoProntuario = document.getElementById('prontuario');
             const campoLeito = document.getElementById('leito');
             const termoPaciente = document.getElementById('termo-paciente');
             const termoLeito = document.getElementById('termo-leito');
@@ -3048,6 +3049,9 @@
             const termoNascimento = document.getElementById('termo-nascimento');
             if (campoPaciente && dados.nome) {
                 campoPaciente.value = padronizarNomeMaiusculo(dados.nome);
+            }
+            if (campoProntuario && dados.prontuario) {
+                campoProntuario.value = dados.prontuario;
             }
             if (campoLeito && dados.leito) {
                 campoLeito.value = dados.leito;
@@ -7175,6 +7179,7 @@
                     numero: numeroArmario,
                     nomeVisitante: padronizarNomeMaiusculo(document.getElementById('nome-visitante').value),
                     nomePaciente: padronizarNomeMaiusculo(document.getElementById('nome-paciente').value),
+                    prontuario: document.getElementById('prontuario').value.trim(),
                     leito: document.getElementById('leito').value.trim(),
                     whatsapp: document.getElementById('whatsapp-contato').value.trim(),
                     volumes: volumesInformados,
@@ -7237,6 +7242,7 @@
                             status: 'em-uso',
                             nomeVisitante: dados.nomeVisitante,
                             nomePaciente: dados.nomePaciente,
+                            prontuario: dados.prontuario,
                             leito: dados.leito,
                             volumes: volumesInformados,
                             whatsapp: dados.whatsapp,
