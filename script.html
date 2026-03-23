@@ -4736,16 +4736,31 @@
             }
         }
 
-        async function confirmarLiberacaoPersistida({ idInterface = '', idPlanilha = '', tipo = '' } = {}) {
+        async function confirmarLiberacaoPersistida(
+            { idInterface = '', idPlanilha = '', tipo = '' } = {},
+            { tentativas = 4, intervaloMs = 350 } = {}
+        ) {
             try {
-                const armarioAtual = await buscarArmarioAtualizado({
-                    idInterface,
-                    idPlanilha,
-                    tipo,
-                    incluirTermos: true
-                });
+                const totalTentativas = Math.max(1, Number(tentativas) || 1);
 
-                return Boolean(armarioAtual && normalizarTexto(armarioAtual.status) === 'livre');
+                for (let tentativa = 1; tentativa <= totalTentativas; tentativa += 1) {
+                    const armarioAtual = await buscarArmarioAtualizado({
+                        idInterface,
+                        idPlanilha,
+                        tipo,
+                        incluirTermos: true
+                    });
+
+                    if (armarioAtual && normalizarTexto(armarioAtual.status) === 'livre') {
+                        return true;
+                    }
+
+                    if (tentativa < totalTentativas) {
+                        await aguardar(intervaloMs);
+                    }
+                }
+
+                return false;
             } catch (erroConfirmacao) {
                 console.error('Erro ao confirmar persistência da liberação:', erroConfirmacao);
                 return false;
@@ -7415,12 +7430,15 @@
                 const resultado = await callGoogleScript('liberarArmario', payload);
                 if (resultado.success) {
                     const persistiu = await confirmarLiberacaoPersistida(dadosConfirmacao);
+                    liberacaoConfirmada = true;
+
                     if (!persistiu) {
-                        throw new Error('A liberação foi concluída, mas a atualização não apareceu na consulta de confirmação.');
+                        console.warn('Liberação concluída no backend, mas a confirmação imediata ainda não refletiu na consulta.');
                     }
 
-                    liberacaoConfirmada = true;
-                    mostrarSucesso('Armário liberado com sucesso');
+                    mostrarSucesso(persistiu
+                        ? 'Armário liberado com sucesso'
+                        : 'Liberação concluída. Atualizando status do armário.');
                     sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
                     return;
                 }
@@ -10367,11 +10385,12 @@
                     }
 
                     const persistiu = await confirmarLiberacaoPersistida(dadosConfirmacao);
+                    liberacaoConfirmada = true;
+
                     if (!persistiu) {
-                        throw new Error('A liberação foi processada, mas a atualização ainda não apareceu na consulta de confirmação.');
+                        console.warn('Liberação processada no backend, mas a confirmação imediata ainda não refletiu na consulta.');
                     }
 
-                    liberacaoConfirmada = true;
                     garantirArmarioLiberadoLocal(id, metodo, confirmacao);
                     atualizarResumoDashboardLocal();
                     atualizarInterface();
