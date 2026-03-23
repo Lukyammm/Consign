@@ -5739,7 +5739,12 @@ function gerarESalvarTermoPDF(dadosTermo, opcoes) {
                      Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'ddMMyyyy_HHmmss') + '.pdf';
 
     var arquivoPDF = pastaDestino.createFile(blob).setName(nomeArquivo);
-    arquivoPDF.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    try {
+      arquivoPDF.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (erroCompartilhamentoPdf) {
+      registrarLog('AVISO_DRIVE', 'PDF salvo sem compartilhamento público: ' + erroCompartilhamentoPdf.toString());
+    }
 
     var fileId = arquivoPDF.getId();
     var previewUrl = 'https://drive.google.com/file/d/' + fileId + '/preview';
