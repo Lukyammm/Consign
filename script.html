@@ -4692,25 +4692,33 @@
         }
 
 
+        async function buscarArmarioAtualizado({ idInterface = '', idPlanilha = '', tipo = '', incluirTermos = false } = {}) {
+            const tipoNormalizado = normalizarTexto(tipo || '');
+            await carregarArmarios({
+                forcarAtualizacao: true,
+                incluirTermos: incluirTermos || tipoNormalizado === 'acompanhante'
+            });
+
+            const alvoPlanilha = normalizarIdentificador(idPlanilha || '');
+            const alvoInterface = normalizarIdentificador(idInterface || '');
+            return estado.armarios.find(item => {
+                if (alvoPlanilha && normalizarIdentificador(item.idPlanilha) === alvoPlanilha) {
+                    return true;
+                }
+                if (alvoInterface && normalizarIdentificador(item.id) === alvoInterface) {
+                    return true;
+                }
+                return false;
+            }) || null;
+        }
+
         async function confirmarPersistenciaArmario({ idInterface = '', idPlanilha = '', tipo = '', validarTermo = false } = {}) {
             try {
-                const tipoNormalizado = normalizarTexto(tipo || '');
-                if (tipoNormalizado === 'acompanhante') {
-                    await carregarArmarios({ forcarAtualizacao: true, incluirTermos: true });
-                } else {
-                    await carregarArmarios({ forcarAtualizacao: true, incluirTermos: false });
-                }
-
-                const alvoPlanilha = normalizarIdentificador(idPlanilha || '');
-                const alvoInterface = normalizarIdentificador(idInterface || '');
-                const armarioAtual = estado.armarios.find(item => {
-                    if (alvoPlanilha && normalizarIdentificador(item.idPlanilha) === alvoPlanilha) {
-                        return true;
-                    }
-                    if (alvoInterface && normalizarIdentificador(item.id) === alvoInterface) {
-                        return true;
-                    }
-                    return false;
+                const armarioAtual = await buscarArmarioAtualizado({
+                    idInterface,
+                    idPlanilha,
+                    tipo,
+                    incluirTermos: validarTermo
                 });
 
                 if (!armarioAtual || normalizarTexto(armarioAtual.status) !== 'em-uso') {
@@ -4724,6 +4732,22 @@
                 return true;
             } catch (erroConfirmacao) {
                 console.error('Erro ao confirmar persistência do armário:', erroConfirmacao);
+                return false;
+            }
+        }
+
+        async function confirmarLiberacaoPersistida({ idInterface = '', idPlanilha = '', tipo = '' } = {}) {
+            try {
+                const armarioAtual = await buscarArmarioAtualizado({
+                    idInterface,
+                    idPlanilha,
+                    tipo,
+                    incluirTermos: true
+                });
+
+                return Boolean(armarioAtual && normalizarTexto(armarioAtual.status) === 'livre');
+            } catch (erroConfirmacao) {
+                console.error('Erro ao confirmar persistência da liberação:', erroConfirmacao);
                 return false;
             }
         }
@@ -7372,6 +7396,11 @@
                 tipo: tipoPreferencial || identificadores.tipo
             });
             payload.numero = identificadores.numeroArmario;
+            const dadosConfirmacao = {
+                idInterface: armario.id,
+                idPlanilha: identificadores?.idPlanilha || '',
+                tipo: payload.tipo || identificadores?.tipo || ''
+            };
 
             garantirArmarioLiberadoLocal(id);
             atualizarResumoDashboardLocal();
@@ -7385,6 +7414,11 @@
             try {
                 const resultado = await callGoogleScript('liberarArmario', payload);
                 if (resultado.success) {
+                    const persistiu = await confirmarLiberacaoPersistida(dadosConfirmacao);
+                    if (!persistiu) {
+                        throw new Error('A liberação foi concluída, mas a atualização não apareceu na consulta de confirmação.');
+                    }
+
                     liberacaoConfirmada = true;
                     mostrarSucesso('Armário liberado com sucesso');
                     sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
@@ -10264,6 +10298,11 @@
             let mensagemSucesso = 'Termo finalizado e armário liberado com sucesso';
             const usuarioResponsavel = obterDescricaoResponsavelAtual();
             const snapshotArmario = clonarArmario(armario);
+            const dadosConfirmacao = {
+                idInterface: armario.id,
+                idPlanilha: identificadores?.idPlanilha || '',
+                tipo: identificadores?.tipo || ''
+            };
             let liberacaoConfirmada = false;
 
             const notificarProcessamentoEmSegundoPlano = () => {
@@ -10325,6 +10364,11 @@
 
                     if (!finalizacao.success && termoNaoLocalizado) {
                         mensagemSucesso = 'Armário liberado com sucesso. Termo não localizado para finalização.';
+                    }
+
+                    const persistiu = await confirmarLiberacaoPersistida(dadosConfirmacao);
+                    if (!persistiu) {
+                        throw new Error('A liberação foi processada, mas a atualização ainda não apareceu na consulta de confirmação.');
                     }
 
                     liberacaoConfirmada = true;
