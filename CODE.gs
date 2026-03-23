@@ -780,6 +780,36 @@ function limparCacheIndiceArmarios(sheetName) {
   limparCaches(chaves);
 }
 
+function invalidarCachesArmariosRelacionados(sheetName) {
+  limparCacheArmarios();
+  limparCacheHistorico();
+  limparCacheIndiceArmarios(sheetName);
+}
+
+function validarLinhaArmarioEncontrada(armarioData, estrutura, idComparacao, numeroInformado) {
+  if (!armarioData || !estrutura) {
+    return false;
+  }
+
+  var idLinha = obterValorLinha(armarioData, estrutura, 'id', '');
+  var numeroLinha = obterValorLinha(armarioData, estrutura, 'numero', '');
+  var numeroLinhaNormalizado = normalizarNumeroArmario(numeroLinha);
+
+  if (idComparacao && idLinha !== null && idLinha !== undefined && idLinha.toString().trim() === idComparacao) {
+    return true;
+  }
+
+  if (numeroInformado && numeroLinhaNormalizado === numeroInformado) {
+    return true;
+  }
+
+  if (!idComparacao && !numeroInformado) {
+    return false;
+  }
+
+  return false;
+}
+
 function obterIndiceArmarios(sheetName, forcarReconstrucao) {
   var cache = CacheService.getScriptCache();
   var chaveCache = montarChaveCache('indice-armarios', sheetName);
@@ -2609,8 +2639,7 @@ function cadastrarArmario(armarioData) {
 
     registrarLog('CADASTRO', `Armário ${numeroArmario} cadastrado para ${armarioData.nomeVisitante}`);
 
-    limparCacheArmarios();
-    limparCacheHistorico();
+    invalidarCachesArmariosRelacionados(sheetName);
 
     return {
       success: true,
@@ -2782,8 +2811,7 @@ function registrarContingencia(dados) {
 
     historicoSheet.getRange(proximaLinhaHistorico, 1, 1, historicoLinha.length).setValues([historicoLinha]);
 
-    limparCacheArmarios();
-    limparCacheHistorico();
+    invalidarCachesArmariosRelacionados('Acompanhantes');
 
     return {
       success: true,
@@ -2887,7 +2915,7 @@ function registrarContingenciaTermo(dados) {
 
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([linhaBase]);
 
-    limparCacheArmarios();
+    invalidarCachesArmariosRelacionados('Acompanhantes');
 
     return {
       success: true,
@@ -3005,8 +3033,7 @@ function atualizarHorarioVisitante(parametros) {
 
     sheet.getRange(linhaPlanilha, 1, 1, totalColunas).setValues([armarioData]);
 
-    limparCacheArmarios();
-    limparCacheHistorico();
+    invalidarCachesArmariosRelacionados('Visitantes');
 
     var numeroArmario = armarioData[numeroIndex] || numeroInformado || '';
     var detalheHorario = visitaEstendida ? 'visita estendida' : (novaHoraPrevista || '-');
@@ -3155,7 +3182,7 @@ function atualizarDadosArmario(parametros) {
     var dataRegistroValorFormatado = dataRegistroIndex !== null && dataRegistroIndex !== undefined ? armarioData[dataRegistroIndex] : '';
 
     registrarLog('ATUALIZACAO', 'Dados do armário ' + numeroArmario + ' (' + sheetName + ') atualizados');
-    limparCacheArmarios();
+    invalidarCachesArmariosRelacionados(sheetName);
 
     return {
       success: true,
@@ -3243,6 +3270,10 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
 
       if (linhaPlanilha !== -1) {
         armarioData = sheet.getRange(linhaPlanilha, 1, 1, totalColunas).getValues()[0];
+        if (!validarLinhaArmarioEncontrada(armarioData, estrutura, idComparacao, numeroInformado)) {
+          linhaPlanilha = -1;
+          armarioData = null;
+        }
       }
 
       if (linhaPlanilha === -1 || !armarioData) {
@@ -3258,6 +3289,10 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
 
         if (linhaPlanilha !== -1) {
           armarioData = sheet.getRange(linhaPlanilha, 1, 1, totalColunas).getValues()[0];
+          if (!validarLinhaArmarioEncontrada(armarioData, estrutura, idComparacao, numeroInformado)) {
+            linhaPlanilha = -1;
+            armarioData = null;
+          }
         }
       }
     }
@@ -3341,9 +3376,7 @@ function liberarArmario(id, tipo, numero, usuarioResponsavel) {
     registrarLog('LIBERAÇÃO', `Armário ${numeroArmario} liberado`);
 
     SpreadsheetApp.flush();
-    limparCacheArmarios();
-    limparCacheHistorico();
-    limparCacheIndiceArmarios(sheetName);
+    invalidarCachesArmariosRelacionados(sheetName);
 
     return { success: true, message: 'Armário liberado com sucesso' };
 
@@ -5044,7 +5077,7 @@ function salvarTermoCompleto(dadosTermo) {
     }
 
     limparCacheTermos();
-    limparCacheArmarios();
+    invalidarCachesArmariosRelacionados('Acompanhantes');
 
     registrarLog('TERMO_APLICADO', `Termo inicial registrado para armário ${dadosTermo.numeroArmario}`);
 
@@ -5618,18 +5651,30 @@ function finalizarELiberarArmario(dados) {
 
 // Função para gerar e salvar PDF
 function obterPastaSeguraDrive(pastaIdPreferida) {
-  try {
-    if (pastaIdPreferida && pastaIdPreferida.toString().trim()) {
-      return DriveApp.getFolderById(pastaIdPreferida.toString().trim());
+  var pastaPreferida = pastaIdPreferida && pastaIdPreferida.toString().trim()
+    ? pastaIdPreferida.toString().trim()
+    : '';
+  var pastaPadrao = PASTA_DRIVE_ID && PASTA_DRIVE_ID.toString().trim()
+    ? PASTA_DRIVE_ID.toString().trim()
+    : '';
+
+  if (pastaPreferida) {
+    try {
+      return DriveApp.getFolderById(pastaPreferida);
+    } catch (error) {
+      console.warn('Pasta preferida inválida ou inacessível:', error);
     }
-  } catch (error) {
-    console.warn('Pasta preferida inválida ou inacessível, usando raiz.', error);
   }
-  try {
-    return DriveApp.getFolderById(PASTA_DRIVE_ID);
-  } catch (erroPadrao) {
-    return DriveApp.getRootFolder();
+
+  if (pastaPadrao) {
+    try {
+      return DriveApp.getFolderById(pastaPadrao);
+    } catch (erroPadrao) {
+      console.warn('Pasta padrão inválida ou inacessível:', erroPadrao);
+    }
   }
+
+  throw new Error('Não foi possível acessar a pasta configurada no Drive. Revise os IDs das pastas e as permissões do WebApp.');
 }
 
 function gerarNomeArquivoEvidencia(prefixo, numeroArmario) {
@@ -5660,7 +5705,12 @@ function salvarImagemBase64EmPasta(base64, mimePadrao, nomeArquivo, pastaId) {
   var pasta = obterPastaSeguraDrive(pastaId || PASTA_DRIVE_FOTOS_ID);
   var blob = Utilities.newBlob(Utilities.base64Decode(conteudoBase64), mime, nomeArquivo + extensao);
   var arquivo = pasta.createFile(blob).setName(nomeArquivo + extensao);
-  arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  try {
+    arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (erroCompartilhamento) {
+    registrarLog('AVISO_DRIVE', 'Arquivo salvo sem compartilhamento público: ' + erroCompartilhamento.toString());
+  }
 
   return {
     id: arquivo.getId(),
