@@ -2169,6 +2169,21 @@
         function limparCacheLeiturasCliente() {
             cacheChamadasLeitura.clear();
         }
+        function executarViaGoogleScriptNativo(action, payload) {
+            return new Promise((resolve, reject) => {
+                if (!window.google || !google.script || !google.script.run || typeof google.script.run.callAction !== 'function') {
+                    reject(criarErroChamadaGoogle('Google Script indisponível no cliente', 'google.script.run não está disponível.'));
+                    return;
+                }
+                google.script.run
+                    .withSuccessHandler(resolve)
+                    .withFailureHandler(erro => {
+                        const detalhes = erro && erro.message ? erro.message : 'Falha ao executar chamada interna do Apps Script.';
+                        reject(criarErroChamadaGoogle('Erro de conexão com o servidor', detalhes));
+                    })
+                    .callAction(action, payload || {});
+            });
+        }
 
         // Função para chamar o Google Apps Script
         async function callGoogleScript(action, data = {}, opcoes = {}) {
@@ -2271,10 +2286,28 @@
                     const ultimaTentativa = tentativa === maxTentativas;
                     console.error(`Erro ao chamar Google Script (ação: ${action}, tentativa ${tentativa}/${maxTentativas}):`, erro);
                     if (ultimaTentativa) {
-                        const mensagemUsuario = erro && erro.mensagemUsuario ? erro.mensagemUsuario : 'Erro de conexão com o servidor';
-                        mostrarErro(mensagemUsuario);
-                        const mensagemDetalhada = erro && erro.message ? erro.message : mensagemUsuario;
-                        return { success: false, error: mensagemDetalhada, _erroNotificado: true };
+                        try {
+                            const respostaNativa = await executarViaGoogleScriptNativo(action, payload);
+                            if (usarCache && respostaNativa && respostaNativa.success && chaveCache) {
+                                cacheChamadasLeitura.set(chaveCache, {
+                                    valor: respostaNativa,
+                                    expiraEm: Date.now() + ttlCache
+                                });
+                            }
+                            if (!acoesLeituraComCache.has(action) && respostaNativa && respostaNativa.success) {
+                                limparCacheLeiturasCliente();
+                            }
+                            return respostaNativa;
+                        } catch (erroNativo) {
+                            const mensagemUsuario = erroNativo && erroNativo.mensagemUsuario
+                                ? erroNativo.mensagemUsuario
+                                : (erro && erro.mensagemUsuario ? erro.mensagemUsuario : 'Erro de conexão com o servidor');
+                            mostrarErro(mensagemUsuario);
+                            const mensagemDetalhada = erroNativo && erroNativo.message
+                                ? erroNativo.message
+                                : (erro && erro.message ? erro.message : mensagemUsuario);
+                            return { success: false, error: mensagemDetalhada, _erroNotificado: true };
+                        }
                     }
                     await aguardar(atraso);
                     atraso = Math.min(atraso * 1.8, 2000);
