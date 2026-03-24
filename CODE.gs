@@ -11,6 +11,40 @@ function doPost(e) {
   return handlePost(e);
 }
 
+function callAction(action, parametros) {
+  var acao = action !== null && action !== undefined ? action.toString().trim() : '';
+  if (!acao) {
+    return { success: false, error: 'Ação inválida.' };
+  }
+
+  var dados = {};
+  if (parametros && typeof parametros === 'object') {
+    for (var chave in parametros) {
+      if (Object.prototype.hasOwnProperty.call(parametros, chave)) {
+        var valor = parametros[chave];
+        if (valor === undefined || valor === null) {
+          dados[chave] = '';
+        } else if (typeof valor === 'object') {
+          dados[chave] = JSON.stringify(valor);
+        } else {
+          dados[chave] = valor.toString();
+        }
+      }
+    }
+  }
+  dados.action = acao;
+
+  var resposta = handlePost({ parameter: dados });
+  if (resposta && typeof resposta.getContent === 'function') {
+    try {
+      return JSON.parse(resposta.getContent());
+    } catch (erroParse) {
+      return { success: false, error: 'Resposta inválida do servidor.' };
+    }
+  }
+  return resposta;
+}
+
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
