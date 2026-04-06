@@ -2612,7 +2612,8 @@
         async function carregarArmarios({
             forcarAtualizacao = false,
             incluirTermos,
-            incluirInternacoes = false
+            incluirInternacoes = false,
+            ignorarCacheLeitura = false
         } = {}) {
             if (!estado.autenticado) {
                 return false;
@@ -2634,6 +2635,8 @@
                 tipo: 'todos',
                 incluirInternacoes: incluirInternacoesNormalizado,
                 incluirTermos: incluirTermosNormalizado
+            }, {
+                cache: !ignorarCacheLeitura
             });
 
             if (resultado.success) {
@@ -2738,11 +2741,15 @@
             recarregarArmarios = true,
             recarregarEstatisticas = true,
             recarregarTabelas = true,
-            recarregarArmariosNasTabelas = true
+            recarregarArmariosNasTabelas = true,
+            ignorarCacheLeituraArmarios = false
         } = {}) {
             const tarefas = [];
             if (recarregarArmarios) {
-                tarefas.push(carregarArmarios({ forcarAtualizacao: true }));
+                tarefas.push(carregarArmarios({
+                    forcarAtualizacao: true,
+                    ignorarCacheLeitura: ignorarCacheLeituraArmarios
+                }));
             }
             if (recarregarEstatisticas) {
                 tarefas.push(carregarEstatisticas());
@@ -4692,11 +4699,18 @@
         }
 
 
-        async function buscarArmarioAtualizado({ idInterface = '', idPlanilha = '', tipo = '', incluirTermos = false } = {}) {
+        async function buscarArmarioAtualizado({
+            idInterface = '',
+            idPlanilha = '',
+            tipo = '',
+            incluirTermos = false,
+            ignorarCacheLeitura = false
+        } = {}) {
             const tipoNormalizado = normalizarTexto(tipo || '');
             await carregarArmarios({
                 forcarAtualizacao: true,
-                incluirTermos: incluirTermos || tipoNormalizado === 'acompanhante'
+                incluirTermos: incluirTermos || tipoNormalizado === 'acompanhante',
+                ignorarCacheLeitura
             });
 
             const alvoPlanilha = normalizarIdentificador(idPlanilha || '');
@@ -4748,7 +4762,8 @@
                         idInterface,
                         idPlanilha,
                         tipo,
-                        incluirTermos: true
+                        incluirTermos: true,
+                        ignorarCacheLeitura: true
                     });
 
                     if (armarioAtual && normalizarTexto(armarioAtual.status) === 'livre') {
@@ -7439,7 +7454,10 @@
                     mostrarSucesso(persistiu
                         ? 'Armário liberado com sucesso'
                         : 'Liberação concluída. Atualizando status do armário.');
-                    sincronizarDadosArmariosEmSegundoPlano({ recarregarArmariosNasTabelas: true });
+                    sincronizarDadosArmariosEmSegundoPlano({
+                        recarregarArmariosNasTabelas: true,
+                        ignorarCacheLeituraArmarios: !persistiu
+                    });
                     return;
                 }
 
