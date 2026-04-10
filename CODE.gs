@@ -619,6 +619,16 @@ const PLANILHA_PERTENCES_PERDIDOS_ABA = 'PERTENCES PERDIDOS GUARDA-VOLUMES';
 const PLANILHA_PERTENCES_PERDIDOS_LINHA_CABECALHO = 3;
 const PLANILHA_PERTENCES_PERDIDOS_COLUNA_INICIAL = 2; // Coluna B
 
+
+// Base clínica externa (Pentaho)
+const PLANILHA_ENTRADA_CLINICA_ID = '1ap8BnfjHTpF4KcwuyxGKJEUKddSZnkl3Ldfp3gDAmxg';
+const PLANILHA_ENTRADA_CLINICA_ABA = 'PENTAHO_ENTRADA_CLINICA';
+
+function obterAbaEntradaClinicaExterna() {
+  var spreadsheet = SpreadsheetApp.openById(PLANILHA_ENTRADA_CLINICA_ID);
+  return spreadsheet.getSheetByName(PLANILHA_ENTRADA_CLINICA_ABA);
+}
+
 function montarChaveCache() {
   var partes = Array.prototype.slice.call(arguments).filter(function(parte) {
     return parte !== null && parte !== undefined && parte !== '';
@@ -1829,8 +1839,7 @@ function obterMapaInternacoesBaseVitae() {
   var chaveCache = montarChaveCache('base-vitae', 'internacoes');
   var resultado = executarComCache(chaveCache, CACHE_TTL_PADRAO, function() {
     try {
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var sheet = ss.getSheetByName('Base Vitae 1');
+      var sheet = obterAbaEntradaClinicaExterna();
       if (!sheet || sheet.getLastRow() < 2) {
         return { success: true, data: {} };
       }
@@ -1884,7 +1893,7 @@ function obterMapaInternacoesBaseVitae() {
 
       return { success: true, data: mapa };
     } catch (erro) {
-      registrarLog('ERRO', 'Falha ao mapear Base Vitae: ' + erro.toString());
+      registrarLog('ERRO', 'Falha ao mapear PENTAHO_ENTRADA_CLINICA: ' + erro.toString());
       return { success: true, data: {} };
     }
   });
@@ -1899,8 +1908,7 @@ function obterMapaPacientesBaseVitae() {
   var chaveCache = montarChaveCache('base-vitae', 'pacientes-detalhes');
   var resultado = executarComCache(chaveCache, CACHE_TTL_PADRAO, function() {
     try {
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var sheet = ss.getSheetByName('Base Vitae 1');
+      var sheet = obterAbaEntradaClinicaExterna();
       if (!sheet || sheet.getLastRow() < 2) {
         return { success: true, data: {} };
       }
@@ -1948,7 +1956,7 @@ function obterMapaPacientesBaseVitae() {
 
       return { success: true, data: mapa };
     } catch (erro) {
-      registrarLog('ERRO', 'Falha ao mapear Base Vitae para busca de pacientes: ' + erro.toString());
+      registrarLog('ERRO', 'Falha ao mapear PENTAHO_ENTRADA_CLINICA para busca de pacientes: ' + erro.toString());
       return { success: true, data: {} };
     }
   });
@@ -1963,8 +1971,7 @@ function obterMapaNascimentosPacientes() {
   var chaveCache = montarChaveCache('paciente-por-setor', 'nascimentos');
   return executarComCache(chaveCache, CACHE_TTL_PADRAO, function() {
     try {
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var sheet = ss.getSheetByName('PACIENTE_POR_SETOR');
+      var sheet = obterAbaEntradaClinicaExterna();
       if (!sheet || sheet.getLastRow() < 2) {
         return { success: true, data: {} };
       }
@@ -2009,7 +2016,7 @@ function buscarNascimentoPorProntuario(prontuarioEntrada, prontuarioSemZeros) {
     var mapa = mapaResultado.data || {};
     return mapa[prontuarioEntrada] || mapa[prontuarioSemZeros] || '';
   } catch (erro) {
-    registrarLog('ERRO', 'Falha ao buscar nascimento na aba PACIENTE_POR_SETOR: ' + erro.toString());
+    registrarLog('ERRO', 'Falha ao buscar nascimento na aba PENTAHO_ENTRADA_CLINICA: ' + erro.toString());
     return '';
   }
 }
@@ -2018,8 +2025,7 @@ function obterMapaPacientesBaseVitae() {
   var chaveCache = montarChaveCache('base-vitae', 'pacientes');
   return executarComCache(chaveCache, CACHE_TTL_PADRAO, function() {
     try {
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var sheet = ss.getSheetByName('Base Vitae 1');
+      var sheet = obterAbaEntradaClinicaExterna();
       if (!sheet || sheet.getLastRow() < 2) {
         return { success: true, data: {} };
       }
@@ -2074,7 +2080,7 @@ function obterMapaPacientesBaseVitae() {
 
       return { success: true, data: mapa };
     } catch (erroMapa) {
-      registrarLog('ERRO', 'Falha ao montar mapa da Base Vitae: ' + erroMapa.toString());
+      registrarLog('ERRO', 'Falha ao montar mapa da PENTAHO_ENTRADA_CLINICA: ' + erroMapa.toString());
       return { success: true, data: {} };
     }
   });
@@ -2108,15 +2114,14 @@ function buscarPacienteBaseVitae(dados) {
       }
     };
   } catch (erroBusca) {
-    registrarLog('ERRO', 'Falha ao buscar paciente na Base Vitae: ' + erroBusca.toString());
-    return { success: false, error: 'Erro ao buscar paciente na Base Vitae' };
+    registrarLog('ERRO', 'Falha ao buscar paciente na PENTAHO_ENTRADA_CLINICA: ' + erroBusca.toString());
+    return { success: false, error: 'Erro ao buscar paciente na PENTAHO_ENTRADA_CLINICA' };
   }
 }
 
 function obterRegistroBaseVitaePorProntuario(prontuarioEntrada, prontuarioSemZeros) {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Base Vitae 1');
+    var sheet = obterAbaEntradaClinicaExterna();
     if (!sheet || sheet.getLastRow() < 2) {
       return null;
     }

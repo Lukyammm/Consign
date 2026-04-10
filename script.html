@@ -6054,13 +6054,26 @@
                 return;
             }
 
+            const textoOriginalBotao = elementos.backupExecutarBtn ? elementos.backupExecutarBtn.innerHTML : '';
+
             try {
                 if (elementos.backupExecutarBtn) {
                     elementos.backupExecutarBtn.disabled = true;
+                    elementos.backupExecutarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Executando backup...';
                 }
                 if (elementos.backupResultado) {
-                    elementos.backupResultado.textContent = 'Executando backup...';
+                    elementos.backupResultado.textContent = 'Executando backup... aguarde, isso pode levar alguns instantes.';
                 }
+
+                Swal.fire({
+                    title: 'Backup em andamento',
+                    text: 'Copiando e limpando registros. Aguarde a finalização.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
 
                 const resultado = await callGoogleScript('executarBackupSistema');
                 if (!resultado.success) {
@@ -6075,16 +6088,21 @@
                 if (elementos.backupResultado) {
                     elementos.backupResultado.textContent = `Backup concluído em ${resultado.timestamp || ''}. Registros movidos: ${total}. ${detalhes}`;
                 }
+
+                Swal.close();
                 mostrarSucesso(`Backup concluído. Registros movidos: ${total}.`);
             } catch (erro) {
                 console.error('Erro ao executar backup:', erro);
                 if (elementos.backupResultado) {
                     elementos.backupResultado.textContent = 'Falha ao executar backup.';
                 }
+
+                Swal.close();
                 mostrarErro('Não foi possível concluir o backup.');
             } finally {
                 if (elementos.backupExecutarBtn) {
                     elementos.backupExecutarBtn.disabled = false;
+                    elementos.backupExecutarBtn.innerHTML = textoOriginalBotao;
                 }
             }
         }
