@@ -9974,6 +9974,18 @@
                 return;
             }
 
+            Swal.fire({
+                title: 'Registros em imagens',
+                html: '<div class="loading-state"><span class="loading-spinner"></span> Carregando registros em imagens...</div>',
+                width: 960,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             let imagens = [];
             try {
                 const parametros = montarPayloadTermo(armario, { incluirFinalizados: true });
@@ -10037,6 +10049,7 @@
                     }
                 }
             } catch (erroGaleria) {
+                Swal.close();
                 console.error('Erro ao carregar registros em imagens:', erroGaleria);
                 mostrarErro('Não foi possível carregar os registros em imagens.');
                 return;
@@ -10062,13 +10075,15 @@
                     `).join('')}</div>`
                 : '<div class="registro-imagens-vazia">Nenhum registro em imagem encontrado para este armário.</div>';
 
-            await Swal.fire({
-                title: 'Registros em imagens',
+            Swal.update({
                 html: `<div class="modal-registro-imagens">${resumo}${conteudoImagens}</div>`,
-                width: 960,
+                showConfirmButton: true,
                 confirmButtonText: 'Fechar',
+                allowOutsideClick: true,
+                allowEscapeKey: true,
                 focusConfirm: false
             });
+            Swal.hideLoading();
         }
         function aplicarMascaraLeito(valor) {
             const texto = (valor || '').toString();
