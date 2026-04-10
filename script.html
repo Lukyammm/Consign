@@ -55,6 +55,11 @@
                 },
                 usuarios: [],
                 logs: [],
+                registrosImagens: {
+                    itens: [],
+                    carregado: false,
+                    ultimaAtualizacao: null
+                },
                 carregamentoTermosId: 0,
                 filtrosTermos: {
                     status: 'todos',
@@ -3824,7 +3829,7 @@
                 const grupo = trigger.dataset.imageGroup || '';
                 if (!grupo) return;
                 evento.preventDefault();
-                abrirVisualizadorImagem(grupo, Number(trigger.dataset.imageIndex || 0));
+                abrirImagemRegistroEmNovaGuia(grupo, Number(trigger.dataset.imageIndex || 0));
             });
             const aplicarFiltrosLogsDebounced = debounce(aplicarFiltrosLogs, 150);
             if (elementos.logsDataInicio) {
@@ -3843,7 +3848,7 @@
                 elementos.logsBtnLimpar.addEventListener('click', limparFiltrosLogs);
             }
             if (elementos.registrosImagensRefresh) {
-                elementos.registrosImagensRefresh.addEventListener('click', carregarTabelaRegistrosImagens);
+                elementos.registrosImagensRefresh.addEventListener('click', () => carregarTabelaRegistrosImagens({ forcarAtualizacao: true }));
             }
             if (elementos.backupExecutarBtn) {
                 elementos.backupExecutarBtn.addEventListener('click', executarBackupSistemaFrontend);
@@ -6102,31 +6107,17 @@
             elementos.tabelaRegistrosImagensBody.innerHTML = '';
             elementos.tabelaRegistrosImagensBody.appendChild(tr);
         }
-        async function carregarTabelaRegistrosImagens() {
+        function renderizarTabelaRegistrosImagens(registros = []) {
             if (!elementos.tabelaRegistrosImagensBody) return;
-            exibirEstadoTabelaRegistrosImagens('Carregando registros em imagens...', 'loading');
-            if (elementos.registrosImagensResumo) {
-                elementos.registrosImagensResumo.textContent = 'Carregando registros...';
-            }
-            const resultado = await callGoogleScript('getRegistrosImagens', {});
-            if (!resultado || !resultado.success) {
-                exibirEstadoTabelaRegistrosImagens('Não foi possível carregar os registros em imagens.', 'error');
-                if (elementos.registrosImagensResumo) {
-                    elementos.registrosImagensResumo.textContent = 'Erro ao carregar os registros.';
-                }
-                return;
-            }
-            const registros = Array.isArray(resultado.data) ? resultado.data : [];
-            if (!registros.length) {
+            if (!Array.isArray(registros) || !registros.length) {
                 exibirEstadoTabelaRegistrosImagens('Nenhum registro em imagem encontrado.');
                 if (elementos.registrosImagensResumo) {
                     elementos.registrosImagensResumo.textContent = '0 registros encontrados.';
                 }
                 return;
             }
+
             elementos.tabelaRegistrosImagensBody.innerHTML = '';
-            const grupoGaleriaTabela = 'tabela-registros-imagens';
-            registrarGaleriaImagem(grupoGaleriaTabela, []);
             registros.forEach(item => {
                 const tr = document.createElement('tr');
                 const dataHora = item.dataHora ? formatarDataHora(item.dataHora) : '-';
@@ -6135,30 +6126,53 @@
                 const titulo = item.titulo || '-';
                 const responsavel = item.responsavel || '-';
                 const fotoUrl = item.fotoUrl || '';
-                const indiceImagem = (galeriasImagem[grupoGaleriaTabela] || []).length;
-                if (fotoUrl) {
-                    galeriasImagem[grupoGaleriaTabela].push({
-                        url: fotoUrl,
-                        titulo: item.titulo || 'Registro em imagem',
-                        contexto: item.contexto || '',
-                        detalhe: armario !== '-' ? `Armário ${armario}` : '',
-                        dataHora: dataHora !== '-' ? dataHora : '',
-                        responsavel: responsavel !== '-' ? responsavel : ''
-                    });
-                }
+
                 tr.innerHTML = `
                     <td>${dataHora}</td>
                     <td>${armario}</td>
                     <td>${contexto}</td>
                     <td>${titulo}</td>
                     <td>${responsavel}</td>
-                    <td>${fotoUrl ? `<button type="button" class="registro-imagem-link" data-imagem-modal="true" data-image-group="${grupoGaleriaTabela}" data-image-index="${indiceImagem}">Abrir</button>` : '-'}</td>
+                    <td>${fotoUrl ? `<a class="registro-imagem-link" href="${fotoUrl}" target="_blank" rel="noopener noreferrer">Abrir</a>` : '-'}</td>
                 `;
                 elementos.tabelaRegistrosImagensBody.appendChild(tr);
             });
+
             if (elementos.registrosImagensResumo) {
                 elementos.registrosImagensResumo.textContent = `${registros.length} registro(s) em imagem.`;
             }
+        }
+        async function carregarTabelaRegistrosImagens(opcoes = {}) {
+            if (!elementos.tabelaRegistrosImagensBody) return;
+            const forcarAtualizacao = Boolean(opcoes?.forcarAtualizacao);
+            const cacheValido = !forcarAtualizacao && estado.registrosImagens?.carregado && Array.isArray(estado.registrosImagens?.itens);
+
+            if (cacheValido) {
+                renderizarTabelaRegistrosImagens(estado.registrosImagens.itens);
+                return;
+            }
+
+            exibirEstadoTabelaRegistrosImagens('Carregando registros em imagens...', 'loading');
+            if (elementos.registrosImagensResumo) {
+                elementos.registrosImagensResumo.textContent = 'Carregando registros...';
+            }
+
+            const resultado = await callGoogleScript('getRegistrosImagens', {});
+            if (!resultado || !resultado.success) {
+                exibirEstadoTabelaRegistrosImagens('Não foi possível carregar os registros em imagens.', 'error');
+                if (elementos.registrosImagensResumo) {
+                    elementos.registrosImagensResumo.textContent = 'Erro ao carregar os registros.';
+                }
+                return;
+            }
+
+            const registros = Array.isArray(resultado.data) ? resultado.data : [];
+            estado.registrosImagens = {
+                itens: registros,
+                carregado: true,
+                ultimaAtualizacao: Date.now()
+            };
+            renderizarTabelaRegistrosImagens(registros);
         }
         async function executarBackupSistemaFrontend() {
             if (!perfilAtualEhAdmin()) {
@@ -9931,20 +9945,16 @@
             estadoVisualizadorImagem.indice = (dados.indice + direcao + dados.total) % dados.total;
             renderizarVisualizadorImagem();
         }
-        function abrirVisualizadorImagem(grupo, indice = 0) {
+        function abrirImagemRegistroEmNovaGuia(grupo, indice = 0) {
             const dados = obterItemGaleriaImagem(grupo, indice);
-            if (!dados || !elementos.imageViewerModal) {
+            if (!dados || !dados.item?.url) {
                 mostrarErro('Imagem não encontrada para visualização.');
                 return;
             }
-            estadoVisualizadorImagem.grupo = grupo;
-            estadoVisualizadorImagem.indice = dados.indice;
-            renderizarVisualizadorImagem();
-            if (elementos.imageViewerModal.style.display !== 'flex') {
-                travaRolagem.aplicar();
+            const novaAba = window.open(dados.item.url, '_blank', 'noopener,noreferrer');
+            if (!novaAba) {
+                mostrarErro('Não foi possível abrir a imagem em nova guia. Verifique o bloqueador de pop-up.');
             }
-            elementos.imageViewerModal.style.display = 'flex';
-            elementos.imageViewerModal.setAttribute('aria-hidden', 'false');
         }
         function fecharVisualizadorImagem() {
             if (!elementos.imageViewerModal) return;
@@ -10046,7 +10056,7 @@
                                     ${item.dataHora ? `<span><i class="fas fa-clock"></i> ${item.dataHora}</span>` : ''}
                                     ${item.responsavel ? `<span><i class="fas fa-user"></i> ${item.responsavel}</span>` : ''}
                                 </div>
-                                <button type="button" class="registro-imagem-link" data-imagem-modal="true" data-image-group="${grupoGaleria}" data-image-index="${indice}">Abrir imagem</button>
+                                <a class="registro-imagem-link" href="${item.url}" target="_blank" rel="noopener noreferrer">Abrir imagem</a>
                             </div>
                         </article>
                     `).join('')}</div>`
